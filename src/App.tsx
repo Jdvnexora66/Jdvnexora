@@ -20,6 +20,7 @@ export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [session, setSession] = useState<Session | null>(null);
+  const [authReady, setAuthReady] = useState(false);
   const [projects, setProjects] = useState<StudioProject[]>([]);
   const [activeProject, setActiveProject] = useState<StudioProject | null>(null);
   const [activeAsset, setActiveAsset] = useState<StudioAsset | null>(null);
@@ -37,10 +38,24 @@ export default function App() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
-    return () => data.subscription.unsubscribe();
+    if (!supabase) { setAuthReady(true); return; }
+    let mounted = true;
+    supabase.auth.getSession().then(({ data, error: sessionError }) => {
+      if (!mounted) return;
+      if (sessionError) setError('Impossible de restaurer la session : ' + sessionError.message);
+      setSession(data.session);
+      setAuthReady(true);
+    }).catch((cause: unknown) => {
+      if (!mounted) return;
+      setError(cause instanceof Error ? cause.message : 'Impossible de restaurer la session.');
+      setAuthReady(true);
+    });
+    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!mounted) return;
+      setSession(nextSession);
+      setAuthReady(true);
+    });
+    return () => { mounted = false; data.subscription.unsubscribe(); };
   }, []);
 
   useEffect(() => {
@@ -226,7 +241,13 @@ export default function App() {
         </div>
       </header>
 
-      {session ? (
+      {!authReady ? (
+        <section className="auth-card session-loading" aria-live="polite">
+          <div className="brand-mark"><Sparkles size={20} /></div>
+          <h2>Restauration de votre espace…</h2>
+          <p className="muted">Nous vérifions votre session sécurisée avant d’afficher vos projets.</p>
+        </section>
+      ) : session ? (
         <section className="workspace">
           <div className="workspace-heading">
             <div>
