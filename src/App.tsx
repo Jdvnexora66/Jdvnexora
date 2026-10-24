@@ -212,7 +212,13 @@ export default function App() {
               <textarea id="project-content" className="content-editor" value={editorContent} onChange={(event) => setEditorContent(event.target.value)} placeholder="Commencez à écrire ici…\n\nVous pouvez structurer votre contenu en titres, chapitres, notes et paragraphes." />
               <div className="editor-actions"><p className="muted">Pensez à enregistrer avant de quitter cette page.</p><button className="primary-button save-button" onClick={() => void saveProjectContent()} disabled={savingContent}>{savingContent ? 'Enregistrement…' : 'Enregistrer le contenu'} <ShieldCheck size={16} /></button></div>
             </section>
-          ) : <div className="project-layout">
+          ) : <>
+          <div className="stats-grid">
+            <article className="stat-card"><span>Total des projets</span><strong>{projects.length}</strong><small>Dans votre espace</small></article>
+            <article className="stat-card"><span>En cours</span><strong>{projects.filter((project) => project.status === 'in_progress').length}</strong><small>Projets actifs</small></article>
+            <article className="stat-card"><span>Terminés</span><strong>{projects.filter((project) => project.status === 'completed').length}</strong><small>Projets achevés</small></article>
+          </div>
+          <div className="project-layout">
             <section className="project-panel">
               <div className="section-heading">
                 <div><h2>Mes projets</h2><p className="muted">Vos créations enregistrées dans Supabase.</p></div>
