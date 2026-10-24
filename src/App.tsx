@@ -23,6 +23,7 @@ export default function App() {
   const [projects, setProjects] = useState<StudioProject[]>([]);
   const [activeProject, setActiveProject] = useState<StudioProject | null>(null);
   const [activeAsset, setActiveAsset] = useState<StudioAsset | null>(null);
+  const [projectAssets, setProjectAssets] = useState<StudioAsset[]>([]);
   const [editorContent, setEditorContent] = useState('');
   const [savingContent, setSavingContent] = useState(false);
   const [title, setTitle] = useState('');
@@ -64,19 +65,52 @@ export default function App() {
   async function openProject(project: StudioProject) {
     if (!supabase || !session?.user.id) return;
     setBusy(true); setError(''); setMessage('');
-    const { data, error: assetError } = await supabase.from('studio_assets').select('id, project_id, owner_id, title, content, kind, updated_at').eq('project_id', project.id).eq('owner_id', session.user.id).order('created_at', { ascending: true }).limit(1).maybeSingle();
+    const { data, error: assetError } = await supabase.from('studio_assets').select('id, project_id, owner_id, title, content, kind, updated_at').eq('project_id', project.id).eq('owner_id', session.user.id).order('created_at', { ascending: true });
     if (assetError) { setError('Ouverture impossible : ' + assetError.message); setBusy(false); return; }
-    setActiveProject(project); setActiveAsset(data as StudioAsset | null); setEditorContent(data?.content ?? ''); setBusy(false);
+    const assets = (data ?? []) as StudioAsset[];
+    setActiveProject(project); setProjectAssets(assets); setActiveAsset(assets[0] ?? null); setEditorContent(assets[0]?.content ?? ''); setBusy(false);
   }
 
   async function saveProjectContent() {
     if (!supabase || !session?.user.id || !activeProject) return;
     setSavingContent(true); setError(''); setMessage('');
-    const payload = { project_id: activeProject.id, owner_id: session.user.id, kind: activeProject.project_type === 'ebook' ? 'ebook' : activeProject.project_type === 'course' ? 'course_material' : activeProject.project_type === 'translation' ? 'translation' : 'document', title: activeAsset?.title || 'Contenu principal', content: editorContent, language: 'fr' };
+    const payload = { project_id: activeProject.id, owner_id: session.user.id, kind: activeProject.project_type === 'ebook' ? 'ebook' : activeProject.project_type === 'course' ? 'course_material' : activeProject.project_type === 'translation' ? 'translation' : 'document', title: activeAsset?.title || 'Chapitre 1', content: editorContent, language: 'fr' };
     const result = activeAsset ? await supabase.from('studio_assets').update({ content: editorContent, updated_at: new Date().toISOString() }).eq('id', activeAsset.id).eq('owner_id', session.user.id).select('id, project_id, owner_id, title, content, kind, updated_at').single() : await supabase.from('studio_assets').insert(payload).select('id, project_id, owner_id, title, content, kind, updated_at').single();
     setSavingContent(false);
     if (result.error) { setError('Enregistrement impossible : ' + result.error.message); return; }
-    setActiveAsset(result.data as StudioAsset); setMessage('Contenu enregistré dans Supabase.');
+    const saved = result.data as StudioAsset;
+    setActiveAsset(saved); setProjectAssets((current) => activeAsset ? current.map((asset) => asset.id === saved.id ? saved : asset) : [...current, saved]); setMessage('Contenu enregistré dans Supabase.');
+  }
+
+  function selectAsset(asset: StudioAsset) {
+    setActiveAsset(asset);
+    setEditorContent(asset.content ?? '');
+    setError(''); setMessage('');
+  }
+
+  async function createChapter() {
+    if (!supabase || !session?.user.id || !activeProject) return;
+    const chapterNumber = projectAssets.length + 1;
+    setSavingContent(true); setError(''); setMessage('');
+    const { data, error: insertError } = await supabase.from('studio_assets').insert({
+      project_id: activeProject.id, owner_id: session.user.id,
+      kind: activeProject.project_type === 'ebook' ? 'ebook' : activeProject.project_type === 'course' ? 'course_material' : 'document',
+      title: `Chapitre ${chapterNumber}`, content: '', language: 'fr',
+    }).select('id, project_id, owner_id, title, content, kind, updated_at').single();
+    setSavingContent(false);
+    if (insertError) { setError('Création du chapitre impossible : ' + insertError.message); return; }
+    const asset = data as StudioAsset;
+    setProjectAssets((current) => [...current, asset]); setActiveAsset(asset); setEditorContent(''); setMessage('Nouveau chapitre créé.');
+  }
+
+  async function updateProjectStatus(status: StudioProject['status']) {
+    if (!supabase || !session?.user.id || !activeProject) return;
+    setError(''); setMessage('');
+    const { data, error: updateError } = await supabase.from('studio_projects').update({ status }).eq('id', activeProject.id).eq('owner_id', session.user.id).select('id, owner_id, title, description, project_type, status, created_at').single();
+    if (updateError) { setError('Modification du statut impossible : ' + updateError.message); return; }
+    const updated = data as StudioProject;
+    setActiveProject(updated); setProjects((current) => current.map((project) => project.id === updated.id ? updated : project));
+    setMessage('Statut du projet mis à jour.');
   }
 
   async function handleAuthSubmit(event: FormEvent<HTMLFormElement>) {
@@ -206,11 +240,11 @@ export default function App() {
 
           {activeProject ? (
             <section className="project-panel editor-panel">
-              <div className="section-heading editor-heading"><div><p className="eyebrow">ESPACE DE CRÉATION</p><h2>{activeProject.title}</h2><p className="muted">Rédigez votre contenu. Vos modifications sont enregistrées dans votre espace Supabase.</p></div><button className="logout-button" onClick={() => { setActiveProject(null); setActiveAsset(null); setEditorContent(''); setError(''); setMessage(''); }}>Retour aux projets</button></div>
-              <div className="editor-toolbar"><span><FolderKanban size={14} /> {projectLabel[activeProject.project_type] || activeProject.project_type}</span><span>Français · Brouillon</span><span>{editorContent.trim() ? editorContent.trim().split(/\s+/).length : 0} mots</span></div>
-              <label className="editor-label" htmlFor="project-content">Manuscrit / contenu principal</label>
-              <textarea id="project-content" className="content-editor" value={editorContent} onChange={(event) => setEditorContent(event.target.value)} placeholder="Commencez à écrire ici…\n\nVous pouvez structurer votre contenu en titres, chapitres, notes et paragraphes." />
-              <div className="editor-actions"><p className="muted">Pensez à enregistrer avant de quitter cette page.</p><button className="primary-button save-button" onClick={() => void saveProjectContent()} disabled={savingContent}>{savingContent ? 'Enregistrement…' : 'Enregistrer le contenu'} <ShieldCheck size={16} /></button></div>
+              <div className="section-heading editor-heading"><div><p className="eyebrow">ESPACE DE CRÉATION</p><h2>{activeProject.title}</h2><p className="muted">Rédigez votre contenu. Vos modifications sont enregistrées dans votre espace Supabase.</p></div><button className="logout-button" onClick={() => { setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); setError(''); setMessage(''); }}>Retour aux projets</button></div>
+              <div className="editor-toolbar"><span><FolderKanban size={14} /> {projectLabel[activeProject.project_type] || activeProject.project_type}</span><label className="status-picker">Statut <select aria-label="Statut du projet" value={activeProject.status} onChange={(event) => void updateProjectStatus(event.target.value as StudioProject['status'])}><option value="draft">Brouillon</option><option value="in_progress">En cours</option><option value="completed">Terminé</option><option value="archived">Archivé</option></select></label><span>{projectAssets.length} chapitre(s)</span><span>{editorContent.trim() ? editorContent.trim().split(/\s+/).length : 0} mots</span></div>
+              <div className="chapter-layout"><aside className="chapter-sidebar"><div className="chapter-sidebar-heading"><strong>Structure</strong><button type="button" className="icon-button" onClick={() => void createChapter()} disabled={savingContent} aria-label="Ajouter un chapitre"><Plus size={16} /></button></div>{projectAssets.map((asset, index) => <button type="button" key={asset.id} className={activeAsset?.id === asset.id ? 'chapter-item active' : 'chapter-item'} onClick={() => selectAsset(asset)}><span>{String(index + 1).padStart(2, '0')}</span><strong>{asset.title || `Chapitre ${index + 1}`}</strong></button>)}{projectAssets.length === 0 && <p className="chapter-empty">Aucun chapitre. Ajoutez-en un pour commencer.</p>}</aside><div className="chapter-editor"><label className="editor-label" htmlFor="chapter-title">Titre du chapitre</label><input id="chapter-title" className="chapter-title-input" value={activeAsset?.title ?? ''} onChange={(event) => { const value = event.target.value; setActiveAsset((current) => current ? { ...current, title: value } : current); }} placeholder="Titre du chapitre" /><label className="editor-label" htmlFor="project-content">Contenu du chapitre</label>
+              <textarea id="project-content" className="content-editor" value={editorContent} onChange={(event) => setEditorContent(event.target.value)} placeholder="Commencez à écrire ici…\n\nStructurez votre texte en sections et paragraphes." />
+              <div className="editor-actions"><p className="muted">Enregistrez chaque chapitre avant de quitter.</p><button className="primary-button save-button" onClick={() => void saveProjectContent()} disabled={savingContent}>{savingContent ? 'Enregistrement…' : 'Enregistrer le chapitre'} <ShieldCheck size={16} /></button></div></div></div>
             </section>
           ) : <>
           <div className="stats-grid">
