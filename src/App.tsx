@@ -4,6 +4,7 @@ import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshC
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 
 type AuthMode = 'signin' | 'signup';
+type StudioAsset = { id: string; project_id: string; owner_id: string; title: string; content: string | null; kind: string; updated_at: string; };
 type StudioProject = {
   id: string;
   owner_id: string;
@@ -20,6 +21,10 @@ export default function App() {
   const [password, setPassword] = useState('');
   const [session, setSession] = useState<Session | null>(null);
   const [projects, setProjects] = useState<StudioProject[]>([]);
+  const [activeProject, setActiveProject] = useState<StudioProject | null>(null);
+  const [activeAsset, setActiveAsset] = useState<StudioAsset | null>(null);
+  const [editorContent, setEditorContent] = useState('');
+  const [savingContent, setSavingContent] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [projectType, setProjectType] = useState('ebook');
@@ -52,6 +57,24 @@ export default function App() {
     if (queryError) setError('Impossible de charger les projets : ' + queryError.message);
     else setProjects((data ?? []) as StudioProject[]);
     setLoadingProjects(false);
+  }
+
+  async function openProject(project: StudioProject) {
+    if (!supabase || !session?.user.id) return;
+    setBusy(true); setError(''); setMessage('');
+    const { data, error: assetError } = await supabase.from('studio_assets').select('id, project_id, owner_id, title, content, kind, updated_at').eq('project_id', project.id).eq('owner_id', session.user.id).order('created_at', { ascending: true }).limit(1).maybeSingle();
+    if (assetError) { setError('Ouverture impossible : ' + assetError.message); setBusy(false); return; }
+    setActiveProject(project); setActiveAsset(data as StudioAsset | null); setEditorContent(data?.content ?? ''); setBusy(false);
+  }
+
+  async function saveProjectContent() {
+    if (!supabase || !session?.user.id || !activeProject) return;
+    setSavingContent(true); setError(''); setMessage('');
+    const payload = { project_id: activeProject.id, owner_id: session.user.id, kind: activeProject.project_type === 'ebook' ? 'ebook' : activeProject.project_type === 'course' ? 'course_material' : activeProject.project_type === 'translation' ? 'translation' : 'document', title: activeAsset?.title || 'Contenu principal', content: editorContent, language: 'fr' };
+    const result = activeAsset ? await supabase.from('studio_assets').update({ content: editorContent, updated_at: new Date().toISOString() }).eq('id', activeAsset.id).eq('owner_id', session.user.id).select('id, project_id, owner_id, title, content, kind, updated_at').single() : await supabase.from('studio_assets').insert(payload).select('id, project_id, owner_id, title, content, kind, updated_at').single();
+    setSavingContent(false);
+    if (result.error) { setError('Enregistrement impossible : ' + result.error.message); return; }
+    setActiveAsset(result.data as StudioAsset); setMessage('Contenu enregistré dans Supabase.');
   }
 
   async function handleAuthSubmit(event: FormEvent<HTMLFormElement>) {
@@ -174,7 +197,15 @@ export default function App() {
             <div className="workspace-mark"><FolderKanban size={30} /></div>
           </div>
 
-          <div className="project-layout">
+          {activeProject ? (
+            <section className="project-panel editor-panel">
+              <div className="section-heading editor-heading"><div><p className="eyebrow">ESPACE DE CRÉATION</p><h2>{activeProject.title}</h2><p className="muted">Rédigez votre contenu. Vos modifications sont enregistrées dans votre espace Supabase.</p></div><button className="logout-button" onClick={() => { setActiveProject(null); setActiveAsset(null); setEditorContent(''); setError(''); setMessage(''); }}>Retour aux projets</button></div>
+              <div className="editor-toolbar"><span><FolderKanban size={14} /> {projectLabel[activeProject.project_type] || activeProject.project_type}</span><span>Français · Brouillon</span><span>{editorContent.trim() ? editorContent.trim().split(/\s+/).length : 0} mots</span></div>
+              <label className="editor-label" htmlFor="project-content">Manuscrit / contenu principal</label>
+              <textarea id="project-content" className="content-editor" value={editorContent} onChange={(event) => setEditorContent(event.target.value)} placeholder="Commencez à écrire ici…\n\nVous pouvez structurer votre contenu en titres, chapitres, notes et paragraphes." />
+              <div className="editor-actions"><p className="muted">Pensez à enregistrer avant de quitter cette page.</p><button className="primary-button save-button" onClick={() => void saveProjectContent()} disabled={savingContent}>{savingContent ? 'Enregistrement…' : 'Enregistrer le contenu'} <ShieldCheck size={16} /></button></div>
+            </section>
+          ) : <div className="project-layout">
             <section className="project-panel">
               <div className="section-heading">
                 <div><h2>Mes projets</h2><p className="muted">Vos créations enregistrées dans Supabase.</p></div>
@@ -188,7 +219,7 @@ export default function App() {
                     <article className="project-item" key={project.id}>
                       <div className="project-type-icon"><FolderKanban size={19} /></div>
                       <div className="project-info"><h3>{project.title}</h3><p>{project.description || 'Aucune description'}</p><div className="project-meta"><span>{projectLabel[project.project_type] || project.project_type}</span><span><Clock3 size={12} /> {statusLabel[project.status] || project.status}</span></div></div>
-                      <button className="delete-button" onClick={() => void deleteProject(project)} aria-label={`Supprimer ${project.title}`}><Trash2 size={16} /></button>
+                      <button className="open-project-button" onClick={() => void openProject(project)} disabled={busy}>Ouvrir <ArrowRight size={14} /></button><button className="delete-button" onClick={() => void deleteProject(project)} aria-label={`Supprimer ${project.title}`}><Trash2 size={16} /></button>
                     </article>
                   ))}
                 </div>
@@ -211,7 +242,7 @@ export default function App() {
                 <button className="primary-button" type="submit" disabled={busy || !title.trim()}>{busy ? 'Enregistrement…' : 'Créer le projet'} <Plus size={17} /></button>
               </form>
             </section>
-          </div>
+          </div>}
           {error && <p className="feedback error" role="alert">{error}</p>}
           {message && <p className="feedback success" role="status">{message}</p>}
           <p className="workspace-footnote">Le Studio IA complet reste en préparation. Les autorisations Supabase sont appliquées à chaque opération.</p>
