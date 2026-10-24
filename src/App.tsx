@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3 } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 
 type AuthMode = 'signin' | 'signup';
@@ -30,6 +30,8 @@ export default function App() {
   const [projectType, setProjectType] = useState('ebook');
   const [busy, setBusy] = useState(false);
   const [loadingProjects, setLoadingProjects] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -168,6 +170,11 @@ export default function App() {
   const projectLabel: Record<string, string> = {
     ebook: 'E-book', course: 'Formation', document: 'Document', translation: 'Traduction', other: 'Autre',
   };
+  const filteredProjects = projects.filter((project) => {
+    const query = searchQuery.trim().toLocaleLowerCase();
+    const matchesQuery = !query || project.title.toLocaleLowerCase().includes(query) || (project.description ?? '').toLocaleLowerCase().includes(query);
+    return matchesQuery && (statusFilter === 'all' || project.status === statusFilter);
+  });
   const statusLabel: Record<string, string> = {
     draft: 'Brouillon', in_progress: 'En cours', completed: 'Terminé', archived: 'Archivé',
   };
@@ -211,11 +218,15 @@ export default function App() {
                 <div><h2>Mes projets</h2><p className="muted">Vos créations enregistrées dans Supabase.</p></div>
                 <button className="icon-button" onClick={() => void loadProjects()} disabled={loadingProjects} aria-label="Actualiser les projets"><RefreshCw size={16} /></button>
               </div>
+              <div className="project-filters">
+                <label className="search-field"><Search size={16} /><input aria-label="Rechercher un projet" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Rechercher un projet…" /></label>
+                <select aria-label="Filtrer par statut" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">Tous les statuts</option><option value="draft">Brouillons</option><option value="in_progress">En cours</option><option value="completed">Terminés</option><option value="archived">Archivés</option></select>
+              </div>
               {loadingProjects ? <p className="empty-state">Chargement des projets…</p> : projects.length === 0 ? (
                 <div className="empty-state"><div className="empty-icon"><FolderKanban size={24} /></div><h3>Aucun projet pour le moment</h3><p>Créez votre premier projet depuis le formulaire. La création dépend des permissions de votre compte.</p></div>
               ) : (
                 <div className="project-list">
-                  {projects.map((project) => (
+                  {filteredProjects.length === 0 ? <p className="empty-state">Aucun projet ne correspond à votre recherche.</p> : filteredProjects.map((project) => (
                     <article className="project-item" key={project.id}>
                       <div className="project-type-icon"><FolderKanban size={19} /></div>
                       <div className="project-info"><h3>{project.title}</h3><p>{project.description || 'Aucune description'}</p><div className="project-meta"><span>{projectLabel[project.project_type] || project.project_type}</span><span><Clock3 size={12} /> {statusLabel[project.status] || project.status}</span></div></div>
@@ -242,7 +253,7 @@ export default function App() {
                 <button className="primary-button" type="submit" disabled={busy || !title.trim()}>{busy ? 'Enregistrement…' : 'Créer le projet'} <Plus size={17} /></button>
               </form>
             </section>
-          </div>}
+          </div></>}
           {error && <p className="feedback error" role="alert">{error}</p>}
           {message && <p className="feedback success" role="status">{message}</p>}
           <p className="workspace-footnote">Le Studio IA complet reste en préparation. Les autorisations Supabase sont appliquées à chaque opération.</p>
