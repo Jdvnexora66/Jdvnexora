@@ -23,3 +23,22 @@
 .search-field input::placeholder{color:#66728f}
 .project-filters>select{max-width:155px;border:1px solid #2a3552;border-radius:9px;background:#0b1121;color:#cbd4e9;padding:0 10px;font:11px 'DM Sans',sans-serif}
 @media(max-width:560px){.stats-grid{gap:8px}.stat-card{padding:13px 11px}.stat-card strong{font-size:24px}.stat-card span{font-size:10px}.project-filters{flex-direction:column}.project-filters>select{max-width:none;min-height:40px}}
+
+
+/* Chapter workspace */
+.chapter-layout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:18px;align-items:start;margin-top:4px}
+.chapter-sidebar{border:1px solid rgba(174,188,231,.13);border-radius:12px;background:rgba(8,14,29,.42);padding:12px;min-width:0}
+.chapter-sidebar-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:3px 2px 12px;color:#e6ebfa;font-size:12px}
+.chapter-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 9px;margin:3px 0;border:1px solid transparent;border-radius:8px;background:transparent;color:#aeb9d5;cursor:pointer}
+.chapter-item span{font-size:10px;color:#7f8ba9;font-variant-numeric:tabular-nums}
+.chapter-item strong{font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chapter-item.active{background:rgba(126,140,255,.12);border-color:rgba(126,140,255,.24);color:#e8ebff}
+.chapter-item.active span{color:#aab5ff}
+.chapter-empty{font-size:11px;color:#7f8ba9;line-height:1.7;padding:8px}
+.chapter-editor{min-width:0}
+.chapter-title-input{display:block;width:100%;border:1px solid #2a3552;background:#0b1121;border-radius:9px;padding:12px 13px;color:#f3f5ff;outline:none;margin-bottom:18px;font:600 15px Manrope,sans-serif}
+.chapter-title-input:focus{border-color:#7e8cff;box-shadow:0 0 0 3px rgba(126,140,255,.12)}
+.status-picker{display:inline-flex;align-items:center;gap:7px;font-size:11px;color:#aeb9d5}
+.status-picker select{border:1px solid #2a3552;border-radius:7px;background:#0b1121;color:#dce2f4;padding:5px 7px;font:11px 'DM Sans',sans-serif}
+@media(max-width:760px){.chapter-layout{grid-template-columns:1fr}.chapter-sidebar{display:grid;grid-template-columns:1fr 1fr;gap:4px}.chapter-sidebar-heading{grid-column:1/-1}.chapter-item{min-width:0}.chapter-empty{grid-column:1/-1}}
+@media(max-width:480px){.chapter-sidebar{grid-template-columns:1fr}.chapter-sidebar-heading{grid-column:auto}.editor-toolbar{align-items:flex-start}.status-picker{flex-wrap:wrap}}
