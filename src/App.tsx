@@ -75,7 +75,7 @@ export default function App() {
     if (!supabase || !session?.user.id || !activeProject) return;
     setSavingContent(true); setError(''); setMessage('');
     const payload = { project_id: activeProject.id, owner_id: session.user.id, kind: activeProject.project_type === 'ebook' ? 'ebook' : activeProject.project_type === 'course' ? 'course_material' : activeProject.project_type === 'translation' ? 'translation' : 'document', title: activeAsset?.title || 'Chapitre 1', content: editorContent, language: 'fr' };
-    const result = activeAsset ? await supabase.from('studio_assets').update({ content: editorContent, updated_at: new Date().toISOString() }).eq('id', activeAsset.id).eq('owner_id', session.user.id).select('id, project_id, owner_id, title, content, kind, updated_at').single() : await supabase.from('studio_assets').insert(payload).select('id, project_id, owner_id, title, content, kind, updated_at').single();
+    const result = activeAsset ? await supabase.from('studio_assets').update({ title: activeAsset.title || 'Chapitre', content: editorContent, updated_at: new Date().toISOString() }).eq('id', activeAsset.id).eq('owner_id', session.user.id).select('id, project_id, owner_id, title, content, kind, updated_at').single() : await supabase.from('studio_assets').insert(payload).select('id, project_id, owner_id, title, content, kind, updated_at').single();
     setSavingContent(false);
     if (result.error) { setError('Enregistrement impossible : ' + result.error.message); return; }
     const saved = result.data as StudioAsset;
