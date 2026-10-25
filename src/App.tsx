@@ -100,6 +100,16 @@ export default function App() {
   }, [activeProject]);
 
   useEffect(() => {
+    if (!activeProject || !hasUnsavedChapterChanges()) return;
+    const warnBeforeLeaving = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warnBeforeLeaving);
+    return () => window.removeEventListener('beforeunload', warnBeforeLeaving);
+  }, [activeProject, activeAsset, projectAssets, editorContent]);
+
+  useEffect(() => {
     if (session?.user.id) {
       void loadProjects();
       void loadProfile();
