@@ -430,31 +430,34 @@ export default function App() {
   async function createProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase || !session?.user.id) return;
-    setBusy(true);
-    setError('');
-    setMessage('');
-    const { data, error: insertError } = await supabase
-      .from('studio_projects')
-      .insert({
-        owner_id: session.user.id,
-        title: title.trim(),
-        description: description.trim() || null,
-        project_type: projectType,
-        status: 'draft',
-      })
-      .select('id, owner_id, title, description, project_type, status, created_at')
-      .single();
-    setBusy(false);
-    if (insertError) {
-      setError(insertError.code === '42501'
-        ? 'Création refusée par les règles de sécurité Supabase (RLS). Vérifiez que la politique autorise chaque utilisateur connecté à créer un projet avec son propre owner_id.'
-        : 'Création impossible : ' + insertError.message);
-      return;
+    setBusy(true); setError(''); setMessage('');
+    try {
+      const { data, error: insertError } = await supabase
+        .from('studio_projects')
+        .insert({
+          owner_id: session.user.id,
+          title: title.trim(),
+          description: description.trim() || null,
+          project_type: projectType,
+          status: 'draft',
+        })
+        .select('id, owner_id, title, description, project_type, status, created_at')
+        .single();
+      if (insertError) {
+        setError(insertError.code === '42501'
+          ? 'Création refusée par les règles de sécurité Supabase (RLS). Vérifiez que la politique autorise chaque utilisateur connecté à créer un projet avec son propre owner_id.'
+          : 'Création impossible : ' + insertError.message);
+        return;
+      }
+      setProjects((current) => [data as StudioProject, ...current]);
+      setTitle('');
+      setDescription('');
+      setMessage('Projet créé avec succès.');
+    } catch (cause) {
+      setError('Création impossible : ' + (cause instanceof Error ? cause.message : 'une erreur réseau inattendue est survenue.'));
+    } finally {
+      setBusy(false);
     }
-    setProjects((current) => [data as StudioProject, ...current]);
-    setTitle('');
-    setDescription('');
-    setMessage('Projet créé avec succès.');
   }
 
   function beginEditProject(project: StudioProject) {
@@ -470,30 +473,40 @@ export default function App() {
     event.preventDefault();
     if (!supabase || !session?.user.id || !editProjectTitle.trim()) return;
     setSavingProjectDetails(true); setError(''); setMessage('');
-    const { data, error: updateError } = await supabase.from('studio_projects')
-      .update({ title: editProjectTitle.trim(), description: editProjectDescription.trim() || null, project_type: editProjectType })
-      .eq('id', project.id).eq('owner_id', session.user.id)
-      .select('id, owner_id, title, description, project_type, status, created_at').single();
-    setSavingProjectDetails(false);
-    if (updateError) {
-      setError('Modification du projet impossible : ' + updateError.message);
-      return;
+    try {
+      const { data, error: updateError } = await supabase.from('studio_projects')
+        .update({ title: editProjectTitle.trim(), description: editProjectDescription.trim() || null, project_type: editProjectType })
+        .eq('id', project.id).eq('owner_id', session.user.id)
+        .select('id, owner_id, title, description, project_type, status, created_at').single();
+      if (updateError) {
+        setError('Modification du projet impossible : ' + updateError.message);
+        return;
+      }
+      const updated = data as StudioProject;
+      setProjects((current) => current.map((item) => item.id === updated.id ? updated : item));
+      if (activeProject?.id === updated.id) setActiveProject(updated);
+      setEditingProjectId(null);
+      setMessage('Détails du projet mis à jour.');
+    } catch (cause) {
+      setError('Modification du projet impossible : ' + (cause instanceof Error ? cause.message : 'une erreur réseau inattendue est survenue.'));
+    } finally {
+      setSavingProjectDetails(false);
     }
-    const updated = data as StudioProject;
-    setProjects((current) => current.map((item) => item.id === updated.id ? updated : item));
-    if (activeProject?.id === updated.id) setActiveProject(updated);
-    setEditingProjectId(null);
-    setMessage('Détails du projet mis à jour.');
   }
 
   async function deleteProject(project: StudioProject) {
     if (!supabase || !session?.user.id || !window.confirm(`Supprimer le projet « ${project.title} » ?`)) return;
-    setError('');
-    const { error: deleteError } = await supabase.from('studio_projects').delete().eq('id', project.id).eq('owner_id', session.user.id);
-    if (deleteError) setError('Suppression impossible : ' + deleteError.message);
-    else {
+    setError(''); setMessage('');
+    try {
+      const { error: deleteError } = await supabase.from('studio_projects').delete().eq('id', project.id).eq('owner_id', session.user.id);
+      if (deleteError) {
+        setError('Suppression impossible : ' + deleteError.message);
+        return;
+      }
       setProjects((current) => current.filter((item) => item.id !== project.id));
       setMessage('Projet supprimé.');
+    } catch (cause) {
+      setError('Suppression impossible : ' + (cause instanceof Error ? cause.message : 'une erreur réseau inattendue est survenue.'));
     }
   }
 
