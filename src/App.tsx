@@ -298,7 +298,7 @@ export default function App() {
                   {filteredProjects.length === 0 ? <p className="empty-state">Aucun projet ne correspond à votre recherche.</p> : filteredProjects.map((project) => (
                     <article className="project-item" key={project.id}>
                       <div className="project-type-icon"><FolderKanban size={19} /></div>
-                      <div className="project-info"><h3>{project.title}</h3><p>{project.description || 'Aucune description'}</p><div className="project-meta"><span>{projectLabel[project.project_type] || project.project_type}</span><span><Clock3 size={12} /> {statusLabel[project.status] || project.status}</span></div></div>
+                      <div className="project-info"><h3>{project.title}</h3><p>{project.description || 'Aucune description'}</p><div className="project-meta"><span className="project-type-label">{projectLabel[project.project_type] || project.project_type}</span><span className={`status-badge status-${project.status}`}><Clock3 size={12} /> {statusLabel[project.status] || project.status}</span></div></div>
                       <button className="open-project-button" onClick={() => void openProject(project)} disabled={busy}>Ouvrir <ArrowRight size={14} /></button><button className="delete-button" onClick={() => void deleteProject(project)} aria-label={`Supprimer ${project.title}`}><Trash2 size={16} /></button>
                     </article>
                   ))}
