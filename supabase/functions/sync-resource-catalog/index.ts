@@ -13,10 +13,6 @@ function tag(item: string, name: string): string {
   const match = item.match(new RegExp('<(?:[\\w.-]+:)?' + name + '(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?' + name + '>', 'i'));
   return xmlText(match?.[1] ?? '');
 }
-function attr(item: string, name: string): string {
-  const match = item.match(new RegExp('\\b' + name + '=["\\']([^"\\']+)["\\']', 'i'));
-  return match?.[1] ?? '';
-}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
