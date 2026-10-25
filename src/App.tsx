@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2 } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import Discover from './components/Discover';
 import Timeline from './components/Timeline';
@@ -11,6 +11,7 @@ import ResourceLibrary from './components/ResourceLibrary';
 import Roadmap from './components/Roadmap';
 
 type AuthMode = 'signin' | 'signup';
+type UserProfile = { id: string; display_name: string | null; preferred_language: string; timezone: string; role: string; };
 type StudioAsset = { id: string; project_id: string; owner_id: string; title: string; content: string | null; kind: string; updated_at: string; };
 type StudioProject = {
   id: string;
@@ -27,6 +28,12 @@ export default function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileName, setProfileName] = useState('');
+  const [profileLanguage, setProfileLanguage] = useState('fr');
+  const [profileTimezone, setProfileTimezone] = useState('Africa/Porto-Novo');
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [isRecovery, setIsRecovery] = useState(false);
   const [projects, setProjects] = useState<StudioProject[]>([]);
@@ -84,9 +91,55 @@ export default function App() {
   }, [activeProject]);
 
   useEffect(() => {
-    if (session?.user.id) void loadProjects();
-    else setProjects([]);
+    if (session?.user.id) {
+      void loadProjects();
+      void loadProfile();
+    } else {
+      setProjects([]);
+      setProfile(null);
+      setProfileName('');
+    }
   }, [session?.user.id]);
+
+  async function loadProfile() {
+    if (!supabase || !session?.user.id) return;
+    setLoadingProfile(true);
+    const { data, error: profileError } = await supabase
+      .from('profiles')
+      .select('id, display_name, preferred_language, timezone, role')
+      .eq('id', session.user.id)
+      .maybeSingle();
+    if (profileError) {
+      setError('Impossible de charger le profil : ' + profileError.message);
+    } else if (data) {
+      const current = data as UserProfile;
+      setProfile(current);
+      setProfileName(current.display_name ?? '');
+      setProfileLanguage(current.preferred_language || 'fr');
+      setProfileTimezone(current.timezone || 'Africa/Porto-Novo');
+    } else {
+      setProfile(null);
+      setProfileName((session.user.user_metadata?.display_name as string | undefined) ?? '');
+    }
+    setLoadingProfile(false);
+  }
+
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!supabase || !session?.user.id) return;
+    setSavingProfile(true); setError(''); setMessage('');
+    const values = { display_name: profileName.trim() || null, preferred_language: profileLanguage, timezone: profileTimezone, updated_at: new Date().toISOString() };
+    const result = profile
+      ? await supabase.from('profiles').update(values).eq('id', session.user.id).select('id, display_name, preferred_language, timezone, role').single()
+      : await supabase.from('profiles').insert({ id: session.user.id, ...values }).select('id, display_name, preferred_language, timezone, role').single();
+    setSavingProfile(false);
+    if (result.error) {
+      setError('Enregistrement du profil impossible : ' + result.error.message);
+      return;
+    }
+    const saved = result.data as UserProfile;
+    setProfile(saved); setProfileName(saved.display_name ?? ''); setMessage('Profil enregistré avec succès.');
+  }
 
   async function loadProjects() {
     if (!supabase || !session?.user.id) return;
@@ -344,6 +397,24 @@ export default function App() {
             </div>
             <div className="workspace-mark"><FolderKanban size={30} /></div>
           </div>
+
+          <section className="project-panel profile-panel" aria-labelledby="profile-title" aria-busy={loadingProfile || savingProfile}>
+            <div className="section-heading">
+              <div><p className="eyebrow">VOTRE COMPTE</p><h2 id="profile-title"><UserRound size={20} /> Profil et préférences</h2><p className="muted">Personnalisez les informations affichées dans votre espace de travail.</p></div>
+              <button className="icon-button" type="button" onClick={() => void loadProfile()} disabled={loadingProfile || savingProfile} aria-label="Actualiser le profil"><RefreshCw size={16} /></button>
+            </div>
+            <form className="project-form profile-form" onSubmit={saveProfile}>
+              <label htmlFor="profile-email">Adresse e-mail du compte</label>
+              <input id="profile-email" type="email" value={session.user.email ?? ''} readOnly aria-readonly="true" />
+              <label htmlFor="profile-name">Nom d’affichage</label>
+              <input id="profile-name" value={profileName} onChange={(event) => setProfileName(event.target.value)} maxLength={80} placeholder="Comment souhaitez-vous être appelé ?" />
+              <label htmlFor="profile-language"><Globe2 size={14} /> Langue préférée</label>
+              <select id="profile-language" value={profileLanguage} onChange={(event) => setProfileLanguage(event.target.value)}><option value="fr">Français</option><option value="en">English</option><option value="pt">Português</option></select>
+              <label htmlFor="profile-timezone">Fuseau horaire</label>
+              <select id="profile-timezone" value={profileTimezone} onChange={(event) => setProfileTimezone(event.target.value)}><option value="Africa/Porto-Novo">Bénin — Porto-Novo / Cotonou (UTC+1)</option><option value="Africa/Lagos">Nigeria — Lagos (UTC+1)</option><option value="UTC">UTC</option><option value="Europe/Paris">France — Paris</option><option value="America/New_York">États-Unis — New York</option></select>
+              <div className="profile-footer"><p className="muted">Rôle du compte : <strong>{profile?.role ?? 'Utilisateur'}</strong>. Le rôle est en lecture seule ici.</p><button className="primary-button" type="submit" disabled={savingProfile || loadingProfile}>{savingProfile ? 'Enregistrement…' : 'Enregistrer le profil'} <Save size={16} /></button></div>
+            </form>
+          </section>
 
           <nav className="workspace-nav" aria-label="Navigation de l’espace">
             <a className="workspace-nav-link" href="#roadmap" onClick={(event) => { event.preventDefault(); document.getElementById('roadmap')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><CalendarClock size={16} /> Roadmap</a>
