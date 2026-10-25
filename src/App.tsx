@@ -180,6 +180,27 @@ export default function App() {
     setActiveAsset(saved); setProjectAssets((current) => activeAsset ? current.map((asset) => asset.id === saved.id ? saved : asset) : [...current, saved]); setMessage('Contenu enregistré dans Supabase.');
   }
 
+  function exportProjectMarkdown() {
+    if (!activeProject) return;
+    const content = [
+      `# ${activeProject.title}`,
+      activeProject.description?.trim() ? `\n${activeProject.description.trim()}` : '',
+      ...projectAssets.map((asset, index) => `\n## ${asset.title?.trim() || `Chapitre ${index + 1}`}\n\n${asset.id === activeAsset?.id ? editorContent : (asset.content ?? '')}`),
+    ].join('\n');
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const safeName = activeProject.title.trim().replace(/[^a-z0-9-_]+/gi, '-').replace(/^-+|-+$/g, '') || 'projet';
+    link.href = url;
+    link.download = `${safeName}.md`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setMessage('Export Markdown préparé pour votre projet.');
+    setError('');
+  }
+
   function selectAsset(asset: StudioAsset) {
     setActiveAsset(asset);
     setEditorContent(asset.content ?? '');
@@ -515,7 +536,7 @@ export default function App() {
               <div className="editor-toolbar"><span><FolderKanban size={14} /> {projectLabel[activeProject.project_type] || activeProject.project_type}</span><label className="status-picker">Statut <select aria-label="Statut du projet" value={activeProject.status} onChange={(event) => void updateProjectStatus(event.target.value as StudioProject['status'])}><option value="draft">Brouillon</option><option value="in_progress">En cours</option><option value="completed">Terminé</option><option value="archived">Archivé</option></select></label><span>{projectAssets.length} chapitre(s)</span><span>{editorContent.trim() ? editorContent.trim().split(/\s+/).length : 0} mots</span><span>{editorContent.length.toLocaleString("fr-FR")} caractères</span></div>
               <div className="chapter-layout"><aside className="chapter-sidebar"><div className="chapter-sidebar-heading"><strong>Structure</strong><button type="button" className="icon-button" onClick={() => void createChapter()} disabled={savingContent} aria-label="Ajouter un chapitre"><Plus size={16} /></button></div>{projectAssets.map((asset, index) => <div className="chapter-row" key={asset.id}><button type="button" className={activeAsset?.id === asset.id ? 'chapter-item active' : 'chapter-item'} onClick={() => selectAsset(asset)}><span>{String(index + 1).padStart(2, '0')}</span><strong>{asset.title || `Chapitre ${index + 1}`}</strong></button><button type="button" className="chapter-delete-button" onClick={() => void deleteChapter(asset)} disabled={savingContent} aria-label={`Supprimer ${asset.title || 'le chapitre'}`} title="Supprimer le chapitre"><Trash2 size={14} /></button></div>)}{projectAssets.length === 0 && <p className="chapter-empty">Aucun chapitre. Ajoutez-en un pour commencer.</p>}</aside><div className="chapter-editor"><label className="editor-label" htmlFor="chapter-title">Titre du chapitre</label><input id="chapter-title" className="chapter-title-input" value={activeAsset?.title ?? ''} onChange={(event) => { const value = event.target.value; setActiveAsset((current) => current ? { ...current, title: value } : current); }} placeholder="Titre du chapitre" /><label className="editor-label" htmlFor="project-content">Contenu du chapitre</label>
               <textarea id="project-content" className="content-editor" value={editorContent} onChange={(event) => setEditorContent(event.target.value)} placeholder="Commencez à écrire ici…\n\nStructurez votre texte en sections et paragraphes." />
-              <div className="editor-actions"><p className="muted">Enregistrez chaque chapitre avant de quitter. Raccourci : Ctrl/⌘ + S.</p><button id="save-chapter-button" className="primary-button save-button" onClick={() => void saveProjectContent()} disabled={savingContent}>{savingContent ? 'Enregistrement…' : 'Enregistrer le chapitre'} <ShieldCheck size={16} /></button></div></div></div>
+              <div className="editor-actions"><p className="muted">Exportez l’ensemble du projet en Markdown. Enregistrez les modifications avant l’export pour conserver la dernière version dans Supabase. Raccourci : Ctrl/⌘ + S.</p><div className="editor-button-group"><button type="button" className="logout-button" onClick={exportProjectMarkdown} disabled={projectAssets.length === 0}><ArrowRight size={15} /> Exporter le projet (.md)</button><button id="save-chapter-button" className="primary-button save-button" onClick={() => void saveProjectContent()} disabled={savingContent}>{savingContent ? 'Enregistrement…' : 'Enregistrer le chapitre'} <ShieldCheck size={16} /></button></div></div></div></div>
             </section>
           ) : <>
           <div className="project-layout">
