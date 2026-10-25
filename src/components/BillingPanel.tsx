@@ -3,7 +3,8 @@ import { BadgeCheck, CreditCard, Plus, RefreshCw, ShieldCheck } from 'lucide-rea
 import { supabase } from '../lib/supabase';
 
 type Plan = { id: string; code: string; name: string; description: string | null; active: boolean; features: Record<string, unknown>; price_minor: number; currency: string; billing_interval: 'month'|'year'|'one_time'; trial_days: number; created_at: string };
-type Subscription = { id: string; status: 'pending'|'active'|'trialing'|'past_due'|'canceled'|'expired'; starts_at: string | null; ends_at: string | null; provider: string | null; plan: { name: string; code: string; price_minor: number; currency: string; billing_interval: string } | null };
+type PlanBrief = { name: string; code: string; price_minor: number; currency: string; billing_interval: string };
+type Subscription = { id: string; status: 'pending'|'active'|'trialing'|'past_due'|'canceled'|'expired'; starts_at: string | null; ends_at: string | null; provider: string | null; plan: PlanBrief[] | PlanBrief | null };
 
 export default function BillingPanel({ userId, role }: { userId: string; role: string }) {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -32,7 +33,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
     if (planResult.error) setError('Chargement des forfaits impossible : ' + planResult.error.message);
     else setPlans((planResult.data ?? []) as Plan[]);
     if (subscriptionResult.error) setError('Chargement de votre abonnement impossible : ' + subscriptionResult.error.message);
-    else setSubscription(((subscriptionResult.data ?? [])[0] ?? null) as Subscription | null);
+    else setSubscription(((subscriptionResult.data ?? [])[0] ?? null) as unknown as Subscription | null);
     setLoading(false);
   }, [userId]);
 
@@ -77,12 +78,13 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
   }
 
   const statusLabel: Record<Subscription['status'], string> = { pending: 'En attente', active: 'Actif', trialing: 'Essai en cours', past_due: 'Paiement à régulariser', canceled: 'Résilié', expired: 'Expiré' };
+  const subscribedPlan = subscription ? (Array.isArray(subscription.plan) ? subscription.plan[0] ?? null : subscription.plan) : null;
 
   return <section id="billing" className="project-panel billing-panel">
     <div className="section-heading"><div><p className="eyebrow">OFFRES & ABONNEMENTS</p><h2><CreditCard size={21}/> Forfaits et abonnement</h2><p className="muted">Consultez les offres et le statut de votre abonnement.</p></div><button type="button" className="icon-button" onClick={() => void load()} disabled={loading} aria-label="Actualiser les forfaits"><RefreshCw size={16}/></button></div>
     <div className="billing-current">
       <h3><BadgeCheck size={17}/> Votre abonnement</h3>
-      {subscription ? <div className="project-item"><div className="project-type-icon"><CreditCard size={18}/></div><div className="project-info"><h3>{subscription.plan?.name ?? 'Forfait non disponible'}</h3><p>{statusLabel[subscription.status]}{subscription.ends_at ? ' · échéance ' + new Date(subscription.ends_at).toLocaleDateString('fr-FR') : ''}</p></div><span className="project-type-label">{subscription.plan ? formatPrice(subscription.plan as Plan) : subscription.status}</span></div> : <p className="muted">Aucun abonnement enregistré pour ce compte.</p>}
+      {subscription ? <div className="project-item"><div className="project-type-icon"><CreditCard size={18}/></div><div className="project-info"><h3>{subscribedPlan?.name ?? 'Forfait non disponible'}</h3><p>{statusLabel[subscription.status]}{subscription.ends_at ? ' · échéance ' + new Date(subscription.ends_at).toLocaleDateString('fr-FR') : ''}</p></div><span className="project-type-label">{subscribedPlan ? formatPrice({ price_minor: subscribedPlan.price_minor, currency: subscribedPlan.currency, billing_interval: subscribedPlan.billing_interval as Plan['billing_interval'] }) : subscription.status}</span></div> : <p className="muted">Aucun abonnement enregistré pour ce compte.</p>}
     </div>
     <div className="billing-plans">
       <h3>Forfaits disponibles</h3>
