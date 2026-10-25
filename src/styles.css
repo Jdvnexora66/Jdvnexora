@@ -62,3 +62,12 @@
 .workspace-nav-link.active{background:rgba(126,140,255,.14);border-color:rgba(126,140,255,.22);color:#cbd2ff}
 #projects,#create-project,#studio-editor{scroll-margin-top:24px}
 @media(max-width:480px){.workspace-nav{display:grid;grid-template-columns:1fr}.workspace-nav-link{justify-content:flex-start}}
+
+
+/* Clear visual project status indicators */
+.project-type-label{color:#aeb9d5}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border:1px solid transparent;border-radius:999px;font-size:10px!important;line-height:1.2}
+.status-draft{color:#c5cde0!important;background:rgba(148,163,184,.10);border-color:rgba(148,163,184,.18)}
+.status-in_progress{color:#aab5ff!important;background:rgba(126,140,255,.12);border-color:rgba(126,140,255,.22)}
+.status-completed{color:#8ee3cf!important;background:rgba(85,213,178,.10);border-color:rgba(85,213,178,.22)}
+.status-archived{color:#f0c88a!important;background:rgba(240,200,138,.09);border-color:rgba(240,200,138,.2)}
