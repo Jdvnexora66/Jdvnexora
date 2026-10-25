@@ -144,9 +144,16 @@ export default function MediaLibrary({ userId }: Props) {
     const allowedOrigin = configuredUrl ? new URL(configuredUrl).origin : '';
     const onOAuthMessage = (event: MessageEvent) => {
       if (!allowedOrigin || event.origin !== allowedOrigin || event.data?.type !== 'nexora-media-oauth') return;
-      if (event.data.ok) setProviderNotice('Compte connecté. Vous pouvez synchroniser ses vidéos.');
-      else setProviderError('La connexion a échoué. Vérifiez la configuration de la plateforme et réessayez.');
-      void loadConnections();
+      if (event.data.ok) {
+        setProviderNotice('Compte connecté. Première synchronisation en cours…');
+        const platform = event.data.platform;
+        void loadConnections().then(() => {
+          if (platform === 'youtube' || platform === 'tiktok' || platform === 'instagram') void syncProvider(platform);
+        });
+      } else {
+        setProviderError('La connexion a échoué. Vérifiez la configuration de la plateforme et réessayez.');
+        void loadConnections();
+      }
     };
     window.addEventListener('message', onOAuthMessage);
     return () => window.removeEventListener('message', onOAuthMessage);
