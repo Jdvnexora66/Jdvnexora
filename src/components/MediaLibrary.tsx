@@ -25,7 +25,8 @@ type MediaItem = {
 
 type EmbedInfo = { platform: PlatformDb; embedUrl: string; contentType: MediaKind };
 
-type ProviderConnection = { platform: 'youtube' | 'tiktok' | 'instagram'; account_name: string | null; connected_at: string; last_synced_at: string | null; last_sync_error: string | null };\ntype Props = { userId: string };
+type ProviderConnection = { platform: 'youtube' | 'tiktok' | 'instagram'; account_name: string | null; connected_at: string; last_synced_at: string | null; last_sync_error: string | null };
+type Props = { userId: string };
 
 function buildEmbed(source: string): EmbedInfo | null {
   let url: URL;
@@ -98,7 +99,11 @@ export default function MediaLibrary({ userId }: Props) {
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [busyId, setBusyId] = useState<string | null>(null);\n  const [connections, setConnections] = useState<ProviderConnection[]>([]);\n  const [providerBusy, setProviderBusy] = useState<string | null>(null);\n  const [providerError, setProviderError] = useState('');\n  const [providerNotice, setProviderNotice] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [connections, setConnections] = useState<ProviderConnection[]>([]);
+  const [providerBusy, setProviderBusy] = useState<string | null>(null);
+  const [providerError, setProviderError] = useState('');
+  const [providerNotice, setProviderNotice] = useState('');
 
   const load = useCallback(async () => {
     if (!supabase) {
