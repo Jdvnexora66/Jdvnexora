@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { Sparkles, Send, LoaderCircle, Trash2 } from 'lucide-react';
+import { Sparkles, Send, LoaderCircle, Trash2, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 type Message = { role: 'user' | 'assistant'; content: string };
@@ -53,6 +53,29 @@ export default function StudioIA() {
     }
   }
 
+  function exportConversation() {
+    if (messages.length === 0) return;
+    const markdown = [
+      '# JDV NEXORA — Conversation Studio IA',
+      '',
+      ...messages.flatMap((item) => [
+        item.role === 'user' ? '## Votre demande' : '## Réponse de Studio IA',
+        '',
+        item.content,
+        '',
+      ]),
+    ].join('\n');
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'jdv-nexora-conversation-studio-ia.md';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
   function clearConversation() {
     if (busy) return;
     setMessages([]);
@@ -63,7 +86,10 @@ export default function StudioIA() {
   return <section className="project-panel" id="studio-ia">
     <div className="section-heading">
       <div><p className="eyebrow">ASSISTANT DE CRÉATION</p><h2><Sparkles size={21} style={{ verticalAlign: 'middle', marginRight: 8 }} />Studio IA</h2><p className="muted">Préparez, structurez et améliorez vos idées avec l’assistant.</p></div>
-      {messages.length > 0 && <button type="button" className="icon-button" onClick={clearConversation} disabled={busy} aria-label="Effacer la conversation" title="Effacer la conversation"><Trash2 size={16} /></button>}
+      {messages.length > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <button type="button" className="text-button" onClick={exportConversation} disabled={busy} aria-label="Exporter la conversation en Markdown"><Download size={15} /> Exporter</button>
+        <button type="button" className="icon-button" onClick={clearConversation} disabled={busy} aria-label="Effacer la conversation" title="Effacer la conversation"><Trash2 size={16} /></button>
+      </div>}
     </div>
     <div ref={transcriptRef} style={{ display: 'grid', gap: 12, margin: '18px 0', maxHeight: 420, overflowY: 'auto' }} aria-live="polite" aria-busy={busy}>
       {messages.length === 0 && <p className="empty-state">Décrivez votre idée, demandez un plan de chapitre ou faites améliorer un texte. Vérifiez toujours les informations importantes avant publication.</p>}
