@@ -229,14 +229,27 @@ export default function App() {
     setError('');
   }
 
+  function hasUnsavedChapterChanges() {
+    if (!activeProject) return false;
+    const savedAsset = activeAsset ? projectAssets.find((asset) => asset.id === activeAsset.id) : null;
+    if (!activeAsset) return editorContent.length > 0;
+    return editorContent !== (savedAsset?.content ?? '') || activeAsset.title !== (savedAsset?.title ?? '');
+  }
+
+  function confirmDiscardUnsavedChapterChanges() {
+    if (!hasUnsavedChapterChanges()) return true;
+    return window.confirm('Vous avez des modifications non enregistrées dans ce chapitre. Voulez-vous les abandonner ?');
+  }
+
   function selectAsset(asset: StudioAsset) {
+    if (asset.id === activeAsset?.id || !confirmDiscardUnsavedChapterChanges()) return;
     setActiveAsset(asset);
     setEditorContent(asset.content ?? '');
     setError(''); setMessage('');
   }
 
   async function createChapter() {
-    if (!supabase || !session?.user.id || !activeProject) return;
+    if (!supabase || !session?.user.id || !activeProject || !confirmDiscardUnsavedChapterChanges()) return;
     const chapterNumber = projectAssets.length + 1;
     setSavingContent(true); setError(''); setMessage('');
     const { data, error: insertError } = await supabase.from('studio_assets').insert({
@@ -252,6 +265,7 @@ export default function App() {
 
   async function deleteChapter(asset: StudioAsset) {
     if (!supabase || !session?.user.id || !activeProject) return;
+    if (activeAsset?.id === asset.id && !confirmDiscardUnsavedChapterChanges()) return;
     if (!window.confirm(`Supprimer définitivement « ${asset.title || 'ce chapitre'} » ?`)) return;
     setSavingContent(true); setError(''); setMessage('');
     const { error: deleteError } = await supabase.from('studio_assets')
@@ -412,7 +426,7 @@ export default function App() {
   }
 
   async function signOut() {
-    if (!supabase) return;
+    if (!supabase || !confirmDiscardUnsavedChapterChanges()) return;
     const { error: signOutError } = await supabase.auth.signOut();
     if (signOutError) setError(signOutError.message);
     else { setMessage('Vous êtes déconnecté.'); setError(''); }
@@ -505,9 +519,9 @@ export default function App() {
             <a className="workspace-nav-link" href="#insights" onClick={(event) => { event.preventDefault(); document.getElementById('insights')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Sparkles size={16} /> Insights</a>
             <a className="workspace-nav-link" href="#timeline" onClick={(event) => { event.preventDefault(); document.getElementById('timeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><CalendarDays size={16} /> Timeline</a>
             <a className="workspace-nav-link" href="#discover" onClick={(event) => { event.preventDefault(); document.getElementById('discover')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Compass size={16} /> Discover</a>
-            <a className={!activeProject ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#projects" onClick={(event) => { event.preventDefault(); setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); setError(''); setMessage(''); }}><FolderKanban size={16} /> Mes projets</a>
+            <a className={!activeProject ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#projects" onClick={(event) => { event.preventDefault(); if (!confirmDiscardUnsavedChapterChanges()) return; setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); setError(''); setMessage(''); }}><FolderKanban size={16} /> Mes projets</a>
             <a className={activeProject ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#studio" onClick={(event) => { event.preventDefault(); if (activeProject) document.getElementById('studio-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); else document.getElementById('create-project')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}><Sparkles size={16} /> Studio de création</a>
-            <button className="workspace-nav-link" type="button" onClick={() => { setSearchQuery(''); setStatusFilter('all'); setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); void loadProjects(); }}><RefreshCw size={15} /> Actualiser</button>
+            <button className="workspace-nav-link" type="button" onClick={() => { if (!confirmDiscardUnsavedChapterChanges()) return; setSearchQuery(''); setStatusFilter('all'); setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); void loadProjects(); }}><RefreshCw size={15} /> Actualiser</button>
           </nav>
 
           <div className="dashboard-stats" aria-label="Résumé de vos projets" aria-busy={loadingProjects}>
@@ -568,7 +582,7 @@ export default function App() {
               <CollaborationPanel projectId={activeProject.id} ownerId={activeProject.owner_id} userId={session.user.id} />
             ) : <>
             <section id="studio-editor" className="project-panel editor-panel">
-              <div className="section-heading editor-heading"><div><p className="eyebrow">ESPACE DE CRÉATION</p><h2>{activeProject.title}</h2><p className="muted">Rédigez votre contenu. Vos modifications sont enregistrées dans votre espace Supabase.</p></div><button className="logout-button" onClick={() => { setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); setError(''); setMessage(''); }}>Retour aux projets</button></div>
+              <div className="section-heading editor-heading"><div><p className="eyebrow">ESPACE DE CRÉATION</p><h2>{activeProject.title}</h2><p className="muted">Rédigez votre contenu. Vos modifications sont enregistrées dans votre espace Supabase.</p></div><button className="logout-button" onClick={() => { if (!confirmDiscardUnsavedChapterChanges()) return; setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); setError(''); setMessage(''); }}>Retour aux projets</button></div>
               <div className="editor-toolbar"><span><FolderKanban size={14} /> {projectLabel[activeProject.project_type] || activeProject.project_type}</span><label className="status-picker">Statut <select aria-label="Statut du projet" value={activeProject.status} onChange={(event) => void updateProjectStatus(event.target.value as StudioProject['status'])}><option value="draft">Brouillon</option><option value="in_progress">En cours</option><option value="completed">Terminé</option><option value="archived">Archivé</option></select></label><span>{projectAssets.length} chapitre(s)</span><span>{editorContent.trim() ? editorContent.trim().split(/\s+/).length : 0} mots</span><span>{editorContent.length.toLocaleString("fr-FR")} caractères</span></div>
               <div className="chapter-layout"><aside className="chapter-sidebar"><div className="chapter-sidebar-heading"><strong>Structure</strong><button type="button" className="icon-button" onClick={() => void createChapter()} disabled={savingContent} aria-label="Ajouter un chapitre"><Plus size={16} /></button></div>{projectAssets.map((asset, index) => <div className="chapter-row" key={asset.id}><button type="button" className={activeAsset?.id === asset.id ? 'chapter-item active' : 'chapter-item'} onClick={() => selectAsset(asset)}><span>{String(index + 1).padStart(2, '0')}</span><strong>{asset.title || `Chapitre ${index + 1}`}</strong></button><button type="button" className="chapter-delete-button" onClick={() => void deleteChapter(asset)} disabled={savingContent} aria-label={`Supprimer ${asset.title || 'le chapitre'}`} title="Supprimer le chapitre"><Trash2 size={14} /></button></div>)}{projectAssets.length === 0 && <p className="chapter-empty">Aucun chapitre. Ajoutez-en un pour commencer.</p>}</aside><div className="chapter-editor"><label className="editor-label" htmlFor="chapter-title">Titre du chapitre</label><input id="chapter-title" className="chapter-title-input" value={activeAsset?.title ?? ''} onChange={(event) => { const value = event.target.value; setActiveAsset((current) => current ? { ...current, title: value } : current); }} placeholder="Titre du chapitre" /><label className="editor-label" htmlFor="project-content">Contenu du chapitre</label>
               <textarea id="project-content" className="content-editor" value={editorContent} onChange={(event) => setEditorContent(event.target.value)} placeholder="Commencez à écrire ici…\n\nStructurez votre texte en sections et paragraphes." />
