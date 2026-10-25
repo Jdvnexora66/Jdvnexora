@@ -10,6 +10,7 @@ import Academy from './components/Academy';
 import ResourceLibrary from './components/ResourceLibrary';
 import Roadmap from './components/Roadmap';
 import StudioIA from './components/StudioIA';
+import CollaborationPanel from './components/CollaborationPanel';
 
 type AuthMode = 'signin' | 'signup';
 type UserProfile = { id: string; display_name: string | null; preferred_language: string; timezone: string; role: string; };
@@ -151,13 +152,37 @@ export default function App() {
     if (!supabase || !session?.user.id) return;
     setLoadingProjects(true);
     setError('');
-    const { data, error: queryError } = await supabase
-      .from('studio_projects')
-      .select('id, owner_id, title, description, project_type, status, created_at')
-      .eq('owner_id', session.user.id)
-      .order('created_at', { ascending: false });
-    if (queryError) setError('Impossible de charger les projets : ' + queryError.message);
-    else setProjects((data ?? []) as StudioProject[]);
+    const [ownedResult, membershipResult] = await Promise.all([
+      supabase.from('studio_projects')
+        .select('id, owner_id, title, description, project_type, status, created_at')
+        .eq('owner_id', session.user.id)
+        .order('created_at', { ascending: false }),
+      supabase.from('studio_project_members').select('project_id').eq('user_id', session.user.id),
+    ]);
+    if (ownedResult.error) {
+      setError('Impossible de charger les projets : ' + ownedResult.error.message);
+      setLoadingProjects(false);
+      return;
+    }
+    const owned = (ownedResult.data ?? []) as StudioProject[];
+    if (membershipResult.error) {
+      setError('Impossible de charger les projets partagés : ' + membershipResult.error.message);
+      setProjects(owned);
+      setLoadingProjects(false);
+      return;
+    }
+    const sharedIds = [...new Set((membershipResult.data ?? []).map(row => row.project_id as string))]
+      .filter(id => !owned.some(project => project.id === id));
+    let shared: StudioProject[] = [];
+    if (sharedIds.length) {
+      const sharedResult = await supabase.from('studio_projects')
+        .select('id, owner_id, title, description, project_type, status, created_at')
+        .in('id', sharedIds)
+        .order('created_at', { ascending: false });
+      if (sharedResult.error) setError('Impossible de charger les projets partagés : ' + sharedResult.error.message);
+      else shared = (sharedResult.data ?? []) as StudioProject[];
+    }
+    setProjects([...owned, ...shared].sort((a, b) => b.created_at.localeCompare(a.created_at)));
     setLoadingProjects(false);
   }
 
@@ -533,6 +558,9 @@ export default function App() {
           </section>}
 
           {activeProject ? (
+            activeProject.owner_id !== session.user.id ? (
+              <CollaborationPanel projectId={activeProject.id} ownerId={activeProject.owner_id} userId={session.user.id} />
+            ) : <>
             <section id="studio-editor" className="project-panel editor-panel">
               <div className="section-heading editor-heading"><div><p className="eyebrow">ESPACE DE CRÉATION</p><h2>{activeProject.title}</h2><p className="muted">Rédigez votre contenu. Vos modifications sont enregistrées dans votre espace Supabase.</p></div><button className="logout-button" onClick={() => { setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); setError(''); setMessage(''); }}>Retour aux projets</button></div>
               <div className="editor-toolbar"><span><FolderKanban size={14} /> {projectLabel[activeProject.project_type] || activeProject.project_type}</span><label className="status-picker">Statut <select aria-label="Statut du projet" value={activeProject.status} onChange={(event) => void updateProjectStatus(event.target.value as StudioProject['status'])}><option value="draft">Brouillon</option><option value="in_progress">En cours</option><option value="completed">Terminé</option><option value="archived">Archivé</option></select></label><span>{projectAssets.length} chapitre(s)</span><span>{editorContent.trim() ? editorContent.trim().split(/\s+/).length : 0} mots</span><span>{editorContent.length.toLocaleString("fr-FR")} caractères</span></div>
@@ -540,6 +568,8 @@ export default function App() {
               <textarea id="project-content" className="content-editor" value={editorContent} onChange={(event) => setEditorContent(event.target.value)} placeholder="Commencez à écrire ici…\n\nStructurez votre texte en sections et paragraphes." />
               <div className="editor-actions"><p className="muted">Exportez l’ensemble du projet en Markdown. Enregistrez les modifications avant l’export pour conserver la dernière version dans Supabase. Raccourci : Ctrl/⌘ + S.</p><div className="editor-button-group"><button type="button" className="logout-button" onClick={exportProjectMarkdown} disabled={projectAssets.length === 0}><ArrowRight size={15} /> Exporter le projet (.md)</button><button id="save-chapter-button" className="primary-button save-button" onClick={() => void saveProjectContent()} disabled={savingContent}>{savingContent ? 'Enregistrement…' : 'Enregistrer le chapitre'} <ShieldCheck size={16} /></button></div></div></div></div>
             </section>
+            <CollaborationPanel projectId={activeProject.id} ownerId={activeProject.owner_id} userId={session.user.id} />
+            </>
           ) : <>
           <div className="project-layout">
             <section className="project-panel">
