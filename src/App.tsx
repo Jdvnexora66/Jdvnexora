@@ -1,8 +1,9 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import Discover from './components/Discover';
+import MediaLibrary from './components/MediaLibrary';
 import Timeline from './components/Timeline';
 import Insights from './components/Insights';
 import LearningLibrary from './components/LearningLibrary';
@@ -604,6 +605,7 @@ export default function App() {
             <a className="workspace-nav-link" href="#insights" onClick={(event) => { event.preventDefault(); document.getElementById('insights')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Sparkles size={16} /> Insights</a>
             <a className="workspace-nav-link" href="#timeline" onClick={(event) => { event.preventDefault(); document.getElementById('timeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><CalendarDays size={16} /> Timeline</a>
             <a className="workspace-nav-link" href="#discover" onClick={(event) => { event.preventDefault(); document.getElementById('discover')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Compass size={16} /> Discover</a>
+            <a className="workspace-nav-link" href="#media-library" onClick={(event) => { event.preventDefault(); document.getElementById('media-library')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Film size={16} /> Vidéothèque</a>
             <a className={!activeProject ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#projects" onClick={(event) => { event.preventDefault(); if (!confirmDiscardUnsavedChapterChanges()) return; setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); setError(''); setMessage(''); }}><FolderKanban size={16} /> Mes projets</a>
             <a className={activeProject ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#studio" onClick={(event) => { event.preventDefault(); if (activeProject) document.getElementById('studio-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); else document.getElementById('create-project')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}><Sparkles size={16} /> Studio de création</a>
             <button className="workspace-nav-link" type="button" onClick={() => { if (!confirmDiscardUnsavedChapterChanges()) return; setSearchQuery(''); setStatusFilter('all'); setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); void loadProjects(); }}><RefreshCw size={15} /> Actualiser</button>
@@ -639,6 +641,7 @@ export default function App() {
           {!activeProject && <Academy userId={session.user.id} />}
           {!activeProject && <ResourceLibrary userId={session.user.id} />}
           {!activeProject && <Discover userId={session.user.id} />}
+          {!activeProject && <MediaLibrary />}
 
           {!activeProject && <Timeline />}
 
