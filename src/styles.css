@@ -315,3 +315,69 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 .roadmap-status-label { display:flex; align-items:center; gap:8px; margin-top:11px; }
 .roadmap-status-label select { width:auto; max-width:170px; padding:7px 9px; }
 @media(max-width:500px) { .roadmap-summary { grid-template-columns:1fr; } .roadmap-form { padding:12px; } .roadmap-task { padding:11px; gap:7px; } .roadmap-status-label { align-items:flex-start; flex-direction:column; } .roadmap-status-label select { max-width:100%; width:100%; } }
+
+
+/* Phase 9–12: collaboration, billing, administration and mobile readiness */
+.collaboration-panel h2, .collaboration-panel h3,
+.billing-panel h2, .billing-panel h3,
+.admin-panel h2, .admin-panel h3 { display:flex; align-items:center; gap:9px; }
+.collaboration-members, .collaboration-comments, .billing-current, .billing-plans, .billing-admin, .admin-section {
+  display:grid; gap:13px; margin-top:22px; min-width:0;
+}
+.collaboration-member-form { margin-bottom:14px; }
+.collaboration-member-list { list-style:none; display:grid; gap:9px; padding:0; margin:0; }
+.collaboration-member-list li { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:12px; border:1px solid rgba(174,188,231,.13); border-radius:11px; background:rgba(12,19,37,.55); min-width:0; }
+.collaboration-member-list li > div:first-child { display:grid; gap:5px; min-width:0; overflow-wrap:anywhere; }
+.collaboration-member-list small, .collaboration-comment small { color:#9ba8c7; font-size:11px; }
+.collaboration-member-actions { display:flex; align-items:center; gap:8px; }
+.collaboration-member-actions select, .billing-panel select, .admin-panel select { max-width:100%; min-width:0; padding:9px 10px; border:1px solid rgba(174,188,231,.18); border-radius:9px; background:#0b1122; color:#edf0ff; font:inherit; }
+.collaboration-comment-list { display:grid; gap:10px; min-width:0; }
+.collaboration-comment { padding:14px; border:1px solid rgba(174,188,231,.13); border-radius:12px; background:rgba(12,19,37,.55); min-width:0; }
+.collaboration-comment-meta { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px; color:#edf0ff; font-size:12px; }
+.collaboration-comment-meta time { color:#9ba8c7; font-size:10px; }
+.collaboration-comment > p { color:#c6cee0; line-height:1.7; font-size:12px; white-space:pre-wrap; overflow-wrap:anywhere; }
+.collaboration-comment .text-button { display:inline-flex; align-items:center; gap:6px; }
+.billing-panel .project-item, .admin-panel .project-item { min-width:0; flex-wrap:wrap; }
+.billing-panel .project-info, .admin-panel .project-info { min-width:0; overflow-wrap:anywhere; }
+.billing-panel .project-info small, .admin-panel .project-info small { display:block; color:#9ba8c7; line-height:1.6; overflow-wrap:anywhere; margin-top:8px; }
+.billing-panel .project-form, .admin-panel .project-form { display:grid; gap:10px; }
+.billing-panel .project-form label, .admin-panel .project-form label { display:grid; gap:6px; color:#aeb9d5; font-size:11px; }
+.billing-panel .project-form input, .billing-panel .project-form textarea,
+.billing-panel .project-form select, .admin-panel .project-form input,
+.admin-panel .project-form textarea, .admin-panel .project-form select {
+  width:100%; min-width:0; padding:10px 12px; border:1px solid rgba(174,188,231,.18);
+  border-radius:9px; background:#0b1122; color:#edf0ff; font:inherit;
+}
+.billing-panel .project-form textarea, .admin-panel .project-form textarea { resize:vertical; }
+.billing-panel .project-form .primary-button { justify-self:start; }
+.admin-section { padding-top:18px; border-top:1px solid rgba(181,194,231,.12); }
+.admin-panel .dashboard-stats { margin:18px 0; }
+@media(max-width:760px) {
+  .page-shell { padding:18px 16px 24px; }
+  .topbar { gap:12px; align-items:flex-start; }
+  .topbar-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+  .secure-label { font-size:10px; }
+  .auth-card { padding:22px 18px; }
+  .project-panel { min-width:0; padding:16px; }
+  .section-heading { gap:12px; align-items:flex-start; }
+  .section-heading h2 { overflow-wrap:anywhere; }
+  .collaboration-member-list li { align-items:flex-start; }
+  .collaboration-member-actions { width:100%; }
+  .collaboration-member-actions select { flex:1; }
+  .billing-panel .project-item, .admin-panel .project-item { align-items:flex-start; }
+  .billing-panel .project-info, .admin-panel .project-info { flex:1 1 calc(100% - 56px); }
+  .billing-panel .project-item > .logout-button,
+  .admin-panel .project-item > select { width:100%; }
+}
+@media(max-width:420px) {
+  .page-shell { padding:14px 10px 20px; }
+  .brand { font-size:13px; gap:8px; }
+  .brand-mark { width:36px; height:36px; }
+  .topbar { padding-bottom:18px; }
+  .auth-card { padding:18px 14px; border-radius:16px; }
+  .project-panel { padding:12px; border-radius:14px; }
+  .collaboration-comment { padding:11px; }
+  .collaboration-comment-meta { flex-direction:column; }
+  .collaboration-member-actions select, .billing-panel select, .admin-panel select { font-size:12px; }
+  .primary-button, .logout-button { min-height:42px; }
+}
