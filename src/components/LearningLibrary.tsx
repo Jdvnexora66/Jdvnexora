@@ -14,6 +14,7 @@ type LearningItem = {
 export default function LearningLibrary({ userId }: { userId: string }) {
   const [items, setItems] = useState<LearningItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [kind, setKind] = useState<'favorite' | 'note' | 'bookmark' | 'goal'>('note');
@@ -45,12 +46,14 @@ export default function LearningLibrary({ userId }: { userId: string }) {
     event.preventDefault();
     if (!supabase) return;
     const entityId = targetType === 'entrepreneur' ? entrepreneurId : contentId;
-    if (!entityId) { setError('Choisissez un entrepreneur ou un contenu.'); return; }
+    if (!entityId) { setError('Choisissez un entrepreneur ou un contenu.'); setSaving(false); return; }
     setError(''); setMessage('');
     const payload = { user_id: userId, item_type: kind, note: note.trim() || null, entrepreneur_id: targetType === 'entrepreneur' ? entityId : null, content_item_id: targetType === 'content' ? entityId : null };
     const { error: insertError } = await supabase.from('user_learning_items').insert(payload);
-    if (insertError) { setError(insertError.message); return; }
-    setNote(''); setMessage('Élément ajouté à votre bibliothèque.'); await load();
+    if (insertError) { setError(insertError.message); setSaving(false); return; }
+    setNote(''); setMessage('Élément ajouté à votre bibliothèque.');
+    await load();
+    setSaving(false);
   }
 
   async function updateProgress(item: LearningItem, progress: number) {
@@ -79,7 +82,7 @@ export default function LearningLibrary({ userId }: { userId: string }) {
         {targetType === 'entrepreneur' ? <label className="learning-target">Entrepreneur<select required value={entrepreneurId} onChange={e => setEntrepreneurId(e.target.value)}><option value="">Choisir un profil…</option>{entrepreneurs.map(person => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label> : <label className="learning-target">Contenu<select required value={contentId} onChange={e => setContentId(e.target.value)}><option value="">Choisir un contenu…</option>{contents.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>}
         <label className="learning-note">Note personnelle<textarea rows={2} maxLength={3000} value={note} onChange={e => setNote(e.target.value)} placeholder="Pourquoi garder cette ressource ? Que retenir ?"/></label>
       </div>
-      <div className="learning-form-actions"><button className="primary-button" type="submit">Ajouter à ma bibliothèque</button></div>
+      <div className="learning-form-actions"><button className="primary-button" type="submit" disabled={saving || loading}>{saving ? 'Enregistrement…' : 'Ajouter à ma bibliothèque'}</button></div>
     </form>
     {error && <p className="feedback error" role="alert">{error}</p>}{message && <p className="feedback success" role="status">{message}</p>}
     {loading ? <p className="empty-state">Chargement de votre bibliothèque…</p> : items.length === 0 ? <div className="empty-state"><div className="empty-icon"><Bookmark size={24}/></div><h3>Votre bibliothèque est vide</h3><p>Ajoutez un profil ou un contenu, puis conservez vos notes et votre progression ici.</p></div> : <div className="learning-list">{items.map(item => <article className="learning-item" key={item.id}><div className="learning-item-icon">{icon(item.item_type)}</div><div className="learning-item-main"><span className="insight-type">{label[item.item_type]}</span><h3>{item.content?.title ?? item.entrepreneur?.name ?? 'Ressource'}</h3>{item.content?.canonical_url && <a href={item.content.canonical_url} target="_blank" rel="noreferrer">Ouvrir le contenu ↗</a>}{item.note && <p>{item.note}</p>}<div className="learning-progress"><label>Progression <strong>{item.progress}%</strong></label><input type="range" min="0" max="100" step="10" value={item.progress} aria-label={'Progression pour ' + (item.content?.title ?? item.entrepreneur?.name ?? 'la ressource')} onChange={e => { const value = Number(e.target.value); setItems(current => current.map(row => row.id === item.id ? {...row,progress:value} : row)); }} onMouseUp={e => void updateProgress(item, Number(e.currentTarget.value))} onTouchEnd={e => void updateProgress(item, Number(e.currentTarget.value))} onKeyUp={e => { if (['ArrowLeft','ArrowRight','Home','End'].includes(e.key)) void updateProgress(item, Number(e.currentTarget.value)); }}/></div></div><button className="chapter-delete-button" type="button" onClick={() => void remove(item)} aria-label="Retirer de la bibliothèque"><Trash2 size={15}/></button></article>)}</div>}
