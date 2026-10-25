@@ -28,9 +28,9 @@ export default function Academy({ userId }: { userId:string }) {
     if(p.error||m.error||g.error){setError('Le programme Académie nécessite l’application de la migration Supabase.');setLoading(false);return;}
     const pathRows=(p.data??[]) as PathRow[]; setPaths(pathRows);setModules((m.data??[]) as ModuleRow[]);
     setProgress(Object.fromEntries(((g.data??[]) as ProgressRow[]).map(row=>[row.module_id,row])));
-    if(pathRows.length&&!pathRows.some(row=>row.id===selected))setSelected(pathRows[0].id);
+    setSelected(current => pathRows.length && !pathRows.some(row=>row.id===current) ? pathRows[0].id : current);
     setLoading(false);
-  },[userId,selected]);
+  },[userId]);
   useEffect(()=>{void load();},[load]);
 
   async function setStatus(module:ModuleRow,status:ProgressRow['status']){
