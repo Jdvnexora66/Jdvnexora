@@ -1,11 +1,13 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { MessageSquare, Send, Trash2, UserPlus, Users, RefreshCw } from 'lucide-react';
+import { BookOpen, MessageSquare, Send, Trash2, UserPlus, Users, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 type Member = { id: string; project_id: string; user_id: string; role: 'viewer'|'commenter'|'editor'; created_at: string };
 type Comment = { id: string; project_id: string; user_id: string; body: string; created_at: string; updated_at: string };
 
-export default function CollaborationPanel({ projectId, ownerId, userId }: { projectId: string; ownerId: string; userId: string }) {
+type SharedAsset = { id: string; title: string; content: string | null; updated_at: string };
+
+export default function CollaborationPanel({ projectId, ownerId, userId, assets }: { projectId: string; ownerId: string; userId: string; assets: SharedAsset[] }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [memberId, setMemberId] = useState('');
@@ -103,7 +105,14 @@ export default function CollaborationPanel({ projectId, ownerId, userId }: { pro
         <div className="collaboration-member-actions"><select aria-label="Rôle du membre" value={member.role} onChange={event => void changeRole(member, event.target.value as Member['role'])}><option value="viewer">Lecture seule</option><option value="commenter">Commentaire</option><option value="editor">Éditeur</option></select><button type="button" className="icon-button" onClick={() => void removeMember(member)} aria-label="Retirer le membre"><Trash2 size={15}/></button></div>
       </li>)}</ul> : <p className="muted">Aucun membre ajouté pour le moment.</p>}
     </div>}
-    {!isOwner && <p className="muted">Vous consultez ce projet en tant que collaborateur. L’édition des chapitres partagés n’est pas encore activée.</p>}
+    {!isOwner && <p className="muted">Vous consultez ce projet en lecture seule. Vous pouvez lire les chapitres ci-dessous et échanger avec le propriétaire dans les commentaires.</p>}
+    {!isOwner && <div className="collaboration-shared-chapters">
+      <h3><BookOpen size={17} /> Chapitres partagés ({assets.length})</h3>
+      {assets.length === 0 ? <p className="empty-state">Ce projet ne contient pas encore de chapitre.</p> : <div className="project-list">{assets.map((asset, index) => <details className="project-item" key={asset.id}>
+        <summary className="project-info" style={{ cursor: 'pointer' }}><h3>{asset.title?.trim() || `Chapitre ${index + 1}`}</h3><p className="muted">Mis à jour le {new Date(asset.updated_at).toLocaleDateString('fr-FR')}</p></summary>
+        <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', lineHeight: 1.8, fontSize: 13, color: '#d0d7e8', width: '100%', marginTop: 12 }}>{asset.content?.trim() || 'Ce chapitre est vide pour le moment.'}</div>
+      </details>)}</div>}
+    </div>}
     <div className="collaboration-comments">
       <h3><MessageSquare size={17} /> Commentaires ({comments.length})</h3>
       <form className="project-form" onSubmit={addComment}>
