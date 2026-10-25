@@ -221,3 +221,36 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 .timeline-person { margin:0 0 8px !important; color:#aab5ff !important; font-size:12px !important; font-weight:700; }
 .timeline-event-card > p:not(.timeline-person) { margin:8px 0 0; color:#aeb9d5; font-size:12px; line-height:1.7; white-space:pre-wrap; }
 .timeline-source { display:inline-flex; align-items:center; gap:5px; flex-wrap:wrap; margin-top:11px; color:#aab5ff; font-size:11px; overflow-wrap:anywhere; }
+
+
+/* Insights analysis library */
+.insights-panel { scroll-margin-top:24px; }
+.insights-panel .section-heading h2 { display:flex; align-items:center; gap:9px; }
+.insights-search { width:100%; margin:18px 0; padding:12px 14px; border:1px solid rgba(174,188,231,.18); border-radius:10px; background:rgba(8,13,27,.65); color:#edf0ff; font:inherit; outline:none; }
+.insights-search:focus { border-color:rgba(126,140,255,.7); }
+.insights-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:18px; }
+.insights-metrics > div { display:grid; gap:7px; padding:14px; border:1px solid rgba(174,188,231,.13); border-radius:12px; background:rgba(12,19,37,.55); }
+.insights-metrics span { color:#9ba8c7; font-size:11px; }
+.insights-metrics strong { color:#edf0ff; font:800 24px Manrope,sans-serif; }
+.insights-list { display:grid; gap:12px; }
+.insight-item { padding:16px; border:1px solid rgba(174,188,231,.13); border-radius:13px; background:rgba(12,19,37,.55); min-width:0; }
+.insight-item-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.insight-item-head > div { min-width:0; }
+.insight-item-head h3 { margin:8px 0 5px; color:#edf0ff; font-size:14px; line-height:1.5; overflow-wrap:anywhere; }
+.insight-item-head > a { display:grid; place-items:center; flex:0 0 34px; width:34px; height:34px; border-radius:9px; color:#aab5ff; background:rgba(126,140,255,.1); }
+.insight-type { display:inline-block; padding:4px 7px; border-radius:6px; color:#aab5ff; background:rgba(126,140,255,.1); font-size:10px; text-transform:capitalize; }
+.insight-item .muted { margin:0; font-size:11px; }
+.insight-description { margin:12px 0; color:#aeb9d5; font-size:12px; line-height:1.7; }
+.insight-pending { margin:12px 0 0; color:#9ba8c7; font-size:11px; }
+.analysis-result { margin-top:13px; padding:14px; border:1px solid rgba(126,140,255,.16); border-radius:10px; background:rgba(8,13,27,.38); }
+.analysis-result-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; }
+.analysis-result-head strong { color:#dfe5ff; font-size:12px; }
+.analysis-status { padding:4px 7px; border-radius:6px; background:rgba(174,188,231,.08); color:#aeb9d5; font-size:10px; }
+.analysis-completed { background:rgba(52,211,153,.1); color:#6ee7b7; }
+.analysis-processing { background:rgba(96,165,250,.1); color:#93c5fd; }
+.analysis-failed { background:rgba(248,113,113,.1); color:#fca5a5; }
+.analysis-result p, .analysis-result li { color:#aeb9d5; font-size:12px; line-height:1.7; }
+.analysis-result ul, .analysis-result ol { padding-left:20px; }
+.analysis-result h4 { margin:14px 0 5px; color:#aab5ff; font-size:11px; }
+.analysis-result small { display:block; margin-top:12px; color:#8d9ab8; font-size:10px; }
+@media(max-width:480px) { .insight-item { padding:12px; } .analysis-result { padding:11px; } }
