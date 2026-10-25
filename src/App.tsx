@@ -201,7 +201,7 @@ export default function App() {
   async function openProject(project: StudioProject) {
     if (!supabase || !session?.user.id) return;
     setBusy(true); setError(''); setMessage('');
-    const { data, error: assetError } = await supabase.from('studio_assets').select('id, project_id, owner_id, title, content, kind, updated_at').eq('project_id', project.id).eq('owner_id', session.user.id).order('created_at', { ascending: true });
+    const { data, error: assetError } = await supabase.from('studio_assets').select('id, project_id, owner_id, title, content, kind, updated_at').eq('project_id', project.id).eq('owner_id', project.owner_id).order('created_at', { ascending: true });
     if (assetError) { setError('Ouverture impossible : ' + assetError.message); setBusy(false); return; }
     const assets = (data ?? []) as StudioAsset[];
     setActiveProject(project); setProjectAssets(assets); setActiveAsset(assets[0] ?? null); setEditorContent(assets[0]?.content ?? ''); setBusy(false);
