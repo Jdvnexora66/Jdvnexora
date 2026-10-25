@@ -641,7 +641,7 @@ export default function App() {
           {!activeProject && <Academy userId={session.user.id} />}
           {!activeProject && <ResourceLibrary userId={session.user.id} />}
           {!activeProject && <Discover userId={session.user.id} />}
-          {!activeProject && <MediaLibrary />}
+          {!activeProject && <MediaLibrary userId={session.user.id} />}
 
           {!activeProject && <Timeline />}
 
