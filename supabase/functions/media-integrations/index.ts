@@ -62,7 +62,7 @@ Deno.serve(async (req: Request) => {
     const state = url.searchParams.get("state");
     const providerError = url.searchParams.get("error_description") ?? url.searchParams.get("error");
     if (providerError) return html("Le fournisseur a refusé la connexion. Vérifiez les autorisations puis réessayez.", false);
-    if (!platform || !code || !state) return html("Paramètres OAuth incomplets. Recommencez depuis NEXORA.", false);
+    if (!code || !state) return html("Paramètres OAuth incomplets. Recommencez depuis NEXORA.", false);
     if (!SUPABASE_SERVICE_ROLE_KEY) return html("La configuration serveur Supabase est incomplète.", false);
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
