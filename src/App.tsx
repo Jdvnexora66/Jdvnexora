@@ -210,12 +210,31 @@ export default function App() {
   async function saveProjectContent() {
     if (!supabase || !session?.user.id || !activeProject) return;
     setSavingContent(true); setError(''); setMessage('');
-    const payload = { project_id: activeProject.id, owner_id: session.user.id, kind: activeProject.project_type === 'ebook' ? 'ebook' : activeProject.project_type === 'course' ? 'course_material' : activeProject.project_type === 'translation' ? 'translation' : 'document', title: activeAsset?.title || 'Chapitre 1', content: editorContent, language: 'fr' };
-    const result = activeAsset ? await supabase.from('studio_assets').update({ title: activeAsset.title || 'Chapitre', content: editorContent, updated_at: new Date().toISOString() }).eq('id', activeAsset.id).eq('owner_id', session.user.id).select('id, project_id, owner_id, title, content, kind, updated_at').single() : await supabase.from('studio_assets').insert(payload).select('id, project_id, owner_id, title, content, kind, updated_at').single();
-    setSavingContent(false);
-    if (result.error) { setError('Enregistrement impossible : ' + result.error.message); return; }
-    const saved = result.data as StudioAsset;
-    setActiveAsset(saved); setProjectAssets((current) => activeAsset ? current.map((asset) => asset.id === saved.id ? saved : asset) : [...current, saved]); setMessage('Contenu enregistré dans Supabase.');
+    try {
+      const payload = {
+        project_id: activeProject.id,
+        owner_id: session.user.id,
+        kind: activeProject.project_type === 'ebook' ? 'ebook' : activeProject.project_type === 'course' ? 'course_material' : activeProject.project_type === 'translation' ? 'translation' : 'document',
+        title: activeAsset?.title || 'Chapitre 1',
+        content: editorContent,
+        language: 'fr',
+      };
+      const result = activeAsset
+        ? await supabase.from('studio_assets').update({ title: activeAsset.title || 'Chapitre', content: editorContent, updated_at: new Date().toISOString() }).eq('id', activeAsset.id).eq('owner_id', session.user.id).select('id, project_id, owner_id, title, content, kind, updated_at').single()
+        : await supabase.from('studio_assets').insert(payload).select('id, project_id, owner_id, title, content, kind, updated_at').single();
+      if (result.error) {
+        setError('Enregistrement impossible : ' + result.error.message);
+        return;
+      }
+      const saved = result.data as StudioAsset;
+      setActiveAsset(saved);
+      setProjectAssets((current) => activeAsset ? current.map((asset) => asset.id === saved.id ? saved : asset) : [...current, saved]);
+      setMessage('Contenu enregistré dans Supabase.');
+    } catch (cause) {
+      setError('Enregistrement impossible : ' + (cause instanceof Error ? cause.message : 'une erreur réseau inattendue est survenue.'));
+    } finally {
+      setSavingContent(false);
+    }
   }
 
   function exportProjectMarkdown() {
@@ -262,15 +281,26 @@ export default function App() {
     if (!supabase || !session?.user.id || !activeProject || !confirmDiscardUnsavedChapterChanges()) return;
     const chapterNumber = projectAssets.length + 1;
     setSavingContent(true); setError(''); setMessage('');
-    const { data, error: insertError } = await supabase.from('studio_assets').insert({
-      project_id: activeProject.id, owner_id: session.user.id,
-      kind: activeProject.project_type === 'ebook' ? 'ebook' : activeProject.project_type === 'course' ? 'course_material' : 'document',
-      title: `Chapitre ${chapterNumber}`, content: '', language: 'fr',
-    }).select('id, project_id, owner_id, title, content, kind, updated_at').single();
-    setSavingContent(false);
-    if (insertError) { setError('Création du chapitre impossible : ' + insertError.message); return; }
-    const asset = data as StudioAsset;
-    setProjectAssets((current) => [...current, asset]); setActiveAsset(asset); setEditorContent(''); setMessage('Nouveau chapitre créé.');
+    try {
+      const { data, error: insertError } = await supabase.from('studio_assets').insert({
+        project_id: activeProject.id, owner_id: session.user.id,
+        kind: activeProject.project_type === 'ebook' ? 'ebook' : activeProject.project_type === 'course' ? 'course_material' : 'document',
+        title: `Chapitre ${chapterNumber}`, content: '', language: 'fr',
+      }).select('id, project_id, owner_id, title, content, kind, updated_at').single();
+      if (insertError) {
+        setError('Création du chapitre impossible : ' + insertError.message);
+        return;
+      }
+      const asset = data as StudioAsset;
+      setProjectAssets((current) => [...current, asset]);
+      setActiveAsset(asset);
+      setEditorContent('');
+      setMessage('Nouveau chapitre créé.');
+    } catch (cause) {
+      setError('Création du chapitre impossible : ' + (cause instanceof Error ? cause.message : 'une erreur réseau inattendue est survenue.'));
+    } finally {
+      setSavingContent(false);
+    }
   }
 
   async function deleteChapter(asset: StudioAsset) {
@@ -278,18 +308,26 @@ export default function App() {
     if (!window.confirm(`Supprimer définitivement « ${asset.title || 'ce chapitre'} » ?`)) return;
     if (activeAsset?.id === asset.id && !confirmDiscardUnsavedChapterChanges()) return;
     setSavingContent(true); setError(''); setMessage('');
-    const { error: deleteError } = await supabase.from('studio_assets')
-      .delete().eq('id', asset.id).eq('project_id', activeProject.id).eq('owner_id', session.user.id);
-    setSavingContent(false);
-    if (deleteError) { setError('Suppression du chapitre impossible : ' + deleteError.message); return; }
-    const remaining = projectAssets.filter((item) => item.id !== asset.id);
-    setProjectAssets(remaining);
-    if (activeAsset?.id === asset.id) {
-      const next = remaining[0] ?? null;
-      setActiveAsset(next);
-      setEditorContent(next?.content ?? '');
+    try {
+      const { error: deleteError } = await supabase.from('studio_assets')
+        .delete().eq('id', asset.id).eq('project_id', activeProject.id).eq('owner_id', session.user.id);
+      if (deleteError) {
+        setError('Suppression du chapitre impossible : ' + deleteError.message);
+        return;
+      }
+      const remaining = projectAssets.filter((item) => item.id !== asset.id);
+      setProjectAssets(remaining);
+      if (activeAsset?.id === asset.id) {
+        const next = remaining[0] ?? null;
+        setActiveAsset(next);
+        setEditorContent(next?.content ?? '');
+      }
+      setMessage('Chapitre supprimé.');
+    } catch (cause) {
+      setError('Suppression du chapitre impossible : ' + (cause instanceof Error ? cause.message : 'une erreur réseau inattendue est survenue.'));
+    } finally {
+      setSavingContent(false);
     }
-    setMessage('Chapitre supprimé.');
   }
 
   async function updateProjectStatus(status: StudioProject['status']) {
