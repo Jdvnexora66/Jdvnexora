@@ -259,6 +259,13 @@ export default function App() {
             <div className="workspace-mark"><FolderKanban size={30} /></div>
           </div>
 
+          <div className="dashboard-stats" aria-label="Résumé de vos projets">
+            <article className="stat-card"><span className="stat-icon"><FolderKanban size={18} /></span><div><p>Total des projets</p><strong>{projects.length}</strong><small>Tous vos espaces</small></div></article>
+            <article className="stat-card"><span className="stat-icon"><Clock3 size={18} /></span><div><p>En cours</p><strong>{projects.filter((project) => project.status === 'in_progress').length}</strong><small>À faire avancer</small></div></article>
+            <article className="stat-card"><span className="stat-icon"><ShieldCheck size={18} /></span><div><p>Terminés</p><strong>{projects.filter((project) => project.status === 'completed').length}</strong><small>Projets finalisés</small></div></article>
+            <article className="stat-card"><span className="stat-icon"><Sparkles size={18} /></span><div><p>Brouillons</p><strong>{projects.filter((project) => project.status === 'draft').length}</strong><small>Idées à développer</small></div></article>
+          </div>
+
           {activeProject ? (
             <section className="project-panel editor-panel">
               <div className="section-heading editor-heading"><div><p className="eyebrow">ESPACE DE CRÉATION</p><h2>{activeProject.title}</h2><p className="muted">Rédigez votre contenu. Vos modifications sont enregistrées dans votre espace Supabase.</p></div><button className="logout-button" onClick={() => { setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); setError(''); setMessage(''); }}>Retour aux projets</button></div>
