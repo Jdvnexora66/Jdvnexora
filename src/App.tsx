@@ -275,8 +275,8 @@ export default function App() {
 
   async function deleteChapter(asset: StudioAsset) {
     if (!supabase || !session?.user.id || !activeProject) return;
-    if (activeAsset?.id === asset.id && !confirmDiscardUnsavedChapterChanges()) return;
     if (!window.confirm(`Supprimer définitivement « ${asset.title || 'ce chapitre'} » ?`)) return;
+    if (activeAsset?.id === asset.id && !confirmDiscardUnsavedChapterChanges()) return;
     setSavingContent(true); setError(''); setMessage('');
     const { error: deleteError } = await supabase.from('studio_assets')
       .delete().eq('id', asset.id).eq('project_id', activeProject.id).eq('owner_id', session.user.id);
