@@ -9,6 +9,7 @@ import LearningLibrary from './components/LearningLibrary';
 import Academy from './components/Academy';
 import ResourceLibrary from './components/ResourceLibrary';
 import Roadmap from './components/Roadmap';
+import StudioIA from './components/StudioIA';
 
 type AuthMode = 'signin' | 'signup';
 type UserProfile = { id: string; display_name: string | null; preferred_language: string; timezone: string; role: string; };
@@ -508,6 +509,7 @@ export default function App() {
             )}
           </section>}
 
+          {!activeProject && <StudioIA />}
           {!activeProject && <Academy userId={session.user.id} />}
           {!activeProject && <ResourceLibrary userId={session.user.id} />}
           {!activeProject && <Discover userId={session.user.id} />}
@@ -591,7 +593,7 @@ export default function App() {
           </div></>}
           {error && <p className="feedback error" role="alert">{error}</p>}
           {message && <p className="feedback success" role="status">{message}</p>}
-          <p className="workspace-footnote">Le Studio IA complet reste en préparation. Les autorisations Supabase sont appliquées à chaque opération.</p>
+          <p className="workspace-footnote">Studio IA est disponible pour les demandes authentifiées. Les réponses nécessitent la configuration du fournisseur côté serveur.</p>
         </section>
       ) : (
         <section className="hero-grid">
