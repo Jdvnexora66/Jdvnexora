@@ -6,6 +6,7 @@ import Discover from './components/Discover';
 import Timeline from './components/Timeline';
 import Insights from './components/Insights';
 import LearningLibrary from './components/LearningLibrary';
+import Academy from './components/Academy';
 import Roadmap from './components/Roadmap';
 
 type AuthMode = 'signin' | 'signup';
@@ -311,7 +312,8 @@ export default function App() {
             <article className="stat-card"><span className="stat-icon"><Sparkles size={18} /></span><div><p>Brouillons</p><strong>{projects.filter((project) => project.status === 'draft').length}</strong><small>Idées à développer</small></div></article>
           </div>
 
-          {!activeProject && <Discover userId={session.user.id} />}
+          {!activeProject && <Academy userId={session.user.id} />}
+          {!activeProject && <Discover userId={session.user.id} />
 
           {!activeProject && <Timeline />}
 
