@@ -313,7 +313,7 @@ export default function App() {
           </div>
 
           {!activeProject && <Academy userId={session.user.id} />}
-          {!activeProject && <Discover userId={session.user.id} />
+          {!activeProject && <Discover userId={session.user.id} />}
 
           {!activeProject && <Timeline />}
 
