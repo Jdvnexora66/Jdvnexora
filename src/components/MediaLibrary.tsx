@@ -21,6 +21,8 @@ type MediaItem = {
   description: string | null;
   visibility: Visibility;
   created_at: string;
+  storage_path: string | null;
+  playback_url?: string | null;
 };
 
 type EmbedInfo = { platform: PlatformDb; embedUrl: string; contentType: MediaKind };
@@ -104,6 +106,8 @@ export default function MediaLibrary({ userId }: Props) {
   const [providerBusy, setProviderBusy] = useState<string | null>(null);
   const [providerError, setProviderError] = useState('');
   const [providerNotice, setProviderNotice] = useState('');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
 
   const load = useCallback(async () => {
     if (!supabase) {
@@ -116,11 +120,20 @@ export default function MediaLibrary({ userId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('media_library_items')
-        .select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at')
+        .select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at,storage_path')
         .order('created_at', { ascending: false })
         .limit(100);
       if (loadError) throw loadError;
-      setItems((data ?? []) as MediaItem[]);
+      const loadedItems = (data ?? []) as MediaItem[];
+      const hostedItems = loadedItems.filter((item) => Boolean(item.storage_path));
+      if (hostedItems.length) {
+        const { data: signedFiles, error: signedError } = await supabase.storage.from('nexora-media').createSignedUrls(hostedItems.map((item) => item.storage_path as string), 3600);
+        if (signedError) throw signedError;
+        const urls = new Map((signedFiles ?? []).map((file) => [file.path, file.signedUrl]));
+        setItems(loadedItems.map((item) => ({ ...item, playback_url: item.storage_path ? urls.get(item.storage_path) ?? null : null })));
+      } else {
+        setItems(loadedItems);
+      }
     } catch (cause) {
       setError(cause instanceof Error && cause.message.includes('media_library_items')
         ? 'La vidéothèque persistante attend la migration Supabase. Actualisez après la mise à jour du schéma.'
@@ -246,7 +259,7 @@ export default function MediaLibrary({ userId }: Props) {
         content_type: contentType === 'video' ? embed.contentType : contentType,
         visibility,
         sync_source: 'manual',
-      }).select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at').single();
+      }).select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at,storage_path').single();
       if (insertError) throw insertError;
       setItems((current) => [data as MediaItem, ...current]);
       setSourceUrl('');
@@ -262,10 +275,64 @@ export default function MediaLibrary({ userId }: Props) {
     }
   }
 
+  async function uploadOwnedFile() {
+    if (!supabase || !uploadFile) return;
+    setError(''); setNotice('');
+    if (!uploadFile.type.startsWith('video/') && !uploadFile.type.startsWith('audio/')) {
+      setError('Choisissez un fichier vidéo ou audio pris en charge.');
+      return;
+    }
+    if (uploadFile.size > 524288000) {
+      setError('Le fichier dépasse la limite de 500 Mo.');
+      return;
+    }
+    setUploadingFile(true);
+    let uploadedPath = '';
+    try {
+      const safeName = uploadFile.name.normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g, '-').slice(-150) || 'media-file';
+      uploadedPath = userId + '/' + crypto.randomUUID() + '-' + safeName;
+      const { error: uploadError } = await supabase.storage.from('nexora-media').upload(uploadedPath, uploadFile, { contentType: uploadFile.type, upsert: false });
+      if (uploadError) throw uploadError;
+      const baseUrl = (import.meta.env.VITE_SUPABASE_URL as string).replace(/\/$/, '');
+      const authenticatedUrl = baseUrl + '/storage/v1/object/authenticated/nexora-media/' + uploadedPath.split('/').map(encodeURIComponent).join('/');
+      const kind: MediaKind = uploadFile.type.startsWith('audio/') ? 'audio' : (contentType === 'interview' || contentType === 'podcast' ? contentType : 'video');
+      const { data, error: insertError } = await supabase.from('media_library_items').insert({
+        owner_id: userId,
+        title: title.trim() || uploadFile.name.slice(0, 240),
+        creator_name: creatorName.trim() || null,
+        platform: 'other',
+        source_url: authenticatedUrl,
+        embed_url: authenticatedUrl,
+        storage_path: uploadedPath,
+        content_type: kind,
+        visibility,
+        sync_source: 'authorized_import',
+        provider_metadata: { uploaded_file: true, original_file_name: uploadFile.name, mime_type: uploadFile.type, file_size: uploadFile.size },
+      }).select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at,storage_path').single();
+      if (insertError) throw insertError;
+      const { data: signed, error: signedError } = await supabase.storage.from('nexora-media').createSignedUrl(uploadedPath, 3600);
+      if (signedError) throw signedError;
+      setItems((current) => [{ ...(data as MediaItem), playback_url: signed.signedUrl }, ...current]);
+      setUploadFile(null);
+      setTitle('');
+      setCreatorName('');
+      setNotice('Fichier hébergé dans le stockage privé NEXORA et prêt à être lu dans l’application.');
+    } catch (cause) {
+      if (uploadedPath) await supabase.storage.from('nexora-media').remove([uploadedPath]);
+      setError(cause instanceof Error ? cause.message : 'Impossible d’importer ce fichier.');
+    } finally {
+      setUploadingFile(false);
+    }
+  }
+
   async function removeMedia(item: MediaItem) {
     if (!supabase || item.owner_id !== userId) return;
     setBusyId(item.id); setError(''); setNotice('');
     try {
+      if (item.storage_path) {
+        const { error: storageError } = await supabase.storage.from('nexora-media').remove([item.storage_path]);
+        if (storageError) throw storageError;
+      }
       const { error: deleteError } = await supabase.from('media_library_items').delete().eq('id', item.id).eq('owner_id', userId);
       if (deleteError) throw deleteError;
       setItems((current) => current.filter((candidate) => candidate.id !== item.id));
@@ -284,7 +351,7 @@ export default function MediaLibrary({ userId }: Props) {
       const { data, error: updateError } = await supabase.from('media_library_items')
         .update({ visibility: nextVisibility })
         .eq('id', item.id).eq('owner_id', userId)
-        .select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at').single();
+        .select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at,storage_path').single();
       if (updateError) throw updateError;
       setItems((current) => current.map((candidate) => candidate.id === item.id ? data as MediaItem : candidate));
       setNotice(nextVisibility === 'public' ? 'Ce média est maintenant visible dans le catalogue public NEXORA.' : 'Ce média est désormais privé.');
@@ -335,6 +402,12 @@ export default function MediaLibrary({ userId }: Props) {
       <select id="media-kind" value={contentType} onChange={(event) => setContentType(event.target.value as MediaKind)}>
         <option value="video">Vidéo</option><option value="interview">Interview</option><option value="podcast">Podcast</option><option value="audio">Audio</option><option value="short">Vidéo courte</option><option value="other">Autre</option>
       </select>
+      <div className="media-file-upload">
+        <label htmlFor="media-file">Ou importer un fichier vidéo/audio (maximum 500 Mo)</label>
+        <input id="media-file" type="file" accept="video/mp4,video/webm,video/quicktime,audio/mpeg,audio/mp4,audio/ogg,audio/wav,audio/webm" onChange={(event) => setUploadFile(event.target.files?.[0] ?? null)} />
+        <button type="button" className="primary-button" onClick={() => void uploadOwnedFile()} disabled={!uploadFile || uploadingFile}><Film size={16} /> {uploadingFile ? 'Importation…' : 'Héberger et lire dans NEXORA'}</button>
+        <p className="muted">Pour les vidéos appartenant à votre compte ou pour lesquelles vous disposez des droits. Les médias importés sont stockés dans un espace privé.</p>
+      </div>
       <label htmlFor="media-url">Lien du média</label>
       <input id="media-url" type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} required placeholder="https://www.youtube.com/watch?v=…" />
       <label htmlFor="media-visibility">Visibilité initiale</label>
@@ -359,9 +432,13 @@ export default function MediaLibrary({ userId }: Props) {
     </div> : <div className="media-grid">
       {filtered.map((item) => <article className="media-card" key={item.id}>
         <div className={'media-player-wrap ' + (item.content_type === 'podcast' || item.content_type === 'audio' ? 'media-audio' : '')}>
-          <iframe src={item.embed_url} title={item.title} loading="lazy"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
+          {item.storage_path ? (item.playback_url ? (item.content_type === 'audio' || item.content_type === 'podcast'
+            ? <audio className="media-native-audio" controls preload="metadata" src={item.playback_url}>Votre navigateur ne prend pas en charge la lecture audio.</audio>
+            : <video className="media-native-video" controls playsInline preload="metadata" poster={item.thumbnail_url ?? undefined} src={item.playback_url}>Votre navigateur ne prend pas en charge la lecture vidéo.</video>)
+            : <p className="media-playback-error">Le fichier n’est pas accessible. Actualisez la vidéothèque.</p>)
+            : <iframe src={item.embed_url} title={item.title} loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />}
         </div>
         <div className="media-card-details">
           <div className="media-card-title"><span>{platformIcon(item.platform)}</span><h3>{item.title}</h3></div>
@@ -376,6 +453,6 @@ export default function MediaLibrary({ userId }: Props) {
       </article>)}
     </div>}
 
-    <p className="workspace-footnote">La bibliothèque est désormais persistante dans Supabase. Les lecteurs officiels permettent de regarder les contenus compatibles dans NEXORA, mais n’en téléchargent pas les fichiers. La synchronisation automatique de comptes YouTube, TikTok et Instagram nécessite encore les identifiants API/OAuth, les autorisations de chaque plateforme et la validation de leurs applications. Les contenus privés ou non intégrables resteront indisponibles sans autorisation explicite.</p>
+    <p className="workspace-footnote">La bibliothèque est persistante dans Supabase. Les fichiers dont vous détenez les droits peuvent être hébergés et lus directement dans NEXORA ; les autres plateformes utilisent leur lecteur officiel. La synchronisation automatique de comptes YouTube, TikTok et Instagram nécessite encore les identifiants API/OAuth, les autorisations de chaque plateforme et la validation de leurs applications. Les contenus privés ou non intégrables resteront indisponibles sans autorisation explicite.</p>
   </section>;
 }
