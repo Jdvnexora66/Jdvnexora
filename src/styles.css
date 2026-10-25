@@ -42,3 +42,14 @@
 .status-picker select{border:1px solid #2a3552;border-radius:7px;background:#0b1121;color:#dce2f4;padding:5px 7px;font:11px 'DM Sans',sans-serif}
 @media(max-width:760px){.chapter-layout{grid-template-columns:1fr}.chapter-sidebar{display:grid;grid-template-columns:1fr 1fr;gap:4px}.chapter-sidebar-heading{grid-column:1/-1}.chapter-item{min-width:0}.chapter-empty{grid-column:1/-1}}
 @media(max-width:480px){.chapter-sidebar{grid-template-columns:1fr}.chapter-sidebar-heading{grid-column:auto}.editor-toolbar{align-items:flex-start}.status-picker{flex-wrap:wrap}}
+
+
+/* Dashboard overview cards */
+.dashboard-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:24px 0 20px}
+.stat-card{display:flex;align-items:center;gap:13px;min-width:0;padding:18px;border:1px solid #263250;border-radius:15px;background:linear-gradient(145deg,rgba(24,34,62,.92),rgba(13,20,38,.92));box-shadow:0 10px 28px rgba(0,0,0,.12)}
+.stat-icon{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border-radius:12px;background:rgba(126,140,255,.13);color:#aab5ff}
+.stat-card p{margin:0 0 5px;color:#aab6d2;font-size:12px}
+.stat-card strong{display:block;color:#f4f6ff;font:800 25px Manrope,sans-serif;line-height:1.1}
+.stat-card small{display:block;margin-top:5px;color:#7786a7;font-size:10px}
+@media(max-width:900px){.dashboard-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.dashboard-stats{gap:9px;margin:18px 0}.stat-card{padding:13px;gap:9px}.stat-icon{width:34px;height:34px;flex-basis:34px}.stat-card strong{font-size:21px}.stat-card p{font-size:11px}}
