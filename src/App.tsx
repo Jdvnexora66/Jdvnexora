@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
+import Discover from './components/Discover';
 
 type AuthMode = 'signin' | 'signup';
 type StudioAsset = { id: string; project_id: string; owner_id: string; title: string; content: string | null; kind: string; updated_at: string; };
@@ -300,6 +301,8 @@ export default function App() {
             <article className="stat-card"><span className="stat-icon"><ShieldCheck size={18} /></span><div><p>Terminés</p><strong>{projects.filter((project) => project.status === 'completed').length}</strong><small>Projets finalisés</small></div></article>
             <article className="stat-card"><span className="stat-icon"><Sparkles size={18} /></span><div><p>Brouillons</p><strong>{projects.filter((project) => project.status === 'draft').length}</strong><small>Idées à développer</small></div></article>
           </div>
+
+          {!activeProject && <Discover userId={session.user.id} />}
 
           {!activeProject && <section className="quick-access" aria-label="Accès rapides">
             <div className="quick-access-heading"><div><p className="eyebrow">CENTRE DE COMMANDE</p><h2>Accès rapides</h2><p className="muted">Reprenez votre travail ou démarrez une nouvelle création.</p></div></div>
