@@ -73,7 +73,7 @@ export default function StudioIA() {
     <form className="project-form" onSubmit={submit}>
       <label htmlFor="studio-ai-prompt">Votre demande</label>
       <textarea id="studio-ai-prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={4} maxLength={8000} placeholder="Ex. Propose un plan détaillé pour mon e-book…" required />
-      <div className="studio-ai-form-footer">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <small className="muted">{prompt.length.toLocaleString('fr-FR')} / 8 000 caractères</small>
         <button className="primary-button" type="submit" disabled={busy || !prompt.trim()}>{busy ? 'Génération…' : 'Envoyer à Studio IA'} <Send size={16} /></button>
       </div>
