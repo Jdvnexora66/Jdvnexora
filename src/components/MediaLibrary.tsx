@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Film, Headphones, Play, Plus, Search, Trash2, Youtube, Video, RefreshCw, Globe2, LockKeyhole, Link2, Unplug } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import './media-provider.css';
 
 type Platform = 'YouTube' | 'TikTok' | 'Instagram' | 'Spotify' | 'SoundCloud';
 type PlatformDb = 'youtube' | 'tiktok' | 'instagram' | 'spotify' | 'soundcloud';
