@@ -589,7 +589,7 @@ export default function App() {
 
           {activeProject ? (
             activeProject.owner_id !== session.user.id ? (
-              <CollaborationPanel projectId={activeProject.id} ownerId={activeProject.owner_id} userId={session.user.id} />
+              <CollaborationPanel projectId={activeProject.id} ownerId={activeProject.owner_id} userId={session.user.id} assets={projectAssets} />
             ) : <>
             <section id="studio-editor" className="project-panel editor-panel">
               <div className="section-heading editor-heading"><div><p className="eyebrow">ESPACE DE CRÉATION</p><h2>{activeProject.title}</h2><p className="muted">Rédigez votre contenu. Vos modifications sont enregistrées dans votre espace Supabase.</p></div><button className="logout-button" onClick={() => { if (!confirmDiscardUnsavedChapterChanges()) return; setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); setError(''); setMessage(''); }}>Retour aux projets</button></div>
