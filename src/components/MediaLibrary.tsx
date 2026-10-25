@@ -131,22 +131,36 @@ export default function MediaLibrary({ userId }: Props) {
   }, []);
 
   const loadConnections = useCallback(async () => {
-    if (!supabase) return;
+    if (!supabase) return [] as ProviderConnection[];
     const { data, error: invokeError } = await supabase.functions.invoke('media-integrations?action=status', { body: {} });
-    if (invokeError) { setProviderError('Le service de connexion média n’est pas encore disponible. Vérifiez le déploiement de la fonction Supabase.'); return; }
-    setConnections(((data?.connections ?? []) as ProviderConnection[]));
+    if (invokeError) { setProviderError('Le service de connexion média n’est pas encore disponible. Vérifiez le déploiement de la fonction Supabase.'); return [] as ProviderConnection[]; }
+    const loadedConnections = (data?.connections ?? []) as ProviderConnection[];
+    setConnections(loadedConnections);
+    return loadedConnections;
   }, []);
 
   useEffect(() => {
     void load();
-    void loadConnections();
+    void loadConnections().then((loadedConnections) => {
+      const staleBefore = Date.now() - 12 * 60 * 60 * 1000;
+      for (const connection of loadedConnections) {
+        if (!connection.last_synced_at || new Date(connection.last_synced_at).getTime() < staleBefore) void syncProvider(connection.platform);
+      }
+    });
     const configuredUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
     const allowedOrigin = configuredUrl ? new URL(configuredUrl).origin : '';
     const onOAuthMessage = (event: MessageEvent) => {
       if (!allowedOrigin || event.origin !== allowedOrigin || event.data?.type !== 'nexora-media-oauth') return;
-      if (event.data.ok) setProviderNotice('Compte connecté. Vous pouvez synchroniser ses vidéos.');
-      else setProviderError('La connexion a échoué. Vérifiez la configuration de la plateforme et réessayez.');
-      void loadConnections();
+      if (event.data.ok) {
+        setProviderNotice('Compte connecté. Première synchronisation en cours…');
+        const platform = event.data.platform;
+        void loadConnections().then(() => {
+          if (platform === 'youtube' || platform === 'tiktok' || platform === 'instagram') void syncProvider(platform);
+        });
+      } else {
+        setProviderError('La connexion a échoué. Vérifiez la configuration de la plateforme et réessayez.');
+        void loadConnections();
+      }
     };
     window.addEventListener('message', onOAuthMessage);
     return () => window.removeEventListener('message', onOAuthMessage);
