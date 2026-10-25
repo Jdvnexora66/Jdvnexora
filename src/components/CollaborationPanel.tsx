@@ -7,7 +7,7 @@ type Comment = { id: string; project_id: string; user_id: string; body: string; 
 
 type SharedAsset = { id: string; title: string; content: string | null; updated_at: string };
 
-export default function CollaborationPanel({ projectId, ownerId, userId, assets }: { projectId: string; ownerId: string; userId: string; assets: SharedAsset[] }) {
+export default function CollaborationPanel({ projectId, ownerId, userId, assets = [] }: { projectId: string; ownerId: string; userId: string; assets?: SharedAsset[] }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [memberId, setMemberId] = useState('');
