@@ -272,6 +272,16 @@ export default function App() {
             <article className="stat-card"><span className="stat-icon"><Sparkles size={18} /></span><div><p>Brouillons</p><strong>{projects.filter((project) => project.status === 'draft').length}</strong><small>Idées à développer</small></div></article>
           </div>
 
+          {!activeProject && <section className="quick-access" aria-label="Accès rapides">
+            <div className="quick-access-heading"><div><p className="eyebrow">CENTRE DE COMMANDE</p><h2>Accès rapides</h2><p className="muted">Reprenez votre travail ou démarrez une nouvelle création.</p></div></div>
+            <div className="quick-access-grid">
+              <button type="button" className="quick-access-card" onClick={() => document.getElementById('create-project')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}><span className="quick-access-icon"><Plus size={20} /></span><span><strong>Nouveau projet</strong><small>Créer un e-book, une formation ou un document</small></span><ArrowRight size={16} /></button>
+              <button type="button" className="quick-access-card" onClick={() => document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}><span className="quick-access-icon"><FolderKanban size={20} /></span><span><strong>Bibliothèque de projets</strong><small>Retrouver et organiser vos créations</small></span><ArrowRight size={16} /></button>
+              <button type="button" className="quick-access-card" onClick={() => { setSearchQuery(''); setStatusFilter('in_progress'); document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><span className="quick-access-icon"><Clock3 size={20} /></span><span><strong>Reprendre un projet</strong><small>Afficher les projets en cours</small></span><ArrowRight size={16} /></button>
+              <button type="button" className="quick-access-card" onClick={() => void loadProjects()}><span className="quick-access-icon"><RefreshCw size={20} /></span><span><strong>Synchroniser</strong><small>Recharger les données depuis Supabase</small></span><ArrowRight size={16} /></button>
+            </div>
+          </section>}
+
           {activeProject ? (
             <section id="studio-editor" className="project-panel editor-panel">
               <div className="section-heading editor-heading"><div><p className="eyebrow">ESPACE DE CRÉATION</p><h2>{activeProject.title}</h2><p className="muted">Rédigez votre contenu. Vos modifications sont enregistrées dans votre espace Supabase.</p></div><button className="logout-button" onClick={() => { setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); setError(''); setMessage(''); }}>Retour aux projets</button></div>
