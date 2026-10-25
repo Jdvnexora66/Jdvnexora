@@ -28,32 +28,43 @@ export default function LearningLibrary({ userId }: { userId: string }) {
   const load = useCallback(async () => {
     if (!supabase) { setLoading(false); setError('Supabase n’est pas configuré.'); return; }
     setLoading(true); setError('');
-    const [library, people, media] = await Promise.all([
-      supabase.from('user_learning_items').select('id,user_id,content_item_id,entrepreneur_id,item_type,note,progress,completed_at,created_at,entrepreneur:entrepreneurs(name),content:content_items(title,canonical_url)').eq('user_id', userId).order('created_at', { ascending: false }).limit(200),
-      supabase.from('entrepreneurs').select('id,name').eq('visibility','public').order('name').limit(200),
-      supabase.from('content_items').select('id,title').order('title').limit(200),
-    ]);
-    if (library.error) setError(library.error.message.includes('user_learning_items') ? 'La bibliothèque sera disponible après application de la migration Supabase.' : library.error.message);
-    else setItems((library.data ?? []) as unknown as LearningItem[]);
-    if (!people.error) setEntrepreneurs(people.data ?? []);
-    if (!media.error) setContents(media.data ?? []);
-    setLoading(false);
+    try {
+      const [library, people, media] = await Promise.all([
+        supabase.from('user_learning_items').select('id,user_id,content_item_id,entrepreneur_id,item_type,note,progress,completed_at,created_at,entrepreneur:entrepreneurs(name),content:content_items(title,canonical_url)').eq('user_id', userId).order('created_at', { ascending: false }).limit(200),
+        supabase.from('entrepreneurs').select('id,name').eq('visibility','public').order('name').limit(200),
+        supabase.from('content_items').select('id,title').order('title').limit(200),
+      ]);
+      if (library.error) setError(library.error.message.includes('user_learning_items') ? 'La bibliothèque sera disponible après application de la migration Supabase.' : library.error.message);
+      else setItems((library.data ?? []) as unknown as LearningItem[]);
+      if (!people.error) setEntrepreneurs(people.data ?? []);
+      if (!media.error) setContents(media.data ?? []);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible de charger la bibliothèque. Vérifiez votre connexion puis réessayez.');
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
 
   useEffect(() => { void load(); }, [load]);
 
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!supabase) return;
+    if (!supabase) { setError('Supabase n’est pas configuré.'); return; }
     const entityId = targetType === 'entrepreneur' ? entrepreneurId : contentId;
-    if (!entityId) { setError('Choisissez un entrepreneur ou un contenu.'); setSaving(false); return; }
-    setError(''); setMessage('');
+    if (!entityId) { setError('Choisissez un entrepreneur ou un contenu.'); return; }
+    setSaving(true); setError(''); setMessage('');
     const payload = { user_id: userId, item_type: kind, note: note.trim() || null, entrepreneur_id: targetType === 'entrepreneur' ? entityId : null, content_item_id: targetType === 'content' ? entityId : null };
-    const { error: insertError } = await supabase.from('user_learning_items').insert(payload);
-    if (insertError) { setError(insertError.message); setSaving(false); return; }
-    setNote(''); setMessage('Élément ajouté à votre bibliothèque.');
-    await load();
-    setSaving(false);
+    try {
+      const { error: insertError } = await supabase.from('user_learning_items').insert(payload);
+      if (insertError) throw new Error(insertError.message);
+      setNote('');
+      await load();
+      setMessage('Élément ajouté à votre bibliothèque.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible d’ajouter cet élément. Vérifiez votre connexion puis réessayez.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function updateProgress(item: LearningItem, progress: number) {
