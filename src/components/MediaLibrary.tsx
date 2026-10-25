@@ -1,18 +1,34 @@
-import { FormEvent, useMemo, useState } from 'react';
-import { Film, Headphones, Play, Plus, Search, Trash2, Youtube, Radio, Video } from 'lucide-react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { Film, Headphones, Play, Plus, Search, Trash2, Youtube, Video, RefreshCw, Globe2, LockKeyhole, Link2, Unplug } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import './media-provider.css';
 
 type Platform = 'YouTube' | 'TikTok' | 'Instagram' | 'Spotify' | 'SoundCloud';
+type PlatformDb = 'youtube' | 'tiktok' | 'instagram' | 'spotify' | 'soundcloud';
+type MediaKind = 'video' | 'podcast' | 'interview' | 'audio' | 'short' | 'other';
+type Visibility = 'private' | 'public';
 
 type MediaItem = {
   id: string;
+  owner_id: string;
   title: string;
-  sourceUrl: string;
-  embedUrl: string;
-  platform: Platform;
-  kind: 'video' | 'audio';
+  source_url: string;
+  embed_url: string;
+  platform: PlatformDb;
+  content_type: MediaKind;
+  creator_name: string | null;
+  thumbnail_url: string | null;
+  description: string | null;
+  visibility: Visibility;
+  created_at: string;
 };
 
-function buildEmbed(source: string): { platform: Platform; embedUrl: string; kind: 'video' | 'audio' } | null {
+type EmbedInfo = { platform: PlatformDb; embedUrl: string; contentType: MediaKind };
+
+type ProviderConnection = { platform: 'youtube' | 'tiktok' | 'instagram'; account_name: string | null; connected_at: string; last_synced_at: string | null; last_sync_error: string | null };
+type Props = { userId: string };
+
+function buildEmbed(source: string): EmbedInfo | null {
   let url: URL;
   try {
     url = new URL(source.trim());
@@ -22,85 +38,247 @@ function buildEmbed(source: string): { platform: Platform; embedUrl: string; kin
   }
 
   const host = url.hostname.toLowerCase().replace(/^www\./, '').replace(/^m\./, '');
-  if (host === 'youtu.be' || host === 'youtube.com' || host === 'm.youtube.com') {
+  if (host === 'youtu.be' || host === 'youtube.com') {
     const segments = url.pathname.split('/').filter(Boolean);
     const videoId = host === 'youtu.be'
       ? segments[0]
       : url.searchParams.get('v') || (['shorts', 'embed', 'live'].includes(segments[0] ?? '') ? segments[1] : undefined);
     if (!videoId || !/^[\w-]{6,}$/.test(videoId)) return null;
-    return { platform: 'YouTube', embedUrl: 'https://www.youtube-nocookie.com/embed/' + videoId, kind: 'video' };
+    return { platform: 'youtube', embedUrl: 'https://www.youtube-nocookie.com/embed/' + videoId, contentType: segments[0] === 'shorts' ? 'short' : 'video' };
   }
 
   if (host === 'tiktok.com' || host === 'vm.tiktok.com' || host === 'vt.tiktok.com') {
     const match = url.pathname.match(/\/video\/(\d+)/);
-    if (match) return { platform: 'TikTok', embedUrl: 'https://www.tiktok.com/embed/v2/' + match[1], kind: 'video' };
-    return null;
+    if (!match) return null;
+    return { platform: 'tiktok', embedUrl: 'https://www.tiktok.com/player/v1/' + match[1], contentType: 'video' };
   }
 
   if (host === 'instagram.com') {
     const match = url.pathname.match(/^\/(p|reel|tv)\/([\w-]+)/);
     if (!match) return null;
-    return { platform: 'Instagram', embedUrl: 'https://www.instagram.com/' + match[1] + '/' + match[2] + '/embed/', kind: 'video' };
+    return { platform: 'instagram', embedUrl: 'https://www.instagram.com/' + match[1] + '/' + match[2] + '/embed/', contentType: match[1] === 'reel' ? 'short' : 'video' };
   }
 
   if (host === 'open.spotify.com') {
     const match = url.pathname.match(/^\/(episode|show|track|album)\/([\w]+)/);
     if (!match) return null;
-    return { platform: 'Spotify', embedUrl: 'https://open.spotify.com/embed/' + match[1] + '/' + match[2], kind: 'audio' };
+    return { platform: 'spotify', embedUrl: 'https://open.spotify.com/embed/' + match[1] + '/' + match[2], contentType: match[1] === 'episode' || match[1] === 'show' ? 'podcast' : 'audio' };
   }
 
   if (host === 'soundcloud.com') {
-    return { platform: 'SoundCloud', embedUrl: 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(url.toString()) + '&auto_play=false&visual=true', kind: 'audio' };
+    return { platform: 'soundcloud', embedUrl: 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(url.toString()) + '&auto_play=false&visual=true', contentType: 'podcast' };
   }
 
   return null;
 }
 
-function platformIcon(platform: Platform) {
-  if (platform === 'YouTube') return <Youtube size={15} />;
-  if (platform === 'Spotify' || platform === 'SoundCloud') return <Headphones size={15} />;
-  if (platform === 'TikTok') return <Video size={15} />;
+function platformIcon(platform: PlatformDb) {
+  if (platform === 'youtube') return <Youtube size={15} />;
+  if (platform === 'spotify' || platform === 'soundcloud') return <Headphones size={15} />;
+  if (platform === 'tiktok') return <Video size={15} />;
   return <Film size={15} />;
 }
 
-export default function MediaLibrary() {
+function platformLabel(platform: PlatformDb) {
+  return ({ youtube: 'YouTube', tiktok: 'TikTok', instagram: 'Instagram', spotify: 'Spotify', soundcloud: 'SoundCloud' } as const)[platform];
+}
+
+function mediaKindLabel(kind: MediaKind) {
+  return ({ video: 'Vidéo', podcast: 'Podcast', interview: 'Interview', audio: 'Audio', short: 'Vidéo courte', other: 'Autre' } as const)[kind];
+}
+
+export default function MediaLibrary({ userId }: Props) {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [query, setQuery] = useState('');
   const [sourceUrl, setSourceUrl] = useState('');
   const [title, setTitle] = useState('');
+  const [creatorName, setCreatorName] = useState('');
+  const [contentType, setContentType] = useState<MediaKind>('video');
+  const [visibility, setVisibility] = useState<Visibility>('private');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [connections, setConnections] = useState<ProviderConnection[]>([]);
+  const [providerBusy, setProviderBusy] = useState<string | null>(null);
+  const [providerError, setProviderError] = useState('');
+  const [providerNotice, setProviderNotice] = useState('');
+
+  const load = useCallback(async () => {
+    if (!supabase) {
+      setError('Supabase n’est pas configuré. La vidéothèque ne peut pas enregistrer les médias.');
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const { data, error: loadError } = await supabase
+        .from('media_library_items')
+        .select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (loadError) throw loadError;
+      setItems((data ?? []) as MediaItem[]);
+    } catch (cause) {
+      setError(cause instanceof Error && cause.message.includes('media_library_items')
+        ? 'La vidéothèque persistante attend la migration Supabase. Actualisez après la mise à jour du schéma.'
+        : cause instanceof Error ? cause.message : 'Impossible de charger la vidéothèque.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadConnections = useCallback(async () => {
+    if (!supabase) return;
+    const { data, error: invokeError } = await supabase.functions.invoke('media-integrations?action=status', { body: {} });
+    if (invokeError) { setProviderError('Le service de connexion média n’est pas encore disponible. Vérifiez le déploiement de la fonction Supabase.'); return; }
+    setConnections(((data?.connections ?? []) as ProviderConnection[]));
+  }, []);
+
+  useEffect(() => {
+    void load();
+    void loadConnections();
+    const configuredUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+    const allowedOrigin = configuredUrl ? new URL(configuredUrl).origin : '';
+    const onOAuthMessage = (event: MessageEvent) => {
+      if (!allowedOrigin || event.origin !== allowedOrigin || event.data?.type !== 'nexora-media-oauth') return;
+      if (event.data.ok) setProviderNotice('Compte connecté. Vous pouvez synchroniser ses vidéos.');
+      else setProviderError('La connexion a échoué. Vérifiez la configuration de la plateforme et réessayez.');
+      void loadConnections();
+    };
+    window.addEventListener('message', onOAuthMessage);
+    return () => window.removeEventListener('message', onOAuthMessage);
+  }, [load, loadConnections]);
+
+  async function connectProvider(platform: ProviderConnection['platform']) {
+    if (!supabase) return;
+    setProviderBusy(platform); setProviderError(''); setProviderNotice('');
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke('media-integrations?action=connect', { body: { platform } });
+      if (invokeError) throw new Error(data?.error || invokeError.message || 'Impossible de démarrer la connexion.');
+      if (!data?.authorization_url) throw new Error(data?.error || 'La plateforme n’a pas fourni de lien d’autorisation.');
+      const popup = window.open(data.authorization_url, 'nexora-media-oauth', 'popup,width=600,height=760');
+      if (!popup) window.location.assign(data.authorization_url);
+      else popup.focus();
+    } catch (cause) {
+      setProviderError(cause instanceof Error ? cause.message : 'Connexion impossible. Vérifiez les secrets développeur dans Supabase.');
+    } finally {
+      setProviderBusy(null);
+    }
+  }
+
+  async function syncProvider(platform: ProviderConnection['platform']) {
+    if (!supabase) return;
+    setProviderBusy(platform); setProviderError(''); setProviderNotice('');
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke('media-integrations?action=sync', { body: { platform } });
+      if (invokeError) throw new Error(data?.error || invokeError.message || 'La synchronisation a échoué.');
+      if (data?.error) throw new Error(data.error);
+      setProviderNotice(data?.message || 'Synchronisation terminée.');
+      await Promise.all([load(), loadConnections()]);
+    } catch (cause) {
+      setProviderError(cause instanceof Error ? cause.message : 'Synchronisation impossible.');
+      await loadConnections();
+    } finally {
+      setProviderBusy(null);
+    }
+  }
+
+  async function disconnectProvider(platform: ProviderConnection['platform']) {
+    if (!supabase) return;
+    setProviderBusy(platform); setProviderError(''); setProviderNotice('');
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke('media-integrations?action=disconnect', { body: { platform } });
+      if (invokeError) throw new Error(data?.error || invokeError.message);
+      setConnections((current) => current.filter((item) => item.platform !== platform));
+      setProviderNotice('Compte déconnecté de NEXORA. Les médias déjà importés restent dans votre bibliothèque.');
+    } catch (cause) {
+      setProviderError(cause instanceof Error ? cause.message : 'Déconnexion impossible.');
+    } finally {
+      setProviderBusy(null);
+    }
+  }
 
   const filtered = useMemo(() => {
     const search = query.trim().toLocaleLowerCase();
-    return items.filter((item) => !search || item.title.toLocaleLowerCase().includes(search) || item.platform.toLocaleLowerCase().includes(search));
+    return items.filter((item) => !search || item.title.toLocaleLowerCase().includes(search) || (item.creator_name ?? '').toLocaleLowerCase().includes(search) || item.platform.includes(search) || (item.description ?? '').toLocaleLowerCase().includes(search));
   }, [items, query]);
 
-  function addMedia(event: FormEvent<HTMLFormElement>) {
+  async function addMedia(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!supabase) { setError('Supabase n’est pas configuré.'); return; }
     setError('');
     setNotice('');
     const embed = buildEmbed(sourceUrl);
     if (!embed) {
-      setError('Lien non reconnu ou non compatible. Utilisez un lien public YouTube, TikTok, Instagram (Reel/publication), Spotify ou SoundCloud en HTTPS.');
+      setError('Lien non reconnu ou non compatible. Utilisez un lien public YouTube, TikTok (URL de vidéo complète), Instagram Reel/publication, Spotify ou SoundCloud en HTTPS.');
       return;
     }
-    if (items.some((item) => item.sourceUrl === sourceUrl.trim())) {
-      setError('Ce média est déjà présent dans cette liste.');
+    if (items.some((item) => item.source_url === sourceUrl.trim())) {
+      setError('Ce média est déjà présent dans votre vidéothèque.');
       return;
     }
-    const item: MediaItem = {
-      id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : String(Date.now()),
-      title: title.trim() || embed.platform + ' — ' + (embed.kind === 'audio' ? 'podcast / audio' : 'vidéo'),
-      sourceUrl: sourceUrl.trim(),
-      embedUrl: embed.embedUrl,
-      platform: embed.platform,
-      kind: embed.kind,
-    };
-    setItems((current) => [item, ...current]);
-    setSourceUrl('');
-    setTitle('');
-    setNotice('Média ajouté au lecteur intégré. Cette liste de démonstration est conservée uniquement pendant cette session.');
+    setSaving(true);
+    try {
+      const { data, error: insertError } = await supabase.from('media_library_items').insert({
+        owner_id: userId,
+        title: title.trim() || platformLabel(embed.platform) + ' — ' + mediaKindLabel(contentType),
+        creator_name: creatorName.trim() || null,
+        platform: embed.platform,
+        source_url: sourceUrl.trim(),
+        embed_url: embed.embedUrl,
+        content_type: contentType === 'video' ? embed.contentType : contentType,
+        visibility,
+        sync_source: 'manual',
+      }).select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at').single();
+      if (insertError) throw insertError;
+      setItems((current) => [data as MediaItem, ...current]);
+      setSourceUrl('');
+      setTitle('');
+      setCreatorName('');
+      setContentType('video');
+      setVisibility('private');
+      setNotice('Média enregistré dans votre vidéothèque. Il restera disponible après votre reconnexion.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible d’enregistrer ce média.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeMedia(item: MediaItem) {
+    if (!supabase || item.owner_id !== userId) return;
+    setBusyId(item.id); setError(''); setNotice('');
+    try {
+      const { error: deleteError } = await supabase.from('media_library_items').delete().eq('id', item.id).eq('owner_id', userId);
+      if (deleteError) throw deleteError;
+      setItems((current) => current.filter((candidate) => candidate.id !== item.id));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible de retirer ce média.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function toggleVisibility(item: MediaItem) {
+    if (!supabase || item.owner_id !== userId) return;
+    const nextVisibility: Visibility = item.visibility === 'public' ? 'private' : 'public';
+    setBusyId(item.id); setError(''); setNotice('');
+    try {
+      const { data, error: updateError } = await supabase.from('media_library_items')
+        .update({ visibility: nextVisibility })
+        .eq('id', item.id).eq('owner_id', userId)
+        .select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at').single();
+      if (updateError) throw updateError;
+      setItems((current) => current.map((candidate) => candidate.id === item.id ? data as MediaItem : candidate));
+      setNotice(nextVisibility === 'public' ? 'Ce média est maintenant visible dans le catalogue public NEXORA.' : 'Ce média est désormais privé.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible de modifier la visibilité.');
+    } finally {
+      setBusyId(null);
+    }
   }
 
   return <section id="media-library" className="project-panel media-library-panel">
@@ -108,54 +286,82 @@ export default function MediaLibrary() {
       <div>
         <p className="eyebrow">NEXORA MEDIA · VIDÉOTHÈQUE</p>
         <h2><Play size={21} /> Vidéos, interviews et podcasts dans NEXORA</h2>
-        <p className="muted">Lisez les contenus compatibles directement ici, sans ouvrir une autre application.</p>
+        <p className="muted">Retrouvez vos médias dans l’application, avec une lecture intégrée et une bibliothèque synchronisée.</p>
       </div>
-      <span className="media-count">{items.length} média{items.length === 1 ? '' : 's'}</span>
+      <button className="icon-button" type="button" onClick={() => void load()} disabled={loading} aria-label="Actualiser la vidéothèque"><RefreshCw size={16} /></button>
     </div>
+
+    <section className="media-provider-panel" aria-labelledby="media-provider-title">
+      <div className="media-provider-heading"><div><h3 id="media-provider-title"><Link2 size={17} /> Connecter vos comptes officiels</h3><p>Autorisez NEXORA à récupérer les contenus de vos propres comptes, puis synchronisez-les ici.</p></div><span className="media-provider-badge">API officielle</span></div>
+      <div className="media-provider-grid">
+        {(['youtube','tiktok','instagram'] as const).map((platform) => {
+          const connection = connections.find((item) => item.platform === platform);
+          const label = platform === 'youtube' ? 'YouTube' : platform === 'tiktok' ? 'TikTok' : 'Instagram';
+          return <article className="media-provider-card" key={platform}>
+            <div className="media-provider-card-top"><strong>{label}</strong><span className={connection ? 'media-provider-status connected' : 'media-provider-status'}>{connection ? 'Connecté' : 'Non connecté'}</span></div>
+            {connection ? <><p className="media-provider-account">{connection.account_name || 'Compte autorisé'}</p><p className="media-provider-last-sync">{connection.last_synced_at ? 'Dernière synchronisation : ' + new Date(connection.last_synced_at).toLocaleString('fr-FR') : 'Aucune synchronisation effectuée'}</p><div className="media-provider-actions"><button type="button" className="primary-button" disabled={providerBusy === platform} onClick={() => void syncProvider(platform)}><RefreshCw size={14} /> {providerBusy === platform ? 'Synchronisation…' : 'Synchroniser'}</button><button type="button" className="media-remove-button" disabled={providerBusy === platform} onClick={() => void disconnectProvider(platform)}><Unplug size={14} /> Déconnecter</button></div></> : <><p className="media-provider-last-sync">Connectez le compte du créateur pour importer ses vidéos autorisées.</p><button type="button" className="primary-button" disabled={providerBusy === platform} onClick={() => void connectProvider(platform)}><Link2 size={14} /> {providerBusy === platform ? 'Préparation…' : 'Connecter ' + label}</button></>}
+          </article>;
+        })}
+      </div>
+      {providerError && <p className="feedback error" role="alert">{providerError}</p>}
+      {providerNotice && <p className="feedback success" role="status">{providerNotice}</p>}
+      <p className="workspace-footnote">La synchronisation automatique concerne uniquement les comptes autorisés par leur propriétaire. Les identifiants développeur OAuth doivent être configurés comme secrets côté Supabase avant de pouvoir connecter YouTube, TikTok ou Instagram. Les vidéos sont intégrées depuis leurs plateformes ; aucun fichier protégé n’est téléchargé.</p>
+    </section>
 
     <form className="media-import-form" onSubmit={addMedia}>
       <div className="media-import-heading">
-        <div><strong>Ajouter un contenu à lire</strong><p>Collez le lien public d’une vidéo ou d’un podcast.</p></div>
+        <div><strong>Ajouter un contenu à votre vidéothèque</strong><p>Collez le lien public d’une vidéo, d’une interview ou d’un podcast.</p></div>
         <span className="media-platforms" aria-label="Plateformes prises en charge"><Youtube size={17} /><Video size={17} /><Film size={17} /><Headphones size={17} /></span>
       </div>
       <label htmlFor="media-title">Titre (facultatif)</label>
-      <input id="media-title" value={title} onChange={(event) => setTitle(event.target.value)} maxLength={160} placeholder="Ex. Interview, conférence, podcast…" />
+      <input id="media-title" value={title} onChange={(event) => setTitle(event.target.value)} maxLength={240} placeholder="Ex. Interview, conférence, podcast…" />
+      <label htmlFor="media-creator">Personnalité / créateur (facultatif)</label>
+      <input id="media-creator" value={creatorName} onChange={(event) => setCreatorName(event.target.value)} maxLength={180} placeholder="Nom du personnage ou du créateur" />
+      <label htmlFor="media-kind">Type de contenu</label>
+      <select id="media-kind" value={contentType} onChange={(event) => setContentType(event.target.value as MediaKind)}>
+        <option value="video">Vidéo</option><option value="interview">Interview</option><option value="podcast">Podcast</option><option value="audio">Audio</option><option value="short">Vidéo courte</option><option value="other">Autre</option>
+      </select>
       <label htmlFor="media-url">Lien du média</label>
       <input id="media-url" type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} required placeholder="https://www.youtube.com/watch?v=…" />
+      <label htmlFor="media-visibility">Visibilité initiale</label>
+      <select id="media-visibility" value={visibility} onChange={(event) => setVisibility(event.target.value as Visibility)}>
+        <option value="private">Privé — visible uniquement par moi</option><option value="public">Public — visible par les utilisateurs connectés</option>
+      </select>
       {error && <p className="feedback error" role="alert">{error}</p>}
       {notice && <p className="feedback success" role="status">{notice}</p>}
-      <button className="primary-button media-add-button" type="submit"><Plus size={16} /> Ajouter au lecteur</button>
+      <button className="primary-button media-add-button" type="submit" disabled={saving || !sourceUrl.trim()}><Plus size={16} /> {saving ? 'Enregistrement…' : 'Enregistrer le média'}</button>
     </form>
 
     <div className="media-search-row">
-      <label className="search-field"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher dans cette vidéothèque…" aria-label="Rechercher dans la vidéothèque" /></label>
-      <span className="muted">Lecture intégrée · contenus publics compatibles</span>
+      <label className="search-field"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Rechercher titre, personnalité ou plateforme…" aria-label="Rechercher dans la vidéothèque" /></label>
+      <span className="muted">{filtered.length} média{filtered.length === 1 ? '' : 's'} · lecture intégrée</span>
     </div>
 
-    {filtered.length === 0 ? <div className="empty-state media-empty-state">
+    {error && <p className="feedback error" role="alert">{error}</p>}
+    {loading ? <p className="empty-state" role="status">Chargement de la vidéothèque depuis Supabase…</p> : filtered.length === 0 ? <div className="empty-state media-empty-state">
       <div className="empty-icon"><Play size={24} /></div>
-      <h3>{items.length ? 'Aucun média correspondant' : 'Votre vidéothèque commence ici'}</h3>
-      <p>{items.length ? 'Essayez un autre titre ou une autre plateforme.' : 'Ajoutez un lien public compatible : le lecteur vidéo ou audio apparaîtra dans cette page, au lieu de vous envoyer directement sur la plateforme.'}</p>
+      <h3>{items.length ? 'Aucun média correspondant' : 'Votre vidéothèque est prête'}</h3>
+      <p>{items.length ? 'Essayez un autre titre ou une autre plateforme.' : 'Ajoutez un lien public compatible. Les médias enregistrés seront conservés et disponibles après votre reconnexion.'}</p>
     </div> : <div className="media-grid">
       {filtered.map((item) => <article className="media-card" key={item.id}>
-        <div className={'media-player-wrap ' + (item.kind === 'audio' ? 'media-audio' : '')}>
-          <iframe
-            src={item.embedUrl}
-            title={item.title}
-            loading="lazy"
+        <div className={'media-player-wrap ' + (item.content_type === 'podcast' || item.content_type === 'audio' ? 'media-audio' : '')}>
+          <iframe src={item.embed_url} title={item.title} loading="lazy"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-            referrerPolicy="strict-origin-when-cross-origin"
-          />
+            allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
         </div>
         <div className="media-card-details">
           <div className="media-card-title"><span>{platformIcon(item.platform)}</span><h3>{item.title}</h3></div>
-          <div className="media-card-meta"><span>{item.platform}</span><span>{item.kind === 'audio' ? 'Podcast / audio' : 'Vidéo'}</span></div>
-          <button type="button" className="media-remove-button" onClick={() => setItems((current) => current.filter((candidate) => candidate.id !== item.id))}><Trash2 size={14} /> Retirer de la liste</button>
+          {item.creator_name && <p className="media-creator-name">{item.creator_name}</p>}
+          {item.description && <p className="media-description">{item.description}</p>}
+          <div className="media-card-meta"><span>{platformLabel(item.platform)}</span><span>{mediaKindLabel(item.content_type)}</span><span>{item.visibility === 'public' ? 'Public' : 'Privé'}</span></div>
+          {item.owner_id === userId && <div className="media-card-actions">
+            <button type="button" className="media-remove-button" onClick={() => void toggleVisibility(item)} disabled={busyId === item.id}>{item.visibility === 'public' ? <LockKeyhole size={14} /> : <Globe2 size={14} />}{item.visibility === 'public' ? 'Rendre privé' : 'Partager au public'}</button>
+            <button type="button" className="media-remove-button" onClick={() => void removeMedia(item)} disabled={busyId === item.id}><Trash2 size={14} /> Retirer</button>
+          </div>}
         </div>
       </article>)}
     </div>}
 
-    <p className="workspace-footnote">Important : cette première étape lit les contenus via les lecteurs officiels intégrables ; elle ne télécharge pas les fichiers vidéo. L’import automatique et la synchronisation des comptes nécessitent les API officielles, l’autorisation du propriétaire des comptes, un stockage autorisé et une configuration serveur. La liste actuelle n’est pas encore synchronisée avec Supabase.</p>
+    <p className="workspace-footnote">La bibliothèque est désormais persistante dans Supabase. Les lecteurs officiels permettent de regarder les contenus compatibles dans NEXORA, mais n’en téléchargent pas les fichiers. La synchronisation automatique de comptes YouTube, TikTok et Instagram nécessite encore les identifiants API/OAuth, les autorisations de chaque plateforme et la validation de leurs applications. Les contenus privés ou non intégrables resteront indisponibles sans autorisation explicite.</p>
   </section>;
 }
