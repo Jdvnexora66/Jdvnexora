@@ -123,24 +123,29 @@ export default function App() {
   async function loadProfile() {
     if (!supabase || !session?.user.id) return;
     setLoadingProfile(true);
-    const { data, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, display_name, preferred_language, timezone, role')
-      .eq('id', session.user.id)
-      .maybeSingle();
-    if (profileError) {
-      setError('Impossible de charger le profil : ' + profileError.message);
-    } else if (data) {
-      const current = data as UserProfile;
-      setProfile(current);
-      setProfileName(current.display_name ?? '');
-      setProfileLanguage(current.preferred_language || 'fr');
-      setProfileTimezone(current.timezone || 'Africa/Porto-Novo');
-    } else {
-      setProfile(null);
-      setProfileName((session.user.user_metadata?.display_name as string | undefined) ?? '');
+    try {
+      const { data, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, display_name, preferred_language, timezone, role')
+        .eq('id', session.user.id)
+        .maybeSingle();
+      if (profileError) {
+        setError('Impossible de charger le profil : ' + profileError.message);
+      } else if (data) {
+        const current = data as UserProfile;
+        setProfile(current);
+        setProfileName(current.display_name ?? '');
+        setProfileLanguage(current.preferred_language || 'fr');
+        setProfileTimezone(current.timezone || 'Africa/Porto-Novo');
+      } else {
+        setProfile(null);
+        setProfileName((session.user.user_metadata?.display_name as string | undefined) ?? '');
+      }
+    } catch (cause) {
+      setError('Impossible de charger le profil : ' + (cause instanceof Error ? cause.message : 'une erreur réseau inattendue est survenue.'));
+    } finally {
+      setLoadingProfile(false);
     }
-    setLoadingProfile(false);
   }
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
@@ -164,47 +169,66 @@ export default function App() {
     if (!supabase || !session?.user.id) return;
     setLoadingProjects(true);
     setError('');
-    const [ownedResult, membershipResult] = await Promise.all([
-      supabase.from('studio_projects')
-        .select('id, owner_id, title, description, project_type, status, created_at')
-        .eq('owner_id', session.user.id)
-        .order('created_at', { ascending: false }),
-      supabase.from('studio_project_members').select('project_id').eq('user_id', session.user.id),
-    ]);
-    if (ownedResult.error) {
-      setError('Impossible de charger les projets : ' + ownedResult.error.message);
+    try {
+      const [ownedResult, membershipResult] = await Promise.all([
+        supabase.from('studio_projects')
+          .select('id, owner_id, title, description, project_type, status, created_at')
+          .eq('owner_id', session.user.id)
+          .order('created_at', { ascending: false }),
+        supabase.from('studio_project_members').select('project_id').eq('user_id', session.user.id),
+      ]);
+      if (ownedResult.error) {
+        setError('Impossible de charger les projets : ' + ownedResult.error.message);
+        return;
+      }
+      const owned = (ownedResult.data ?? []) as StudioProject[];
+      if (membershipResult.error) {
+        setError('Impossible de charger les projets partagés : ' + membershipResult.error.message);
+        setProjects(owned);
+        return;
+      }
+      const sharedIds = [...new Set((membershipResult.data ?? []).map(row => row.project_id as string))]
+        .filter(id => !owned.some(project => project.id === id));
+      let shared: StudioProject[] = [];
+      if (sharedIds.length) {
+        const sharedResult = await supabase.from('studio_projects')
+          .select('id, owner_id, title, description, project_type, status, created_at')
+          .in('id', sharedIds)
+          .order('created_at', { ascending: false });
+        if (sharedResult.error) setError('Impossible de charger les projets partagés : ' + sharedResult.error.message);
+        else shared = (sharedResult.data ?? []) as StudioProject[];
+      }
+      setProjects([...owned, ...shared].sort((a, b) => b.created_at.localeCompare(a.created_at)));
+    } catch (cause) {
+      setError('Impossible de charger les projets : ' + (cause instanceof Error ? cause.message : 'une erreur réseau inattendue est survenue.'));
+    } finally {
       setLoadingProjects(false);
-      return;
     }
-    const owned = (ownedResult.data ?? []) as StudioProject[];
-    if (membershipResult.error) {
-      setError('Impossible de charger les projets partagés : ' + membershipResult.error.message);
-      setProjects(owned);
-      setLoadingProjects(false);
-      return;
-    }
-    const sharedIds = [...new Set((membershipResult.data ?? []).map(row => row.project_id as string))]
-      .filter(id => !owned.some(project => project.id === id));
-    let shared: StudioProject[] = [];
-    if (sharedIds.length) {
-      const sharedResult = await supabase.from('studio_projects')
-        .select('id, owner_id, title, description, project_type, status, created_at')
-        .in('id', sharedIds)
-        .order('created_at', { ascending: false });
-      if (sharedResult.error) setError('Impossible de charger les projets partagés : ' + sharedResult.error.message);
-      else shared = (sharedResult.data ?? []) as StudioProject[];
-    }
-    setProjects([...owned, ...shared].sort((a, b) => b.created_at.localeCompare(a.created_at)));
-    setLoadingProjects(false);
   }
 
   async function openProject(project: StudioProject) {
     if (!supabase || !session?.user.id) return;
     setBusy(true); setError(''); setMessage('');
-    const { data, error: assetError } = await supabase.from('studio_assets').select('id, project_id, owner_id, title, content, kind, updated_at').eq('project_id', project.id).eq('owner_id', project.owner_id).order('created_at', { ascending: true });
-    if (assetError) { setError('Ouverture impossible : ' + assetError.message); setBusy(false); return; }
-    const assets = (data ?? []) as StudioAsset[];
-    setActiveProject(project); setProjectAssets(assets); setActiveAsset(assets[0] ?? null); setEditorContent(assets[0]?.content ?? ''); setBusy(false);
+    try {
+      const { data, error: assetError } = await supabase.from('studio_assets')
+        .select('id, project_id, owner_id, title, content, kind, updated_at')
+        .eq('project_id', project.id)
+        .eq('owner_id', project.owner_id)
+        .order('created_at', { ascending: true });
+      if (assetError) {
+        setError('Ouverture impossible : ' + assetError.message);
+        return;
+      }
+      const assets = (data ?? []) as StudioAsset[];
+      setActiveProject(project);
+      setProjectAssets(assets);
+      setActiveAsset(assets[0] ?? null);
+      setEditorContent(assets[0]?.content ?? '');
+    } catch (cause) {
+      setError('Ouverture impossible : ' + (cause instanceof Error ? cause.message : 'une erreur réseau inattendue est survenue.'));
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function saveProjectContent() {
