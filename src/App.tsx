@@ -1,11 +1,12 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import Discover from './components/Discover';
 import Timeline from './components/Timeline';
 import Insights from './components/Insights';
 import LearningLibrary from './components/LearningLibrary';
+import Roadmap from './components/Roadmap';
 
 type AuthMode = 'signin' | 'signup';
 type StudioAsset = { id: string; project_id: string; owner_id: string; title: string; content: string | null; kind: string; updated_at: string; };
@@ -293,6 +294,7 @@ export default function App() {
           </div>
 
           <nav className="workspace-nav" aria-label="Navigation de l’espace">
+            <a className="workspace-nav-link" href="#roadmap" onClick={(event) => { event.preventDefault(); document.getElementById('roadmap')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><CalendarClock size={16} /> Roadmap</a>
             <a className="workspace-nav-link" href="#library" onClick={(event) => { event.preventDefault(); document.getElementById('library')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Bookmark size={16} /> Bibliothèque</a>
             <a className="workspace-nav-link" href="#insights" onClick={(event) => { event.preventDefault(); document.getElementById('insights')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Sparkles size={16} /> Insights</a>
             <a className="workspace-nav-link" href="#timeline" onClick={(event) => { event.preventDefault(); document.getElementById('timeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><CalendarDays size={16} /> Timeline</a>
@@ -316,6 +318,8 @@ export default function App() {
           {!activeProject && <Insights />}
 
           {!activeProject && <LearningLibrary userId={session.user.id} />}
+
+          {!activeProject && <Roadmap userId={session.user.id} />}
 
           {!activeProject && <section className="quick-access" aria-label="Accès rapides">
             <div className="quick-access-heading"><div><p className="eyebrow">CENTRE DE COMMANDE</p><h2>Accès rapides</h2><p className="muted">Reprenez votre travail ou démarrez une nouvelle création.</p></div></div>
