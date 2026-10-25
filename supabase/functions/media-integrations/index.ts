@@ -214,6 +214,16 @@ Deno.serve(async (req: Request) => {
         });
       }
     } else if (platform === "tiktok") {
+      if (tokenExpiry && new Date(tokenExpiry).getTime() < Date.now() + 120000 && newRefreshToken) {
+        const credentials = envFor("tiktok");
+        const refreshed = await readJson(await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
+          method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ client_key: credentials.clientId, client_secret: credentials.clientSecret, grant_type: "refresh_token", refresh_token: newRefreshToken }),
+        }));
+        newAccessToken = text(refreshed.access_token, newAccessToken);
+        newRefreshToken = text(refreshed.refresh_token, newRefreshToken);
+        tokenExpiry = new Date(Date.now() + Number(refreshed.expires_in ?? 86400) * 1000).toISOString();
+      }
       const profile = await readJson(await fetch("https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name,username", { headers: { Authorization: "Bearer " + newAccessToken } }));
       const user = ((profile.data as Json | undefined)?.user ?? {}) as Json;
       accountId = text(user.open_id, accountId ?? "");
@@ -224,6 +234,14 @@ Deno.serve(async (req: Request) => {
         return { external_id: id, title: text(video.title || video.video_description, "Vidéo TikTok"), description: text(video.video_description), creator_name: accountName, source_url: safeUrl(video.share_url, "https://www.tiktok.com/player/v1/" + id), embed_url: safeUrl(video.embed_link, "https://www.tiktok.com/player/v1/" + id), thumbnail_url: safeUrl(video.cover_image_url, ""), published_at: isoFromSeconds(video.create_time), content_type: "video" };
       });
     } else {
+      if (tokenExpiry && new Date(tokenExpiry).getTime() < Date.now() + 7 * 24 * 60 * 60 * 1000) {
+        const credentials = envFor("instagram");
+        const refreshed = await readJson(await fetch("https://graph.facebook.com/" + GRAPH_VERSION + "/oauth/access_token?" + new URLSearchParams({
+          grant_type: "fb_exchange_token", client_id: credentials.clientId, client_secret: credentials.clientSecret, fb_exchange_token: newAccessToken,
+        })));
+        newAccessToken = text(refreshed.access_token, newAccessToken);
+        tokenExpiry = new Date(Date.now() + Number(refreshed.expires_in ?? 5184000) * 1000).toISOString();
+      }
       const pages = await readJson(await fetch("https://graph.facebook.com/" + GRAPH_VERSION + "/me/accounts?fields=id,name,access_token,instagram_business_account{id,username}&access_token=" + encodeURIComponent(newAccessToken)));
       const pageRows = (pages.data as Json[] | undefined) ?? [];
       const page = pageRows.find((row) => Boolean(row.instagram_business_account));
