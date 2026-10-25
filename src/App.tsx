@@ -356,12 +356,31 @@ export default function App() {
             <button className="workspace-nav-link" type="button" onClick={() => { setSearchQuery(''); setStatusFilter('all'); setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); void loadProjects(); }}><RefreshCw size={15} /> Actualiser</button>
           </nav>
 
-          <div className="dashboard-stats" aria-label="Résumé de vos projets">
-            <article className="stat-card"><span className="stat-icon"><FolderKanban size={18} /></span><div><p>Total des projets</p><strong>{projects.length}</strong><small>Tous vos espaces</small></div></article>
-            <article className="stat-card"><span className="stat-icon"><Clock3 size={18} /></span><div><p>En cours</p><strong>{projects.filter((project) => project.status === 'in_progress').length}</strong><small>À faire avancer</small></div></article>
-            <article className="stat-card"><span className="stat-icon"><ShieldCheck size={18} /></span><div><p>Terminés</p><strong>{projects.filter((project) => project.status === 'completed').length}</strong><small>Projets finalisés</small></div></article>
-            <article className="stat-card"><span className="stat-icon"><Sparkles size={18} /></span><div><p>Brouillons</p><strong>{projects.filter((project) => project.status === 'draft').length}</strong><small>Idées à développer</small></div></article>
+          <div className="dashboard-stats" aria-label="Résumé de vos projets" aria-busy={loadingProjects}>
+            <article className="stat-card"><span className="stat-icon"><FolderKanban size={18} /></span><div><p>Total des projets</p><strong>{loadingProjects ? '…' : projects.length}</strong><small>Tous vos espaces</small></div></article>
+            <article className="stat-card"><span className="stat-icon"><Clock3 size={18} /></span><div><p>En cours</p><strong>{loadingProjects ? '…' : projects.filter((project) => project.status === 'in_progress').length}</strong><small>À faire avancer</small></div></article>
+            <article className="stat-card"><span className="stat-icon"><ShieldCheck size={18} /></span><div><p>Terminés</p><strong>{loadingProjects ? '…' : projects.filter((project) => project.status === 'completed').length}</strong><small>Projets finalisés</small></div></article>
+            <article className="stat-card"><span className="stat-icon"><Sparkles size={18} /></span><div><p>Brouillons</p><strong>{loadingProjects ? '…' : projects.filter((project) => project.status === 'draft').length}</strong><small>Idées à développer</small></div></article>
           </div>
+
+          {!activeProject && <section className="project-panel recent-activity-panel" aria-labelledby="recent-activity-title" aria-busy={loadingProjects}>
+            <div className="section-heading">
+              <div><p className="eyebrow">VUE D’ENSEMBLE</p><h2 id="recent-activity-title">Activité récente</h2><p className="muted">Retrouvez rapidement les derniers projets enregistrés dans votre espace.</p></div>
+              <button className="icon-button" type="button" onClick={() => void loadProjects()} disabled={loadingProjects} aria-label="Actualiser l’activité récente"><RefreshCw size={16} /></button>
+            </div>
+            {loadingProjects ? <p className="empty-state" role="status">Synchronisation des projets depuis Supabase…</p> : projects.length === 0 ? (
+              <div className="empty-state"><div className="empty-icon"><FolderKanban size={24} /></div><h3>Votre espace est prêt</h3><p>Votre activité apparaîtra ici dès que vous aurez créé un premier projet.</p><button type="button" className="primary-button" onClick={() => document.getElementById('create-project')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>Créer mon premier projet <ArrowRight size={16} /></button></div>
+            ) : (
+              <div className="project-list">
+                {projects.slice(0, 4).map((project) => <article className="project-item" key={project.id}>
+                  <div className="project-type-icon"><FolderKanban size={19} /></div>
+                  <div className="project-info"><h3>{project.title}</h3><p>{project.description || 'Aucune description renseignée'}</p><div className="project-meta"><span className="project-type-label">{projectLabel[project.project_type] || project.project_type}</span><span className={`status-badge status-${project.status}`}><Clock3 size={12} /> {statusLabel[project.status] || project.status}</span></div></div>
+                  <span className="muted">{new Date(project.created_at).toLocaleDateString('fr-FR')}</span>
+                  <button className="open-project-button" type="button" onClick={() => void openProject(project)} disabled={busy}>Ouvrir <ArrowRight size={14} /></button>
+                </article>)}
+              </div>
+            )}
+          </section>}
 
           {!activeProject && <Academy userId={session.user.id} />}
           {!activeProject && <ResourceLibrary userId={session.user.id} />}
