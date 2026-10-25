@@ -108,7 +108,7 @@ export default function CollaborationPanel({ projectId, ownerId, userId, assets 
     {!isOwner && <p className="muted">Vous consultez ce projet en lecture seule. Vous pouvez lire les chapitres ci-dessous et échanger avec le propriétaire dans les commentaires.</p>}
     {!isOwner && <div className="collaboration-shared-chapters">
       <h3><BookOpen size={17} /> Chapitres partagés ({assets.length})</h3>
-      {assets.length === 0 ? <p className="empty-state">Ce projet ne contient pas encore de chapitre.</p> : <div className="project-list">{assets.map((asset, index) => <details className="project-item" key={asset.id}>
+      {assets.length === 0 ? <p className="empty-state">Ce projet ne contient pas encore de chapitre.</p> : <div className="project-list">{assets.map((asset, index) => <details className="project-item" style={{ display: 'block' }} key={asset.id}>
         <summary className="project-info" style={{ cursor: 'pointer' }}><h3>{asset.title?.trim() || `Chapitre ${index + 1}`}</h3><p className="muted">Mis à jour le {new Date(asset.updated_at).toLocaleDateString('fr-FR')}</p></summary>
         <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', lineHeight: 1.8, fontSize: 13, color: '#d0d7e8', width: '100%', marginTop: 12 }}>{asset.content?.trim() || 'Ce chapitre est vide pour le moment.'}</div>
       </details>)}</div>}
