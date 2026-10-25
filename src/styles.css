@@ -71,3 +71,39 @@
 .status-in_progress{color:#aab5ff!important;background:rgba(126,140,255,.12);border-color:rgba(126,140,255,.22)}
 .status-completed{color:#8ee3cf!important;background:rgba(85,213,178,.10);border-color:rgba(85,213,178,.22)}
 .status-archived{color:#f0c88a!important;background:rgba(240,200,138,.09);border-color:rgba(240,200,138,.2)}
+
+
+/* JDV NEXORA UI pass: unified interaction states, responsive workspace and clearer hierarchy */
+button,a,select,input,textarea{transition:color .18s ease,border-color .18s ease,background .18s ease,box-shadow .18s ease,transform .18s ease}
+button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #8b98ff;outline-offset:3px}
+.primary-button:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 9px 24px rgba(104,133,255,.2)}
+.project-panel{box-shadow:0 16px 45px rgba(0,0,0,.12)}
+.project-item{transition:transform .18s ease,border-color .18s ease,background .18s ease}
+.project-item:hover{transform:translateY(-1px);border-color:rgba(126,140,255,.28);background:rgba(16,24,46,.72)}
+.project-info h3{font-family:Manrope,sans-serif;font-weight:700}
+.section-heading h2,.create-panel h2{color:#f3f5ff}
+.feedback{overflow-wrap:anywhere}
+.workspace-nav{position:relative}
+.editor-toolbar{row-gap:10px}
+.chapter-editor{padding:2px}
+.chapter-title-input{max-width:100%}
+.content-editor{tab-size:2}
+.empty-state{gap:3px}
+.empty-state .empty-icon{margin-bottom:8px}
+@media(max-width:760px){
+  .page-shell{padding-left:18px;padding-right:18px}
+  .workspace-heading{gap:14px}
+  .project-item{flex-wrap:wrap}
+  .project-info{flex:1 1 calc(100% - 58px)}
+  .open-project-button{margin-left:50px}
+  .editor-toolbar{align-items:flex-start}
+}
+@media(max-width:420px){
+  .page-shell{padding-left:13px;padding-right:13px}
+  .brand{font-size:13px}
+  .workspace-heading h1{font-size:34px}
+  .dashboard-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .project-panel{padding:15px}
+  .project-item{gap:9px}
+  .open-project-button{margin-left:0}
+}
