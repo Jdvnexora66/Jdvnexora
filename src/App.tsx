@@ -27,6 +27,7 @@ export default function App() {
   const [password, setPassword] = useState('');
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [isRecovery, setIsRecovery] = useState(false);
   const [projects, setProjects] = useState<StudioProject[]>([]);
   const [activeProject, setActiveProject] = useState<StudioProject | null>(null);
   const [activeAsset, setActiveAsset] = useState<StudioAsset | null>(null);
@@ -56,8 +57,14 @@ export default function App() {
       setError(cause instanceof Error ? cause.message : 'Impossible de restaurer la session.');
       setAuthReady(true);
     });
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted) return;
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecovery(true);
+        setPassword('');
+        setError('');
+        setMessage('Choisissez un nouveau mot de passe pour votre compte.');
+      }
       setSession(nextSession);
       setAuthReady(true);
     });
@@ -203,6 +210,29 @@ export default function App() {
     else setMessage('Si cette adresse est enregistrée, un e-mail de réinitialisation sera envoyé.');
   }
 
+  async function updatePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError('');
+    setMessage('');
+    if (!supabase) { setError('La connexion Supabase n’est pas configurée.'); return; }
+    if (password.length < 8) { setError('Le nouveau mot de passe doit contenir au moins 8 caractères.'); return; }
+    setBusy(true);
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({ password });
+      if (updateError) throw updateError;
+      setIsRecovery(false);
+      setPassword('');
+      setMode('signin');
+      setMessage('Mot de passe mis à jour. Vous pouvez vous reconnecter avec votre nouveau mot de passe.');
+      const { error: signOutError } = await supabase.auth.signOut();
+      if (signOutError) setError('Mot de passe modifié, mais la déconnexion automatique a échoué. Déconnectez-vous manuellement.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible de mettre à jour le mot de passe.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function createProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase || !session?.user.id) return;
@@ -281,6 +311,26 @@ export default function App() {
           <div className="brand-mark"><Sparkles size={20} /></div>
           <h2>Restauration de votre espace…</h2>
           <p className="muted">Nous vérifions votre session sécurisée avant d’afficher vos projets.</p>
+        </section>
+      ) : isRecovery ? (
+        <section className="hero-grid">
+          <div className="hero-copy">
+            <p className="eyebrow">SÉCURITÉ DU COMPTE</p>
+            <h1>Reprenez le contrôle de <span>votre espace.</span></h1>
+            <p className="hero-description">Définissez un nouveau mot de passe pour sécuriser votre compte JDV NEXORA.</p>
+          </div>
+          <section className="auth-card" aria-labelledby="recovery-title">
+            <p className="eyebrow">RÉINITIALISATION</p>
+            <h2 id="recovery-title">Nouveau mot de passe</h2>
+            <p className="muted">Choisissez au moins 8 caractères et gardez ce mot de passe confidentiel.</p>
+            <form onSubmit={updatePassword}>
+              <label htmlFor="new-password">Nouveau mot de passe</label>
+              <input id="new-password" type="password" autoComplete="new-password" minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} required />
+              <button className="primary-button" type="submit" disabled={busy || password.length < 8}>{busy ? 'Mise à jour…' : 'Enregistrer le nouveau mot de passe'} <ShieldCheck size={17} /></button>
+            </form>
+            {error && <p className="feedback error" role="alert">{error}</p>}
+            {message && <p className="feedback success" role="status">{message}</p>}
+          </section>
         </section>
       ) : session ? (
         <section className="workspace">
