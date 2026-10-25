@@ -4,6 +4,7 @@ import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshC
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import Discover from './components/Discover';
 import Timeline from './components/Timeline';
+import Insights from './components/Insights';
 
 type AuthMode = 'signin' | 'signup';
 type StudioAsset = { id: string; project_id: string; owner_id: string; title: string; content: string | null; kind: string; updated_at: string; };
@@ -291,6 +292,7 @@ export default function App() {
           </div>
 
           <nav className="workspace-nav" aria-label="Navigation de l’espace">
+            <a className="workspace-nav-link" href="#insights" onClick={(event) => { event.preventDefault(); document.getElementById('insights')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Sparkles size={16} /> Insights</a>
             <a className="workspace-nav-link" href="#timeline" onClick={(event) => { event.preventDefault(); document.getElementById('timeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><CalendarDays size={16} /> Timeline</a>
             <a className="workspace-nav-link" href="#discover" onClick={(event) => { event.preventDefault(); document.getElementById('discover')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Compass size={16} /> Discover</a>
             <a className={!activeProject ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#projects" onClick={(event) => { event.preventDefault(); setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); setError(''); setMessage(''); }}><FolderKanban size={16} /> Mes projets</a>
@@ -308,6 +310,8 @@ export default function App() {
           {!activeProject && <Discover userId={session.user.id} />}
 
           {!activeProject && <Timeline />}
+
+          {!activeProject && <Insights />}
 
           {!activeProject && <section className="quick-access" aria-label="Accès rapides">
             <div className="quick-access-heading"><div><p className="eyebrow">CENTRE DE COMMANDE</p><h2>Accès rapides</h2><p className="muted">Reprenez votre travail ou démarrez une nouvelle création.</p></div></div>
