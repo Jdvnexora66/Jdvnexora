@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { Film, Headphones, Play, Plus, Search, Trash2, Youtube, Video, RefreshCw, Globe2, LockKeyhole } from 'lucide-react';
+import { Film, Headphones, Play, Plus, Search, Trash2, Youtube, Video, RefreshCw, Globe2, LockKeyhole, Link2, Unplug } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 type Platform = 'YouTube' | 'TikTok' | 'Instagram' | 'Spotify' | 'SoundCloud';
@@ -24,7 +24,7 @@ type MediaItem = {
 
 type EmbedInfo = { platform: PlatformDb; embedUrl: string; contentType: MediaKind };
 
-type Props = { userId: string };
+type ProviderConnection = { platform: 'youtube' | 'tiktok' | 'instagram'; account_name: string | null; connected_at: string; last_synced_at: string | null; last_sync_error: string | null };\ntype Props = { userId: string };
 
 function buildEmbed(source: string): EmbedInfo | null {
   let url: URL;
@@ -97,7 +97,7 @@ export default function MediaLibrary({ userId }: Props) {
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [busyId, setBusyId] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);\n  const [connections, setConnections] = useState<ProviderConnection[]>([]);\n  const [providerBusy, setProviderBusy] = useState<string | null>(null);\n  const [providerError, setProviderError] = useState('');\n  const [providerNotice, setProviderNotice] = useState('');
 
   const load = useCallback(async () => {
     if (!supabase) {
@@ -124,7 +124,76 @@ export default function MediaLibrary({ userId }: Props) {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  const loadConnections = useCallback(async () => {
+    if (!supabase) return;
+    const { data, error: invokeError } = await supabase.functions.invoke('media-integrations?action=status', { body: {} });
+    if (invokeError) { setProviderError('Le service de connexion média n’est pas encore disponible. Vérifiez le déploiement de la fonction Supabase.'); return; }
+    setConnections(((data?.connections ?? []) as ProviderConnection[]));
+  }, []);
+
+  useEffect(() => {
+    void load();
+    void loadConnections();
+    const configuredUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+    const allowedOrigin = configuredUrl ? new URL(configuredUrl).origin : '';
+    const onOAuthMessage = (event: MessageEvent) => {
+      if (!allowedOrigin || event.origin !== allowedOrigin || event.data?.type !== 'nexora-media-oauth') return;
+      if (event.data.ok) setProviderNotice('Compte connecté. Vous pouvez synchroniser ses vidéos.');
+      else setProviderError('La connexion a échoué. Vérifiez la configuration de la plateforme et réessayez.');
+      void loadConnections();
+    };
+    window.addEventListener('message', onOAuthMessage);
+    return () => window.removeEventListener('message', onOAuthMessage);
+  }, [load, loadConnections]);
+
+  async function connectProvider(platform: ProviderConnection['platform']) {
+    if (!supabase) return;
+    setProviderBusy(platform); setProviderError(''); setProviderNotice('');
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke('media-integrations?action=connect', { body: { platform } });
+      if (invokeError) throw new Error(invokeError.message || 'Impossible de démarrer la connexion.');
+      if (!data?.authorization_url) throw new Error(data?.error || 'La plateforme n’a pas fourni de lien d’autorisation.');
+      const popup = window.open(data.authorization_url, 'nexora-media-oauth', 'popup,width=600,height=760');
+      if (!popup) window.location.assign(data.authorization_url);
+      else popup.focus();
+    } catch (cause) {
+      setProviderError(cause instanceof Error ? cause.message : 'Connexion impossible. Vérifiez les secrets développeur dans Supabase.');
+    } finally {
+      setProviderBusy(null);
+    }
+  }
+
+  async function syncProvider(platform: ProviderConnection['platform']) {
+    if (!supabase) return;
+    setProviderBusy(platform); setProviderError(''); setProviderNotice('');
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke('media-integrations?action=sync', { body: { platform } });
+      if (invokeError) throw new Error(data?.error || invokeError.message || 'La synchronisation a échoué.');
+      if (data?.error) throw new Error(data.error);
+      setProviderNotice(data?.message || 'Synchronisation terminée.');
+      await Promise.all([load(), loadConnections()]);
+    } catch (cause) {
+      setProviderError(cause instanceof Error ? cause.message : 'Synchronisation impossible.');
+      await loadConnections();
+    } finally {
+      setProviderBusy(null);
+    }
+  }
+
+  async function disconnectProvider(platform: ProviderConnection['platform']) {
+    if (!supabase) return;
+    setProviderBusy(platform); setProviderError(''); setProviderNotice('');
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke('media-integrations?action=disconnect', { body: { platform } });
+      if (invokeError) throw new Error(data?.error || invokeError.message);
+      setConnections((current) => current.filter((item) => item.platform !== platform));
+      setProviderNotice('Compte déconnecté de NEXORA. Les médias déjà importés restent dans votre bibliothèque.');
+    } catch (cause) {
+      setProviderError(cause instanceof Error ? cause.message : 'Déconnexion impossible.');
+    } finally {
+      setProviderBusy(null);
+    }
+  }
 
   const filtered = useMemo(() => {
     const search = query.trim().toLocaleLowerCase();
@@ -215,6 +284,23 @@ export default function MediaLibrary({ userId }: Props) {
       </div>
       <button className="icon-button" type="button" onClick={() => void load()} disabled={loading} aria-label="Actualiser la vidéothèque"><RefreshCw size={16} /></button>
     </div>
+
+    <section className="media-provider-panel" aria-labelledby="media-provider-title">
+      <div className="media-provider-heading"><div><h3 id="media-provider-title"><Link2 size={17} /> Connecter vos comptes officiels</h3><p>Autorisez NEXORA à récupérer les contenus de vos propres comptes, puis synchronisez-les ici.</p></div><span className="media-provider-badge">API officielle</span></div>
+      <div className="media-provider-grid">
+        {(['youtube','tiktok','instagram'] as const).map((platform) => {
+          const connection = connections.find((item) => item.platform === platform);
+          const label = platform === 'youtube' ? 'YouTube' : platform === 'tiktok' ? 'TikTok' : 'Instagram';
+          return <article className="media-provider-card" key={platform}>
+            <div className="media-provider-card-top"><strong>{label}</strong><span className={connection ? 'media-provider-status connected' : 'media-provider-status'}>{connection ? 'Connecté' : 'Non connecté'}</span></div>
+            {connection ? <><p className="media-provider-account">{connection.account_name || 'Compte autorisé'}</p><p className="media-provider-last-sync">{connection.last_synced_at ? 'Dernière synchronisation : ' + new Date(connection.last_synced_at).toLocaleString('fr-FR') : 'Aucune synchronisation effectuée'}</p><div className="media-provider-actions"><button type="button" className="primary-button" disabled={providerBusy === platform} onClick={() => void syncProvider(platform)}><RefreshCw size={14} /> {providerBusy === platform ? 'Synchronisation…' : 'Synchroniser'}</button><button type="button" className="media-remove-button" disabled={providerBusy === platform} onClick={() => void disconnectProvider(platform)}><Unplug size={14} /> Déconnecter</button></div></> : <><p className="media-provider-last-sync">Connectez le compte du créateur pour importer ses vidéos autorisées.</p><button type="button" className="primary-button" disabled={providerBusy === platform} onClick={() => void connectProvider(platform)}><Link2 size={14} /> {providerBusy === platform ? 'Préparation…' : 'Connecter ' + label}</button></>}
+          </article>;
+        })}
+      </div>
+      {providerError && <p className="feedback error" role="alert">{providerError}</p>}
+      {providerNotice && <p className="feedback success" role="status">{providerNotice}</p>}
+      <p className="workspace-footnote">La synchronisation automatique concerne uniquement les comptes autorisés par leur propriétaire. Les identifiants développeur OAuth doivent être configurés comme secrets côté Supabase avant de pouvoir connecter YouTube, TikTok ou Instagram. Les vidéos sont intégrées depuis leurs plateformes ; aucun fichier protégé n’est téléchargé.</p>
+    </section>
 
     <form className="media-import-form" onSubmit={addMedia}>
       <div className="media-import-heading">
