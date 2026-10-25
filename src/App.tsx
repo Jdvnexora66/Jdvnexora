@@ -12,6 +12,7 @@ import Roadmap from './components/Roadmap';
 import StudioIA from './components/StudioIA';
 import CollaborationPanel from './components/CollaborationPanel';
 import BillingPanel from './components/BillingPanel';
+import AdminPanel from './components/AdminPanel';
 
 type AuthMode = 'signin' | 'signup';
 type UserProfile = { id: string; display_name: string | null; preferred_language: string; timezone: string; role: string; };
@@ -549,6 +550,8 @@ export default function App() {
           {!activeProject && <Roadmap userId={session.user.id} />}
 
           {!activeProject && <BillingPanel userId={session.user.id} role={profile?.role ?? 'user'} />}
+
+          {!activeProject && <AdminPanel userId={session.user.id} role={profile?.role ?? 'user'} />}
 
           {!activeProject && <section className="quick-access" aria-label="Accès rapides">
             <div className="quick-access-heading"><div><p className="eyebrow">CENTRE DE COMMANDE</p><h2>Accès rapides</h2><p className="muted">Reprenez votre travail ou démarrez une nouvelle création.</p></div></div>
