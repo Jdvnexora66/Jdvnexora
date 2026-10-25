@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2 } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import Discover from './components/Discover';
 import Timeline from './components/Timeline';
@@ -49,6 +49,11 @@ export default function App() {
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [editProjectTitle, setEditProjectTitle] = useState('');
+  const [editProjectDescription, setEditProjectDescription] = useState('');
+  const [editProjectType, setEditProjectType] = useState('ebook');
+  const [savingProjectDetails, setSavingProjectDetails] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -317,6 +322,35 @@ export default function App() {
     setMessage('Projet créé avec succès.');
   }
 
+  function beginEditProject(project: StudioProject) {
+    setEditingProjectId(project.id);
+    setEditProjectTitle(project.title);
+    setEditProjectDescription(project.description ?? '');
+    setEditProjectType(project.project_type);
+    setError('');
+    setMessage('');
+  }
+
+  async function saveProjectDetails(event: FormEvent<HTMLFormElement>, project: StudioProject) {
+    event.preventDefault();
+    if (!supabase || !session?.user.id || !editProjectTitle.trim()) return;
+    setSavingProjectDetails(true); setError(''); setMessage('');
+    const { data, error: updateError } = await supabase.from('studio_projects')
+      .update({ title: editProjectTitle.trim(), description: editProjectDescription.trim() || null, project_type: editProjectType })
+      .eq('id', project.id).eq('owner_id', session.user.id)
+      .select('id, owner_id, title, description, project_type, status, created_at').single();
+    setSavingProjectDetails(false);
+    if (updateError) {
+      setError('Modification du projet impossible : ' + updateError.message);
+      return;
+    }
+    const updated = data as StudioProject;
+    setProjects((current) => current.map((item) => item.id === updated.id ? updated : item));
+    if (activeProject?.id === updated.id) setActiveProject(updated);
+    setEditingProjectId(null);
+    setMessage('Détails du projet mis à jour.');
+  }
+
   async function deleteProject(project: StudioProject) {
     if (!supabase || !session?.user.id || !window.confirm(`Supprimer le projet « ${project.title} » ?`)) return;
     setError('');
@@ -502,7 +536,15 @@ export default function App() {
                     <article className="project-item" key={project.id}>
                       <div className="project-type-icon"><FolderKanban size={19} /></div>
                       <div className="project-info"><h3>{project.title}</h3><p>{project.description || 'Aucune description'}</p><div className="project-meta"><span className="project-type-label">{projectLabel[project.project_type] || project.project_type}</span><span className={`status-badge status-${project.status}`}><Clock3 size={12} /> {statusLabel[project.status] || project.status}</span></div></div>
-                      <button className="open-project-button" onClick={() => void openProject(project)} disabled={busy}>Ouvrir <ArrowRight size={14} /></button><button className="delete-button" onClick={() => void deleteProject(project)} aria-label={`Supprimer ${project.title}`}><Trash2 size={16} /></button>
+                      <button className="open-project-button" onClick={() => void openProject(project)} disabled={busy}>Ouvrir <ArrowRight size={14} /></button>
+                      <button className="icon-button" type="button" onClick={() => editingProjectId === project.id ? setEditingProjectId(null) : beginEditProject(project)} aria-label={`Modifier ${project.title}`} title="Modifier le projet"><Pencil size={15} /></button>
+                      <button className="delete-button" onClick={() => void deleteProject(project)} aria-label={`Supprimer ${project.title}`}><Trash2 size={16} /></button>
+                      {editingProjectId === project.id && <form className="project-form project-edit-form" onSubmit={(event) => void saveProjectDetails(event, project)}>
+                        <label htmlFor={`edit-title-${project.id}`}>Nom du projet</label><input id={`edit-title-${project.id}`} value={editProjectTitle} onChange={(event) => setEditProjectTitle(event.target.value)} maxLength={120} required />
+                        <label htmlFor={`edit-type-${project.id}`}>Type</label><select id={`edit-type-${project.id}`} value={editProjectType} onChange={(event) => setEditProjectType(event.target.value)}><option value="ebook">E-book</option><option value="course">Formation</option><option value="document">Document</option><option value="translation">Traduction</option><option value="other">Autre</option></select>
+                        <label htmlFor={`edit-description-${project.id}`}>Description</label><textarea id={`edit-description-${project.id}`} value={editProjectDescription} onChange={(event) => setEditProjectDescription(event.target.value)} rows={3} maxLength={1000} />
+                        <div className="editor-actions"><button className="primary-button" type="submit" disabled={savingProjectDetails || !editProjectTitle.trim()}>{savingProjectDetails ? 'Enregistrement…' : 'Enregistrer'} <Check size={15} /></button><button className="logout-button" type="button" onClick={() => setEditingProjectId(null)} disabled={savingProjectDetails}><X size={15} /> Annuler</button></div>
+                      </form>}
                     </article>
                   ))}
                 </div>
