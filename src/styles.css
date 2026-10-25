@@ -125,3 +125,41 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 .quick-access-icon{display:grid;place-items:center;flex:0 0 36px;width:36px;height:36px;border-radius:10px;background:rgba(126,140,255,.13);color:#aab5ff}
 @media(max-width:900px){.quick-access-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.quick-access-grid{grid-template-columns:1fr}.quick-access-card{padding:14px}.quick-access-heading h2{font-size:19px}}
+
+
+/* Chapter management */
+.chapter-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 0;
+}
+.chapter-row .chapter-item {
+  flex: 1;
+  min-width: 0;
+}
+.chapter-row .chapter-item strong {
+  overflow-wrap: anywhere;
+}
+.chapter-delete-button {
+  display: grid;
+  place-items: center;
+  align-self: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(248, 113, 113, .18);
+  border-radius: 9px;
+  background: transparent;
+  color: #f87171;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease;
+}
+.chapter-delete-button:hover:not(:disabled) {
+  background: rgba(248, 113, 113, .1);
+  border-color: rgba(248, 113, 113, .45);
+}
+.chapter-delete-button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
