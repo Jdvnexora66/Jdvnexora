@@ -44,7 +44,7 @@ export default function ResourceLibrary({ userId }: { userId: string }) {
   const filtered=useMemo(()=>resources.filter(item=>{
     const text=(item.title+' '+item.description+' '+item.creator_name+' '+item.editorial_note_fr).toLocaleLowerCase();
     return (!query.trim()||text.includes(query.trim().toLocaleLowerCase()))&&(topic==='all'||item.topic===topic)&&(kind==='all'||item.resource_type===kind)&&(language==='all'||item.language===language)&&(progressFilter==='all'||(progressFilter==='not_started'?!progress[item.id]:progress[item.id]===progressFilter));
-  }),[resources,query,topic,kind,language]);
+  }),[resources,query,topic,kind,language,progress,progressFilter]);
 
   async function setResourceStatus(resource:Resource,status:Progress['status']){
     if(!supabase)return;setNotice('');setError('');
