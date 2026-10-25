@@ -1,4 +1,5 @@
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import { Bookmark, CheckCircle2, Heart, RefreshCw, StickyNote, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -21,7 +22,7 @@ export default function LearningLibrary({ userId }: { userId: string }) {
   const [contentId, setContentId] = useState('');
   const [note, setNote] = useState('');
   const [entrepreneurs, setEntrepreneurs] = useState<{id:string;name:string}[]>([]);
-  const [contents, setContents] = useState<{id:string;title:string}[]>(());
+  const [contents, setContents] = useState<{id:string;title:string}[]>([]);
 
   const load = useCallback(async () => {
     if (!supabase) { setLoading(false); setError('Supabase n’est pas configuré.'); return; }
