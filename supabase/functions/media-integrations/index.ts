@@ -27,8 +27,9 @@ function envFor(platform: Platform) {
   if (platform === "tiktok") return { clientId: Deno.env.get("TIKTOK_CLIENT_KEY") ?? "", clientSecret: Deno.env.get("TIKTOK_CLIENT_SECRET") ?? "" };
   return { clientId: Deno.env.get("META_APP_ID") ?? "", clientSecret: Deno.env.get("META_APP_SECRET") ?? "" };
 }
-function redirectUri(platform: Platform) {
-  return FUNCTION_URL + "?action=callback&platform=" + platform;
+function redirectUri(_platform: Platform) {
+  // TikTok requires a static redirect URI without query parameters.
+  return FUNCTION_URL;
 }
 function asPlatform(value: unknown): Platform | null {
   return value === "youtube" || value === "tiktok" || value === "instagram" ? value : null;
@@ -54,10 +55,9 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const url = new URL(req.url);
   const action = url.searchParams.get("action") ?? "status";
-  const callbackPlatform = asPlatform(url.searchParams.get("platform"));
+  const isOAuthCallback = req.method === "GET" && (url.searchParams.has("code") || url.searchParams.has("error") || url.searchParams.has("error_description"));
 
-  if (action === "callback" && req.method === "GET") {
-    const platform = callbackPlatform;
+  if (isOAuthCallback) {
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
     const providerError = url.searchParams.get("error_description") ?? url.searchParams.get("error");
@@ -66,11 +66,13 @@ Deno.serve(async (req: Request) => {
     if (!SUPABASE_SERVICE_ROLE_KEY) return html("La configuration serveur Supabase est incomplète.", false);
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
-    const { data: stateRow, error: stateError } = await admin.from("media_oauth_states").select("*").eq("state", state).eq("platform", platform).maybeSingle();
+    const { data: stateRow, error: stateError } = await admin.from("media_oauth_states").select("*").eq("state", state).maybeSingle();
     if (stateError || !stateRow || new Date(stateRow.expires_at).getTime() < Date.now()) {
       if (stateRow) await admin.from("media_oauth_states").delete().eq("state", state);
       return html("Cette demande de connexion a expiré ou a déjà été utilisée. Relancez la connexion dans NEXORA.", false);
     }
+    const platform = asPlatform(stateRow.platform);
+    if (!platform) return html("Plateforme OAuth invalide. Relancez la connexion depuis NEXORA.", false);
 
     try {
       const credentials = envFor(platform);
