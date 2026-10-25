@@ -152,7 +152,7 @@ export default function MediaLibrary({ userId }: Props) {
     setProviderBusy(platform); setProviderError(''); setProviderNotice('');
     try {
       const { data, error: invokeError } = await supabase.functions.invoke('media-integrations?action=connect', { body: { platform } });
-      if (invokeError) throw new Error(invokeError.message || 'Impossible de démarrer la connexion.');
+      if (invokeError) throw new Error(data?.error || invokeError.message || 'Impossible de démarrer la connexion.');
       if (!data?.authorization_url) throw new Error(data?.error || 'La plateforme n’a pas fourni de lien d’autorisation.');
       const popup = window.open(data.authorization_url, 'nexora-media-oauth', 'popup,width=600,height=760');
       if (!popup) window.location.assign(data.authorization_url);
