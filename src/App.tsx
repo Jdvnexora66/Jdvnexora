@@ -7,6 +7,7 @@ import Timeline from './components/Timeline';
 import Insights from './components/Insights';
 import LearningLibrary from './components/LearningLibrary';
 import Academy from './components/Academy';
+import ResourceLibrary from './components/ResourceLibrary';
 import Roadmap from './components/Roadmap';
 
 type AuthMode = 'signin' | 'signup';
@@ -363,6 +364,7 @@ export default function App() {
           </div>
 
           {!activeProject && <Academy userId={session.user.id} />}
+          {!activeProject && <ResourceLibrary userId={session.user.id} />}
           {!activeProject && <Discover userId={session.user.id} />}
 
           {!activeProject && <Timeline />}
