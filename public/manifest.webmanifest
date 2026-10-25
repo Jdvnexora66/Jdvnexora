@@ -1,0 +1,15 @@
+{
+  "id": "/",
+  "name": "JDV NEXORA AI STUDIO",
+  "short_name": "NEXORA",
+  "description": "Espace sécurisé de création, de gestion et de collaboration sur vos projets.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#090e1c",
+  "theme_color": "#0b1020",
+  "icons": [
+    { "src": "/nexora-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
