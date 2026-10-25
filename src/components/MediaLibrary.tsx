@@ -351,7 +351,7 @@ export default function MediaLibrary({ userId }: Props) {
       const { data, error: updateError } = await supabase.from('media_library_items')
         .update({ visibility: nextVisibility })
         .eq('id', item.id).eq('owner_id', userId)
-        .select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at').single();
+        .select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at,storage_path').single();
       if (updateError) throw updateError;
       setItems((current) => current.map((candidate) => candidate.id === item.id ? data as MediaItem : candidate));
       setNotice(nextVisibility === 'public' ? 'Ce média est maintenant visible dans le catalogue public NEXORA.' : 'Ce média est désormais privé.');
