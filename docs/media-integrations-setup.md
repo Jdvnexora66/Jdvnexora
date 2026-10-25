@@ -17,11 +17,11 @@ Supabase fournit déjà les variables serveur `SUPABASE_URL`, `SUPABASE_ANON_KEY
 
 Enregistrez l’URI exacte de chaque fournisseur :
 
-- YouTube / Google : `https://gkguyjmqdvjwcqjivcwj.supabase.co/functions/v1/media-integrations?action=callback&platform=youtube`
-- TikTok : `https://gkguyjmqdvjwcqjivcwj.supabase.co/functions/v1/media-integrations?action=callback&platform=tiktok`
-- Instagram / Meta : `https://gkguyjmqdvjwcqjivcwj.supabase.co/functions/v1/media-integrations?action=callback&platform=instagram`
+- YouTube / Google : `https://gkguyjmqdvjwcqjivcwj.supabase.co/functions/v1/media-integrations`
+- TikTok : `https://gkguyjmqdvjwcqjivcwj.supabase.co/functions/v1/media-integrations`
+- Instagram / Meta : `https://gkguyjmqdvjwcqjivcwj.supabase.co/functions/v1/media-integrations`
 
-L’URI doit correspondre exactement à celle enregistrée dans la console développeur.
+L’URI doit correspondre exactement à celle enregistrée dans la console développeur. Le rappel est volontairement statique, car TikTok n’autorise pas les paramètres de requête dans l’URI de redirection.
 
 ## Autorisations et limites
 
