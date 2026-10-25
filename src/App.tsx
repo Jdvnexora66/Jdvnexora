@@ -188,7 +188,7 @@ export default function App() {
     setBusy(false);
     if (insertError) {
       setError(insertError.code === '42501'
-        ? 'Création bloquée par les permissions actuelles du Studio. Le compte doit disposer d’un accès Studio autorisé (administrateur ou abonnement actif).'
+        ? 'Création refusée par les règles de sécurité Supabase (RLS). Vérifiez que la politique autorise chaque utilisateur connecté à créer un projet avec son propre owner_id.'
         : 'Création impossible : ' + insertError.message);
       return;
     }
