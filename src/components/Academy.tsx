@@ -20,26 +20,38 @@ export default function Academy({ userId }: { userId:string }) {
   const load=useCallback(async()=>{
     if(!supabase){setLoading(false);setError('Supabase n’est pas configuré.');return;}
     setLoading(true);setError('');
-    const [p,m,g]=await Promise.all([
-      supabase.from('nexora_learning_paths').select('id,title,audience,description,position').order('position'),
-      supabase.from('nexora_learning_modules').select('id,path_id,title,summary,project_task,position').order('position'),
-      supabase.from('nexora_learning_progress').select('module_id,status,notes').eq('user_id',userId)
-    ]);
-    if(p.error||m.error||g.error){setError('Le programme Académie nécessite l’application de la migration Supabase.');setLoading(false);return;}
-    const pathRows=(p.data??[]) as PathRow[]; setPaths(pathRows);setModules((m.data??[]) as ModuleRow[]);
-    setProgress(Object.fromEntries(((g.data??[]) as ProgressRow[]).map(row=>[row.module_id,row])));
-    setSelected(current => pathRows.length && !pathRows.some(row=>row.id===current) ? pathRows[0].id : current);
-    setLoading(false);
+    try {
+      const [p,m,g]=await Promise.all([
+        supabase.from('nexora_learning_paths').select('id,title,audience,description,position').order('position'),
+        supabase.from('nexora_learning_modules').select('id,path_id,title,summary,project_task,position').order('position'),
+        supabase.from('nexora_learning_progress').select('module_id,status,notes').eq('user_id',userId)
+      ]);
+      if(p.error||m.error||g.error){setError('Le programme Académie nécessite l’application de la migration Supabase.');return;}
+      const pathRows=(p.data??[]) as PathRow[];
+      setPaths(pathRows);setModules((m.data??[]) as ModuleRow[]);
+      setProgress(Object.fromEntries(((g.data??[]) as ProgressRow[]).map(row=>[row.module_id,row])));
+      setSelected(current => pathRows.length && !pathRows.some(row=>row.id===current) ? pathRows[0].id : current);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible de charger l’Académie. Vérifiez votre connexion puis réessayez.');
+    } finally {
+      setLoading(false);
+    }
   },[userId]);
   useEffect(()=>{void load();},[load]);
 
   async function setStatus(module:ModuleRow,status:ProgressRow['status']){
-    if(!supabase)return;setSaving(module.id);setError('');setMessage('');
-    const {error:e}=await supabase.from('nexora_learning_progress').upsert({user_id:userId,module_id:module.id,status,updated_at:new Date().toISOString()},{onConflict:'user_id,module_id'});
-    setSaving('');
-    if(e){setError(e.message);return;}
-    setProgress(current=>({...current,[module.id]:{module_id:module.id,status,notes:current[module.id]?.notes??null}}));
-    setMessage('Progression enregistrée.'); 
+    if(!supabase)return;
+    setSaving(module.id);setError('');setMessage('');
+    try {
+      const {error:e}=await supabase.from('nexora_learning_progress').upsert({user_id:userId,module_id:module.id,status,updated_at:new Date().toISOString()},{onConflict:'user_id,module_id'});
+      if(e) throw new Error(e.message);
+      setProgress(current=>({...current,[module.id]:{module_id:module.id,status,notes:current[module.id]?.notes??null}}));
+      setMessage('Progression enregistrée.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible d’enregistrer la progression. Vérifiez votre connexion puis réessayez.');
+    } finally {
+      setSaving('');
+    }
   }
   const activeModules=modules.filter(m=>m.path_id===selected);
   const completed=activeModules.filter(m=>progress[m.id]?.status==='completed').length;
