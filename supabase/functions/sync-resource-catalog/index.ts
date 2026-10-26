@@ -65,7 +65,10 @@ Deno.serve(async (req) => {
         const sample = items[0] ?? '';
         const sampleTitle = tag(sample, 'title').slice(0, 120) || '(titre vide)';
         const sampleLink = tag(sample, 'link').slice(0, 180) || '(lien vide)';
-        const rawLinkTag = sample.match(/<link\\b[^>]*>([\\s\\S]*?)<\\/link\\s*>/i)?.[1]?.slice(0, 180) || '(aucun tag link standard)';
+        const linkStart = sample.toLowerCase().indexOf('<link');
+        const linkContentStart = linkStart >= 0 ? sample.indexOf('>', linkStart) + 1 : -1;
+        const linkEnd = linkContentStart > 0 ? sample.toLowerCase().indexOf('</link>', linkContentStart) : -1;
+        const rawLinkTag = linkContentStart > 0 && linkEnd > linkContentStart ? sample.slice(linkContentStart, linkEnd).slice(0, 180) : '(aucun tag link standard o contenu vide)';
         throw new Error('Éléments RSS détectés (' + items.length + '), aucun import valide. Exemple titre=' + sampleTitle + '; lien extrait=' + sampleLink + '; contenu link brut=' + rawLinkTag);
       }
       if (/^the tim ferriss show$/i.test(source.name.trim())) {
