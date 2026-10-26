@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Activity, Bell, BookOpen, CheckCircle2, CircleHelp, FileText, Globe, LifeBuoy, LockKeyhole, MessageCircle, Search, Settings2, ShieldCheck, Sparkles, Users, WandSparkles } from 'lucide-react';
 
 type ProfessionalPagesProps = { userId: string; role: string };
+type SupportTicket = { id: string; topic: string; message: string; status: 'open' | 'in_progress' | 'resolved' | 'closed'; created_at: string };
 
 const tools = [
   { name: 'Assistant de rédaction', description: 'Préparer des textes, plans, résumés et documents.', category: 'Rédaction', icon: FileText },
@@ -18,10 +19,36 @@ export default function ProfessionalPages({ userId, role }: ProfessionalPagesPro
   const [supportSent, setSupportSent] = useState(false);
   const [supportSaving, setSupportSaving] = useState(false);
   const [supportError, setSupportError] = useState('');
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [ticketsLoading, setTicketsLoading] = useState(true);
+  const [ticketsError, setTicketsError] = useState('');
   const [notificationsRead, setNotificationsRead] = useState(false);
   const [emailUpdates, setEmailUpdates] = useState(true);
   const [marketingTab, setMarketingTab] = useState<'features' | 'pricing' | 'about' | 'contact'>('features');
   const filteredTools = tools.filter((tool) => (tool.name + ' ' + tool.description + ' ' + tool.category).toLocaleLowerCase().includes(query.toLocaleLowerCase()));
+
+  async function loadTickets() {
+    if (!supabase) {
+      setTicketsError('Le service de support n’est pas configuré.');
+      setTicketsLoading(false);
+      return;
+    }
+    setTicketsLoading(true);
+    setTicketsError('');
+    const { data, error } = await supabase.from('support_tickets')
+      .select('id, topic, message, status, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    if (error) {
+      setTicketsError('Impossible de charger l’historique du support.');
+    } else {
+      setTickets((data ?? []) as SupportTicket[]);
+    }
+    setTicketsLoading(false);
+  }
+
+  useState(() => { void loadTickets(); return undefined; });
 
   async function submitSupport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,6 +75,7 @@ export default function ProfessionalPages({ userId, role }: ProfessionalPagesPro
     }
     setSupportMessage(message);
     setSupportSent(true);
+    await loadTickets();
   }
 
   return <div className="professional-pages">
@@ -81,6 +109,7 @@ export default function ProfessionalPages({ userId, role }: ProfessionalPagesPro
     <section id="help-center" className="project-panel pro-page" aria-labelledby="help-center-title">
       <div className="section-heading"><div><p className="eyebrow">ASSISTANCE</p><h2 id="help-center-title"><LifeBuoy size={20}/> Centre d’aide et support</h2><p className="muted">Décrivez votre demande pour préparer un message de support.</p></div></div>
       {supportSent ? <div className="pro-success"><CheckCircle2 size={20}/><div><strong>Demande enregistrée</strong><p>Votre demande a été enregistrée de manière sécurisée dans votre espace support. Conservez ce récapitulatif pour votre suivi.</p><blockquote>{supportMessage}</blockquote><button className="logout-button" type="button" onClick={() => { setSupportSent(false); setSupportMessage(''); setSupportError(''); }}>Nouvelle demande</button></div></div> : <form className="project-form pro-support-form" onSubmit={(event) => void submitSupport(event)}><label htmlFor="support-topic">Sujet</label><select id="support-topic" value={supportTopic} onChange={(event) => setSupportTopic(event.target.value)}><option>Compte et connexion</option><option>Projets et fichiers</option><option>Studio IA</option><option>Facturation</option><option>Signaler un problème</option></select><label htmlFor="support-message">Votre demande</label><textarea id="support-message" rows={4} maxLength={2000} required value={supportMessage} onChange={(event) => setSupportMessage(event.target.value)} placeholder="Expliquez le problème rencontré et ce que vous souhaitiez faire…"/>{supportError && <p className="feedback error" role="alert">{supportError}</p>}<button className="primary-button" type="submit" disabled={supportSaving}>{supportSaving ? 'Envoi en cours…' : 'Envoyer la demande'} <MessageCircle size={16}/></button></form>}
+      <div className="pro-faq"><h3><MessageCircle size={17}/> Mes demandes récentes</h3><button type="button" className="logout-button" onClick={() => void loadTickets()} disabled={ticketsLoading}>{ticketsLoading ? 'Actualisation…' : 'Actualiser l’historique'}</button>{ticketsError && <p className="feedback error" role="alert">{ticketsError}</p>}{ticketsLoading ? <p className="muted">Chargement de vos demandes…</p> : tickets.length === 0 ? <p className="muted">Vous n’avez pas encore de demande enregistrée.</p> : tickets.map((ticket) => <details key={ticket.id}><summary>{ticket.topic} · {new Date(ticket.created_at).toLocaleDateString('fr-FR')} · {({open:'Ouverte',in_progress:'En cours',resolved:'Résolue',closed:'Fermée'} as const)[ticket.status]}</summary><p>{ticket.message}</p></details>)}</div>
       <div className="pro-faq"><h3><CircleHelp size={17}/> Questions fréquentes</h3><details><summary>Pourquoi mes projets ne s’affichent-ils pas ?</summary><p>Vérifiez la connexion, actualisez la page et contrôlez les politiques RLS des tables de projets.</p></details><details><summary>Comment récupérer mon mot de passe ?</summary><p>Déconnectez-vous puis utilisez le lien de réinitialisation sur la page de connexion.</p></details><details><summary>Le catalogue IA est-il entièrement connecté ?</summary><p>Cette première version présente les entrées de catalogue. Chaque outil doit être relié à son service et à ses autorisations avant mise en production.</p></details></div>
     </section>
 
