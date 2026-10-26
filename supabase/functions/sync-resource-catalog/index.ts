@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
         const { error: upsertError } = await db.from('nexora_resources').upsert({
           source_id: source.id, external_id: externalId.slice(0, 1000), title: title.slice(0, 300),
           description: description.slice(0, 5000), creator_name: source.name,
-          resource_type: source.source_type === 'youtube' ? 'video' : 'article',
+          resource_type: source.source_type === 'youtube' ? 'video' : /podcast|show/i.test(source.name) ? 'podcast' : 'article',
           topic: source.topic, language: source.language, url: link,
           published_at: dateText ? (Number.isNaN(Date.parse(dateText)) ? null : new Date(dateText).toISOString()) : null,
           is_published: false,
