@@ -36,8 +36,11 @@ Deno.serve(async (req) => {
       const response = await fetch(source.feed_url, { headers: { 'User-Agent': 'JDV-NEXORA-ResourceCatalog/1.0' }, signal: AbortSignal.timeout(12000) });
       if (!response.ok) throw new Error('Feed HTTP ' + response.status);
       const xml = await response.text();
-      const items = [...xml.matchAll(/<item\b[^>]*>[\s\S]*?<\/item\s*>/gi)].map(m => m[0]).slice(0, 30);
-      if (items.length === 0) throw new Error('Aucun élément RSS <item> détecté ; le flux a été récupéré mais son contenu n’a pas été analysé.');
+      // Accept RSS 2.0 items and Atom entries; several legitimate feeds use Atom.
+      const rssItems = [...xml.matchAll(/<item\b[^>]*>[\s\S]*?<\/item\s*>/gi)].map(m => m[0]);
+      const atomEntries = rssItems.length ? [] : [...xml.matchAll(/<(?:[\w.-]+:)?entry\b[^>]*>[\s\S]*?<\/(?:[\w.-]+:)?entry\s*>/gi)].map(m => m[0]);
+      const items = (rssItems.length ? rssItems : atomEntries).slice(0, 30);
+      if (items.length === 0) throw new Error('Aucun élément RSS <item> ni entrée Atom <entry> détecté ; le flux a été récupéré mais son contenu n’a pas été analysé.');
       let importedForSource = 0;
       for (const item of items) {
         const title = tag(item, 'title');
