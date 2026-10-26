@@ -257,8 +257,8 @@ export default function MediaLibrary({ userId }: Props) {
       let isYoutubeChannel = false;
       try {
         const candidate = new URL(sourceUrl.trim());
-        const host = candidate.hostname.toLowerCase().replace(/^www\\./, '').replace(/^m\\./, '');
-        isYoutubeChannel = candidate.protocol === 'https:' && host === 'youtube.com' && (/^\\/channel\\/UC[\\w-]+/.test(candidate.pathname) || /^\\/@[\\w.-]+/.test(candidate.pathname) || /^\\/user\\/[\\w.-]+/.test(candidate.pathname) || /^\\/c\\/[\\w.-]+/.test(candidate.pathname));
+        const host = candidate.hostname.toLowerCase().replace(/^www\./, '').replace(/^m\./, '');
+        isYoutubeChannel = candidate.protocol === 'https:' && host === 'youtube.com' && (/^\/channel\/UC[\w-]+/.test(candidate.pathname) || /^\/@[\w.-]+/.test(candidate.pathname) || /^\/user\/[\w.-]+/.test(candidate.pathname) || /^\/c\/[\w.-]+/.test(candidate.pathname));
       } catch { /* Le message générique couvre les URL mal formées. */ }
       setError(isYoutubeChannel
         ? 'Ce lien correspond à une chaîne YouTube, pas à une vidéo. Utilisez le champ « URL officielle de la chaîne » dans « Suivre des chaînes YouTube officielles », en haut de cette page.'
