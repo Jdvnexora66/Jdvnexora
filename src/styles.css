@@ -482,3 +482,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .workspace-heading,.profile-panel,.dashboard-stats,.pipeline-section,.recent-activity-panel,.workspace>section:not(.profile-panel),.workspace>div:not(.workspace-heading):not(.dashboard-stats){min-width:0}
 @media(max-width:1050px){.workspace{padding-left:0}.workspace-nav{position:relative;left:auto;top:auto;bottom:auto;width:100%;max-height:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;margin:18px 0 22px;padding:10px;gap:5px}.nav-section-label{grid-column:1/-1;padding:8px 8px 3px}.workspace-nav-link{min-width:0}.workspace-nav-link:hover{transform:none}}
 @media(max-width:640px){.workspace-nav{grid-template-columns:repeat(2,minmax(0,1fr));border-radius:14px}.workspace-nav-link{padding:10px 8px;font-size:11px;gap:7px}.workspace-nav-link svg{width:15px;height:15px}.workspace{padding-top:20px}.workspace-heading{align-items:flex-start;gap:12px}.workspace-heading .workspace-mark{width:48px;height:48px;flex-basis:48px;border-radius:14px}.workspace-heading .workspace-mark svg{width:23px;height:23px}}
+
+/* Accessibilité et navigation fiable pour l’espace de travail */
+.workspace-nav-link:focus-visible,.icon-button:focus-visible,.primary-button:focus-visible,.logout-button:focus-visible,.open-project-button:focus-visible{outline:2px solid #73dfc9;outline-offset:3px}
+.workspace .project-panel[id],.workspace section[id]{scroll-margin-top:24px}
+.workspace-nav-link[aria-current="page"]{color:#d8fff7;background:linear-gradient(100deg,rgba(83,211,187,.15),rgba(112,133,255,.12));border-color:rgba(104,224,202,.23);box-shadow:inset 3px 0 0 #73dfc9}
+@media(prefers-reduced-motion:reduce){.workspace-nav-link,.workspace-nav-link:hover{transition:none;transform:none;scroll-behavior:auto}}
