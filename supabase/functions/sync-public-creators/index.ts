@@ -88,13 +88,15 @@ Deno.serve(async (req) => {
     if (parsed.protocol !== "https:" || !["youtube.com", "m.youtube.com"].includes(parsed.hostname.replace(/^www\./, ""))) {
       return json({ error: "L’adresse doit appartenir à youtube.com et utiliser HTTPS." }, 400);
     }
+    // Normalize encoded @ characters before validating the path.
+    const channelPathname = decodeURIComponent(parsed.pathname).replace(/\/+$/, "");
     // Accept canonical channel URLs and common channel tabs such as /videos or /shorts.
-    const channelPath = parsed.pathname.match(/^\/channel\/(UC[a-zA-Z0-9_-]{22})(?:\/(?:videos|shorts|streams|featured|playlists|about|community|live))?\/?$/i);
+    const channelPath = channelPathname.match(/^\/channel\/(UC[a-zA-Z0-9_-]{22})(?:\/(?:videos|shorts|streams|featured|playlists|about|community|live))?$/i);
     let channelId = channelPath?.[1] ?? "";
     if (!channelId) {
-      const handleMatch = parsed.pathname.match(/^\/@([A-Za-z0-9._-]{3,})(?:\/(?:videos|shorts|streams|featured|playlists|about|community|live))?\/?$/i);
+      const handleMatch = channelPathname.match(/^\/@([A-Za-z0-9._-]{3,})(?:\/(?:videos|shorts|streams|featured|playlists|about|community|live))?$/i);
       const handle = handleMatch?.[1];
-      if (!handle) return json({ error: "Format non reconnu. Utilisez l’URL https://www.youtube.com/@nom ou https://www.youtube.com/channel/UC… (les onglets /videos et /shorts sont aussi acceptés)." }, 400);
+      if (!handle) return json({ error: "URL de chaîne non reconnue. Collez le lien direct de la chaîne YouTube, par exemple https://www.youtube.com/@nom." }, 400);
       try {
         const page = await fetch("https://www.youtube.com/@" + encodeURIComponent(handle), {
           headers: { "User-Agent": "Mozilla/5.0 (compatible; NEXORA-CreatorCatalog/1.0)", "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
