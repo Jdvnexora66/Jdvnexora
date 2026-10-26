@@ -468,3 +468,17 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #8b9aff;outline-offset:3px}
 @media(max-width:1000px){.profile-panel{grid-template-columns:1fr}.pipeline-board{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.workspace{padding-top:18px}.workspace-heading{padding:22px 18px;border-radius:18px}.workspace-mark{width:54px;height:54px;flex-basis:54px;border-radius:16px}.profile-panel{padding:17px}.profile-panel .profile-form{grid-template-columns:1fr}.profile-panel .profile-form .profile-footer{grid-column:auto;align-items:stretch;flex-direction:column}.profile-panel .profile-footer .primary-button{width:100%}.workspace-nav{top:4px}.workspace-nav-link{padding:9px 10px}.dashboard-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat-card{padding:14px;gap:10px}.stat-card strong{font-size:25px}.pipeline-section{padding:17px}.pipeline-board{grid-template-columns:1fr}.pipeline-lane{padding:11px}.pipeline-heading{align-items:flex-start}.pipeline-heading h2{font-size:21px}}
+
+
+/* NEXORA premium workspace navigation — first stage of the 12-part interface system */
+.workspace{position:relative;padding:28px 0 42px 276px;min-width:0}
+.workspace-nav{position:fixed;z-index:30;left:max(18px,calc((100vw - 1500px)/2));top:104px;bottom:18px;width:244px;display:flex;flex-direction:column;align-items:stretch;gap:5px;flex-wrap:nowrap;overflow-y:auto;overflow-x:hidden;margin:0;padding:16px 12px;border:1px solid rgba(143,164,207,.16);border-radius:18px;background:linear-gradient(180deg,rgba(17,27,48,.97),rgba(10,17,31,.98));box-shadow:0 20px 60px rgba(0,0,0,.24);backdrop-filter:blur(18px)}
+.nav-section-label{padding:13px 10px 5px;color:#7184a7;font-size:9px;font-weight:800;letter-spacing:.16em}
+.workspace-nav-link{width:100%;min-height:42px;justify-content:flex-start;flex:0 0 auto;padding:10px 11px;border-radius:10px;color:#a9b7d1;font-size:12px;text-align:left}
+.workspace-nav-link svg{flex:0 0 auto}
+.workspace-nav-link span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.workspace-nav-link:hover{background:rgba(111,137,198,.12);color:#f5f7ff;transform:translateX(2px)}
+.workspace-nav-link.active{color:#d8fff7;background:linear-gradient(100deg,rgba(83,211,187,.15),rgba(112,133,255,.12));border-color:rgba(104,224,202,.23);box-shadow:inset 3px 0 0 #73dfc9}
+.workspace-heading,.profile-panel,.dashboard-stats,.pipeline-section,.recent-activity-panel,.workspace>section:not(.profile-panel),.workspace>div:not(.workspace-heading):not(.dashboard-stats){min-width:0}
+@media(max-width:1050px){.workspace{padding-left:0}.workspace-nav{position:relative;left:auto;top:auto;bottom:auto;width:100%;max-height:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;margin:18px 0 22px;padding:10px;gap:5px}.nav-section-label{grid-column:1/-1;padding:8px 8px 3px}.workspace-nav-link{min-width:0}.workspace-nav-link:hover{transform:none}}
+@media(max-width:640px){.workspace-nav{grid-template-columns:repeat(2,minmax(0,1fr));border-radius:14px}.workspace-nav-link{padding:10px 8px;font-size:11px;gap:7px}.workspace-nav-link svg{width:15px;height:15px}.workspace{padding-top:20px}.workspace-heading{align-items:flex-start;gap:12px}.workspace-heading .workspace-mark{width:48px;height:48px;flex-basis:48px;border-radius:14px}.workspace-heading .workspace-mark svg{width:23px;height:23px}}
