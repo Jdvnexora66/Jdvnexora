@@ -39,6 +39,7 @@ export default function CreatorCatalog() {
       setNotice('Chaîne ajoutée : ' + (data.channel?.channel_name || 'YouTube') + '. ' + (data.imported ?? 0) + ' vidéo(s) synchronisée(s).');
       setChannelUrl('');
       await load();
+      window.dispatchEvent(new CustomEvent('nexora-media-library-refresh'));
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Impossible d’ajouter cette chaîne.'); }
     finally { setBusy(null); }
   }
@@ -49,6 +50,7 @@ export default function CreatorCatalog() {
       const data = await invoke({ action: 'sync', id: channel.id });
       setNotice('Synchronisation terminée pour ' + (channel.channel_name || 'la chaîne') + ' : ' + (data.channel?.imported ?? 0) + ' vidéo(s) traitée(s).');
       await load();
+      window.dispatchEvent(new CustomEvent('nexora-media-library-refresh'));
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Synchronisation impossible.'); await load(); }
     finally { setBusy(null); }
   }
