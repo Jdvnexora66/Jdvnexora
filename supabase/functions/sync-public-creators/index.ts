@@ -84,11 +84,31 @@ Deno.serve(async (req) => {
   if (action === "add") {
     const channelUrl = String(body.channel_url ?? "").trim();
     let parsed: URL;
-    try { parsed = new URL(channelUrl); } catch { return json({ error: "Collez l’URL officielle de la chaîne YouTube au format https://www.youtube.com/channel/UC…" }, 400); }
-    const match = parsed.protocol === "https:" && parsed.hostname.replace(/^www\./, "") === "youtube.com"
-      ? parsed.pathname.match(/^\/channel\/(UC[a-zA-Z0-9_-]{22})\/?$/) : null;
-    if (!match) return json({ error: "Pour vérifier la chaîne sans clé API, utilisez son URL YouTube de type /channel/UC… (les URL @nom nécessitent une résolution supplémentaire)." }, 400);
-    const channelId = match[1];
+    try { parsed = new URL(channelUrl); } catch { return json({ error: "Collez une URL officielle de chaîne YouTube, par exemple https://www.youtube.com/@nom ou https://www.youtube.com/channel/UC…" }, 400); }
+    if (parsed.protocol !== "https:" || !["youtube.com", "m.youtube.com"].includes(parsed.hostname.replace(/^www\./, ""))) {
+      return json({ error: "L’adresse doit appartenir à youtube.com et utiliser HTTPS." }, 400);
+    }
+    let channelId = parsed.pathname.match(/^\/channel\/(UC[a-zA-Z0-9_-]{22})\/?$/)?.[1] ?? "";
+    if (!channelId) {
+      const handle = parsed.pathname.match(/^\/@([A-Za-z0-9._-]{3,})\/?$/)?.[1];
+      if (!handle) return json({ error: "Format non reconnu. Utilisez l’URL youtube.com/@nom ou youtube.com/channel/UC…" }, 400);
+      try {
+        const page = await fetch("https://www.youtube.com/@" + encodeURIComponent(handle), {
+          headers: { "User-Agent": "Mozilla/5.0 (compatible; NEXORA-CreatorCatalog/1.0)", "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
+          redirect: "follow",
+        });
+        if (!page.ok) return json({ error: "YouTube n’a pas permis de résoudre cette chaîne (HTTP " + page.status + "). Vérifiez que le nom @ est exact, puis réessayez." }, 502);
+        const html = await page.text();
+        const channelIdMatch =
+          html.match(/<meta[^>]+itemprop=["']channelId["'][^>]+content=["'](UC[a-zA-Z0-9_-]{22})["']/i) ??
+          html.match(/<meta[^>]+content=["'](UC[a-zA-Z0-9_-]{22})["'][^>]+itemprop=["']channelId["']/i) ??
+          html.match(/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{22})/i);
+        if (!channelIdMatch) return json({ error: "YouTube n’a pas fourni d’identifiant de chaîne vérifiable pour @" + handle + ". Vérifiez le lien officiel et réessayez." }, 502);
+        channelId = channelIdMatch[1];
+      } catch {
+        return json({ error: "Impossible de contacter YouTube pour résoudre ce nom @. Réessayez plus tard." }, 502);
+      }
+    }
     const { data: existing } = await admin.from("nexora_creator_channels").select("*").eq("owner_id", ownerId).eq("channel_id", channelId).maybeSingle();
     let channel = existing;
     if (!channel) {
