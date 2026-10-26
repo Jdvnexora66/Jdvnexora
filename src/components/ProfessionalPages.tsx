@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Activity, Bell, BookOpen, CheckCircle2, CircleHelp, FileText, Globe, LifeBuoy, LockKeyhole, MessageCircle, Search, Settings2, ShieldCheck, Sparkles, Users, WandSparkles } from 'lucide-react';
 
@@ -48,7 +48,7 @@ export default function ProfessionalPages({ userId, role }: ProfessionalPagesPro
     setTicketsLoading(false);
   }
 
-  useState(() => { void loadTickets(); return undefined; });
+  useEffect(() => { void loadTickets(); }, [userId]);
 
   async function submitSupport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
