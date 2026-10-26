@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { Compass, ExternalLink, Plus, RefreshCw, Search, ShieldCheck } from 'lucide-react';
+import { Bookmark, Compass, ExternalLink, Plus, RefreshCw, Search, ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 type Entrepreneur = {
@@ -27,6 +27,9 @@ export default function Discover({ userId }: Props) {
   const [newCountry, setNewCountry] = useState('');
   const [newIndustry, setNewIndustry] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [followedIds, setFollowedIds] = useState<string[]>([]);
+  const [showFollowedOnly, setShowFollowedOnly] = useState(false);
+  const [followingBusyId, setFollowingBusyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -48,6 +51,31 @@ export default function Discover({ userId }: Props) {
   }, [query, country, industry]);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadFollowed() {
+      if (!supabase || !userId) return;
+      const { data, error: followError } = await supabase.from('followed_entrepreneurs').select('entrepreneur_id').eq('user_id', userId);
+      if (active && !followError) setFollowedIds((data ?? []).map(row => row.entrepreneur_id as string));
+    }
+    void loadFollowed();
+    return () => { active = false; };
+  }, [userId]);
+
+  async function toggleFollow(entrepreneurId: string) {
+    if (!supabase || !userId) return;
+    setFollowingBusyId(entrepreneurId); setError(''); setMessage('');
+    const isFollowing = followedIds.includes(entrepreneurId);
+    const result = isFollowing
+      ? await supabase.from('followed_entrepreneurs').delete().eq('user_id', userId).eq('entrepreneur_id', entrepreneurId)
+      : await supabase.from('followed_entrepreneurs').insert({ user_id: userId, entrepreneur_id: entrepreneurId });
+    setFollowingBusyId(null);
+    if (result.error) { setError('Impossible de mettre à jour vos créateurs suivis : ' + result.error.message); return; }
+    setFollowedIds(current => isFollowing ? current.filter(id => id !== entrepreneurId) : [...current, entrepreneurId]);
+  }
+
+  const visibleItems = showFollowedOnly ? items.filter(item => followedIds.includes(item.id)) : items;
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -89,7 +117,7 @@ export default function Discover({ userId }: Props) {
     </form>}
     {error && <p className="feedback error" role="alert">{error}</p>}
     {message && <p className="feedback success" role="status">{message}</p>}
-    {loading ? <p className="empty-state">Chargement du répertoire…</p> : items.length === 0 ? <div className="empty-state"><div className="empty-icon"><Compass size={24}/></div><h3>Aucun profil trouvé</h3><p>Ajoutez un profil ou modifiez les filtres. Les sources et les faits doivent être vérifiés avant publication.</p></div> : <div className="discover-list">{items.map(item => <article className="discover-item" key={item.id}><div className="discover-avatar"><Compass size={20}/></div><div className="discover-item-main"><h3>{item.name}</h3><div className="discover-meta">{item.country && <span>{item.country}</span>}{item.industry && <span>{item.industry}</span>}<span className={'verification-tag verification-' + item.verification_status}><ShieldCheck size={12}/>{item.verification_status === 'verified' ? 'Vérifié' : item.verification_status === 'reviewed' ? 'Relu' : 'À vérifier'}</span></div>{item.summary && <p>{item.summary}</p>}{item.biography && <details className="discover-biography"><summary>Parcours et pistes d’apprentissage</summary><p>{item.biography}</p></details>}{item.website_url && <a href={item.website_url} target="_blank" rel="noreferrer">{item.website_url.replace(/^https?:\/\//, '')} <ExternalLink size={12}/></a>}</div></article>)}</div>}
+    {loading ? <p className="empty-state">Chargement du répertoire…</p> : visibleItems.length === 0 ? <div className="empty-state"><div className="empty-icon"><Compass size={24}/></div><h3>{showFollowedOnly ? 'Aucun créateur suivi pour le moment' : 'Aucun profil trouvé'}</h3><p>{showFollowedOnly ? 'Désactivez ce filtre ou enregistrez un créateur avec le bouton Suivre.' : 'Ajoutez un profil ou modifiez les filtres. Les sources et les faits doivent être vérifiés avant publication.'}</p></div> : <div className="discover-list">{visibleItems.map(item => <article className="discover-item" key={item.id}><div className="discover-avatar"><Compass size={20}/></div><div className="discover-item-main"><div className="discover-card-title"><h3>{item.name}</h3><button type="button" className={followedIds.includes(item.id) ? 'discover-follow-button following' : 'discover-follow-button'} disabled={followingBusyId === item.id} onClick={() => void toggleFollow(item.id)} aria-pressed={followedIds.includes(item.id)}><Bookmark size={14} fill={followedIds.includes(item.id) ? 'currentColor' : 'none'}/>{followingBusyId === item.id ? 'En cours…' : followedIds.includes(item.id) ? 'Suivi' : 'Suivre'}</button></div><div className="discover-meta">{item.country && <span>{item.country}</span>}{item.industry && <span>{item.industry}</span>}<span className={'verification-tag verification-' + item.verification_status}><ShieldCheck size={12}/>{item.verification_status === 'verified' ? 'Vérifié' : item.verification_status === 'reviewed' ? 'Relu' : 'À vérifier'}</span></div>{item.summary && <p>{item.summary}</p>}{item.biography && <details className="discover-biography"><summary>Parcours et pistes d’apprentissage</summary><p>{item.biography}</p></details>}{item.website_url && <a href={item.website_url} target="_blank" rel="noreferrer">{item.website_url.replace(/^https?:\/\//, '')} <ExternalLink size={12}/></a>}</div></article>)}</div>}
     <p className="workspace-footnote">Les profils ajoutés par un utilisateur sont identifiés dans la base. Le statut « vérifié » ne doit être attribué qu’après contrôle des sources.</p>
   </section>;
 }
