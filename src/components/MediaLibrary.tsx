@@ -177,8 +177,13 @@ export default function MediaLibrary({ userId }: Props) {
         void loadConnections();
       }
     };
+    const onCreatorSync = () => { void load(); };
     window.addEventListener('message', onOAuthMessage);
-    return () => window.removeEventListener('message', onOAuthMessage);
+    window.addEventListener('nexora-media-library-refresh', onCreatorSync);
+    return () => {
+      window.removeEventListener('message', onOAuthMessage);
+      window.removeEventListener('nexora-media-library-refresh', onCreatorSync);
+    };
   }, [load, loadConnections]);
 
   async function connectProvider(platform: ProviderConnection['platform']) {
