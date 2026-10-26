@@ -14,10 +14,13 @@ type Entrepreneur = {
   verification_status: 'unverified' | 'reviewed' | 'verified';
 };
 
+type CreatorSource = { id: string; entrepreneur_id: string | null; title: string; source_url: string; publisher: string | null; source_type: string };
+
 type Props = { userId: string };
 
 export default function Discover({ userId }: Props) {
   const [items, setItems] = useState<Entrepreneur[]>([]);
+  const [sourcesByProfile, setSourcesByProfile] = useState<Record<string, CreatorSource[]>>({});
   const [query, setQuery] = useState('');
   const [country, setCountry] = useState('');
   const [industry, setIndustry] = useState('');
@@ -46,7 +49,21 @@ export default function Discover({ userId }: Props) {
     if (query.trim()) request = request.or('name.ilike.%' + query.trim().replace(/[,%()]/g, '') + '%,summary.ilike.%' + query.trim().replace(/[,%()]/g, '') + '%');
     const { data, error: loadError } = await request;
     if (loadError) setError(loadError.message.includes('entrepreneurs') ? 'Le module Discover attend l’application de la migration Supabase.' : loadError.message);
-    else setItems((data ?? []) as Entrepreneur[]);
+    else {
+      const profiles = (data ?? []) as Entrepreneur[];
+      setItems(profiles);
+      if (profiles.length) {
+        const { data: sourceRows } = await supabase.from('content_sources')
+          .select('id,entrepreneur_id,title,source_url,publisher,source_type')
+          .in('entrepreneur_id', profiles.map(item => item.id));
+        const grouped: Record<string, CreatorSource[]> = {};
+        for (const source of (sourceRows ?? []) as CreatorSource[]) {
+          if (!source.entrepreneur_id) continue;
+          (grouped[source.entrepreneur_id] ??= []).push(source);
+        }
+        setSourcesByProfile(grouped);
+      } else setSourcesByProfile({});
+    }
     setLoading(false);
   }, [query, country, industry]);
 
