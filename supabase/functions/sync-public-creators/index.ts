@@ -41,8 +41,20 @@ async function syncChannel(admin: ReturnType<typeof createClient>, ownerId: stri
       published_at: publishedAt, content_type: "video", visibility: "private",
       sync_source: "youtube_api", provider_metadata: { creator_channel_id: channelId, synced_via: "public_rss" },
     };
-    const { error } = await admin.from("media_library_items").upsert(record, { onConflict: "owner_id,platform,external_id" });
-    if (error) throw error;
+    // The existing library schema does not guarantee a composite unique constraint.
+    // Find this user's imported video first, then update it or insert it without relying on one.
+    const { data: existingItem, error: lookupError } = await admin
+      .from("media_library_items")
+      .select("id")
+      .eq("owner_id", ownerId)
+      .eq("platform", "youtube")
+      .eq("external_id", videoId)
+      .maybeSingle();
+    if (lookupError) throw lookupError;
+    const write = existingItem
+      ? await admin.from("media_library_items").update(record).eq("id", existingItem.id).eq("owner_id", ownerId)
+      : await admin.from("media_library_items").insert(record);
+    if (write.error) throw write.error;
     imported++;
   }
   const { error: updateError } = await admin.from("nexora_creator_channels").update({
