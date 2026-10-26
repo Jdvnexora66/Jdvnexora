@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Activity } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import Discover from './components/Discover';
 import MediaLibrary from './components/MediaLibrary';
@@ -539,7 +539,13 @@ export default function App() {
         </a>
         <div className="topbar-actions">
           <span className="secure-label"><ShieldCheck size={16} /> Espace sécurisé</span>
-          {session && <button className="logout-button" onClick={signOut}><LogOut size={15} /> Déconnexion</button>}
+          {session && <>
+            <button className="topbar-activity-button" type="button" onClick={() => document.getElementById('recent-activity-title')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} aria-label="Accéder à l’activité récente">
+              <Activity size={16} /><span>Activité</span>
+            </button>
+            <span className="topbar-account" title={session.user.email ?? ''}><UserRound size={15} /><span>{profile?.display_name?.trim() || session.user.email || 'Mon compte'}</span></span>
+            <button className="logout-button" onClick={signOut}><LogOut size={15} /> Déconnexion</button>
+          </>}
         </div>
       </header>
 
