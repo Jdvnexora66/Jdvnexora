@@ -488,3 +488,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .workspace .project-panel[id],.workspace section[id]{scroll-margin-top:24px}
 .workspace-nav-link[aria-current="page"]{color:#d8fff7;background:linear-gradient(100deg,rgba(83,211,187,.15),rgba(112,133,255,.12));border-color:rgba(104,224,202,.23);box-shadow:inset 3px 0 0 #73dfc9}
 @media(prefers-reduced-motion:reduce){.workspace-nav-link,.workspace-nav-link:hover{transition:none;transform:none;scroll-behavior:auto}}
+
+/* Barre supérieure du workspace : activité et identité du compte */
+.topbar-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.topbar-activity-button,.topbar-account{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:9px 12px;border:1px solid rgba(143,164,207,.18);border-radius:11px;background:rgba(18,29,50,.7);color:#c4cee3;font-size:12px}
+.topbar-activity-button{cursor:pointer;transition:background .18s ease,border-color .18s ease}
+.topbar-activity-button:hover{background:rgba(111,137,198,.13);border-color:rgba(115,223,201,.35);color:#f5f7ff}
+.topbar-activity-button:focus-visible{outline:2px solid #73dfc9;outline-offset:3px}
+.topbar-account{max-width:240px;color:#e0e7f6}
+.topbar-account span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:640px){.topbar{align-items:flex-start;gap:14px;flex-wrap:wrap}.topbar-actions{justify-content:flex-start;width:100%;gap:7px}.topbar-actions .secure-label{font-size:11px}.topbar-activity-button,.topbar-account{min-height:36px;padding:8px 9px;font-size:11px}.topbar-account{max-width:180px}.topbar-actions .logout-button{margin-left:auto}}
