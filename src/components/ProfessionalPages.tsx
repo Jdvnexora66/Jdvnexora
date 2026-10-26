@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Activity, Bell, BookOpen, CheckCircle2, CircleHelp, CreditCard, FileText, Globe, LifeBuoy, LockKeyhole, Mail, MessageCircle, Search, Settings2, ShieldCheck, Sparkles, Users, WandSparkles } from 'lucide-react';
+import { Activity, Bell, BookOpen, CheckCircle2, CircleHelp, FileText, Globe, LifeBuoy, LockKeyhole, MessageCircle, Search, Settings2, ShieldCheck, Sparkles, Users, WandSparkles } from 'lucide-react';
 
 type ProfessionalPagesProps = { userId: string; role: string };
 
