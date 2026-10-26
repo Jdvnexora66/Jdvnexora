@@ -138,7 +138,7 @@ export default function Discover({ userId }: Props) {
 
   return <section id="discover" className="project-panel discover-panel">
     <div className="section-heading">
-      <div><p className="eyebrow">DISCOVER · VEILLE ENTREPRENEURIALE</p><h2><Compass size={21} /> Découvrir des entrepreneurs</h2><p className="muted">Explorez les créateurs de contenu, fondateurs de SaaS et créateurs de produits numériques. Les profils sont sourcés et leur statut de vérification reste visible.</p></div>
+      <div><p className="eyebrow">DISCOVER · VEILLE ENTREPRENEURIALE</p><h2><Compass size={21} /> Catalogue des acteurs sélectionnés</h2><p className="muted">Ajoutez uniquement les acteurs que vous avez choisis après vos recherches. Chaque fiche doit documenter son site professionnel, son parcours et ses sources avant validation.</p></div>
       <div className="discover-heading-actions"><button className="icon-button" type="button" onClick={() => void load()} disabled={loading} aria-label="Actualiser Discover"><RefreshCw size={16}/></button><button className="primary-button discover-add" type="button" onClick={() => setShowForm(v => !v)}><Plus size={16}/> Ajouter un profil</button></div>
     </div>
     <div className="discover-global-filters">
