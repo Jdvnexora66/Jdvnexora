@@ -99,11 +99,16 @@ Deno.serve(async (req) => {
         });
         if (!page.ok) return json({ error: "YouTube n’a pas permis de résoudre cette chaîne (HTTP " + page.status + "). Vérifiez que le nom @ est exact, puis réessayez." }, 502);
         const html = await page.text();
+        // YouTube changes the ordering and shape of channel metadata between page variants.
+        // Try the canonical meta tag first, then the JSON fields used by YouTube's page data.
         const channelIdMatch =
           html.match(/<meta[^>]+itemprop=["']channelId["'][^>]+content=["'](UC[a-zA-Z0-9_-]{22})["']/i) ??
           html.match(/<meta[^>]+content=["'](UC[a-zA-Z0-9_-]{22})["'][^>]+itemprop=["']channelId["']/i) ??
+          html.match(/["'](?:externalId|channelId|browseId)["']\s*:\s*["'](UC[a-zA-Z0-9_-]{22})["']/i) ??
           html.match(/youtube\.com\/channel\/(UC[a-zA-Z0-9_-]{22})/i);
-        if (!channelIdMatch) return json({ error: "YouTube n’a pas fourni d’identifiant de chaîne vérifiable pour @" + handle + ". Vérifiez le lien officiel et réessayez." }, 502);
+        if (!channelIdMatch) {
+          return json({ error: "YouTube n’a pas fourni d’identifiant de chaîne vérifiable pour @" + handle + ". Vérifiez que la chaîne est publique et réessayez." }, 502);
+        }
         channelId = channelIdMatch[1];
       } catch {
         return json({ error: "Impossible de contacter YouTube pour résoudre ce nom @. Réessayez plus tard." }, 502);
