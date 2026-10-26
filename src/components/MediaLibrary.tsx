@@ -1,12 +1,12 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
-import { Film, Headphones, Play, Plus, Search, Trash2, Youtube, Video, RefreshCw, Globe2, LockKeyhole, Link2, Unplug } from 'lucide-react';
+import { Film, Headphones, Play, Plus, Search, Trash2, Youtube, Video, RefreshCw, Globe2, LockKeyhole, Link2, Unplug, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import './media-provider.css';
 import CreatorCatalog from './CreatorCatalog';
 import './creator-catalog.css';
 
 type Platform = 'YouTube' | 'TikTok' | 'Instagram' | 'Spotify' | 'SoundCloud';
-type PlatformDb = 'youtube' | 'tiktok' | 'instagram' | 'spotify' | 'soundcloud';
+type PlatformDb = 'youtube' | 'tiktok' | 'instagram' | 'spotify' | 'soundcloud' | 'other';
 type MediaKind = 'video' | 'podcast' | 'interview' | 'audio' | 'short' | 'other';
 type Visibility = 'private' | 'public';
 
@@ -73,6 +73,13 @@ function buildEmbed(source: string): EmbedInfo | null {
     return { platform: 'soundcloud', embedUrl: 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(url.toString()) + '&auto_play=false&visual=true', contentType: 'podcast' };
   }
 
+  // Higgsfield share pages are external project pages, not embeddable video files.
+  // Save the HTTPS link and open it on Higgsfield instead of forcing an iframe.
+  if (host === 'higgsfield.ai') {
+    if (!url.pathname.startsWith('/s/')) return null;
+    return { platform: 'other', embedUrl: url.toString(), contentType: 'video' };
+  }
+
   return null;
 }
 
@@ -84,7 +91,7 @@ function platformIcon(platform: PlatformDb) {
 }
 
 function platformLabel(platform: PlatformDb) {
-  return ({ youtube: 'YouTube', tiktok: 'TikTok', instagram: 'Instagram', spotify: 'Spotify', soundcloud: 'SoundCloud' } as const)[platform];
+  return ({ youtube: 'YouTube', tiktok: 'TikTok', instagram: 'Instagram', spotify: 'Spotify', soundcloud: 'SoundCloud', other: 'Lien externe' } as const)[platform];
 }
 
 function mediaKindLabel(kind: MediaKind) {
@@ -452,6 +459,7 @@ export default function MediaLibrary({ userId }: Props) {
             ? <audio className="media-native-audio" controls preload="metadata" src={item.playback_url}>Votre navigateur ne prend pas en charge la lecture audio.</audio>
             : <video className="media-native-video" controls playsInline preload="metadata" poster={item.thumbnail_url ?? undefined} src={item.playback_url}>Votre navigateur ne prend pas en charge la lecture vidéo.</video>)
             : <p className="media-playback-error">Le fichier n’est pas accessible. Actualisez la vidéothèque.</p>)
+            : item.platform === 'other' ? <div className="media-external-link"><ExternalLink size={28} /><p>Ce contenu est hébergé sur Higgsfield.</p><a href={item.source_url} target="_blank" rel="noopener noreferrer">Ouvrir le projet sur Higgsfield</a></div>
             : <iframe src={item.embed_url} title={item.title} loading="lazy"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />}
