@@ -15,7 +15,17 @@ export default function CreatorCatalog() {
   const invoke = useCallback(async (payload: Record<string, string>) => {
     if (!supabase) throw new Error('Supabase n’est pas configuré.');
     const { data, error: invokeError } = await supabase.functions.invoke('sync-public-creators', { body: payload });
-    if (invokeError) throw new Error(data?.error || invokeError.message || 'Opération impossible.');
+    if (invokeError) {
+      let serverMessage = data?.error as string | undefined;
+      const context = (invokeError as { context?: unknown }).context;
+      if (!serverMessage && context instanceof Response) {
+        try {
+          const body = await context.clone().json() as { error?: string; message?: string };
+          serverMessage = body.error || body.message;
+        } catch { /* Use the SDK error if the response body is not JSON. */ }
+      }
+      throw new Error(serverMessage || invokeError.message || 'Opération impossible.');
+    }
     if (data?.error) throw new Error(data.error);
     return data;
   }, []);
