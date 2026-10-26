@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
       const response = await fetch(source.feed_url, { headers: { 'User-Agent': 'JDV-NEXORA-ResourceCatalog/1.0' }, signal: AbortSignal.timeout(12000) });
       if (!response.ok) throw new Error('Feed HTTP ' + response.status);
       const xml = await response.text();
-      const items = [...xml.matchAll(/<(item|entry)(?:\s[^>]*)?>[\s\S]*?<\/(?:item|entry)>/gi)].map(m => m[0]).slice(0, 30);
+      const items = [...xml.matchAll(/<item\b[^>]*>[\s\S]*?<\/item\s*>/gi)].map(m => m[0]).slice(0, 30);\n      if (items.length === 0) throw new Error('Aucun élément RSS <item> détecté ; le flux a été récupéré mais son contenu n’a pas été analysé.');
       for (const item of items) {
         const title = tag(item, 'title');
         const linkTag = item.match(/<link\b[^>]*\bhref=["']([^"']+)["'][^>]*\/?\s*>/i);
@@ -54,6 +54,17 @@ Deno.serve(async (req) => {
         }, { onConflict: 'source_id,external_id', ignoreDuplicates: true });
         if (upsertError) throw upsertError;
         processed++;
+      }
+      if (/^the tim ferriss show$/i.test(source.name.trim())) {
+        const { error: publishError } = await db.from('nexora_resources')
+          .update({
+            is_published: true,
+            resource_type: 'podcast',
+            editorial_note_fr: 'Épisode du flux RSS officiel The Tim Ferriss Show, importé et publié automatiquement.',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('source_id', source.id);
+        if (publishError) throw publishError;
       }
       await db.from('nexora_resource_sources').update({ last_synced_at: new Date().toISOString() }).eq('id', source.id);
     } catch (cause) {
