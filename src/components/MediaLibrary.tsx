@@ -21,11 +21,8 @@ type MediaItem = {
   description: string | null;
   visibility: Visibility;
   created_at: string;
- feat/media-library-persistence-sync
-=======
   storage_path: string | null;
   playback_url?: string | null;
- main
 };
 
 type EmbedInfo = { platform: PlatformDb; embedUrl: string; contentType: MediaKind };
@@ -109,11 +106,8 @@ export default function MediaLibrary({ userId }: Props) {
   const [providerBusy, setProviderBusy] = useState<string | null>(null);
   const [providerError, setProviderError] = useState('');
   const [providerNotice, setProviderNotice] = useState('');
- feat/media-library-persistence-sync
-=======
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
- main
 
   const load = useCallback(async () => {
     if (!supabase) {
@@ -126,13 +120,6 @@ export default function MediaLibrary({ userId }: Props) {
     try {
       const { data, error: loadError } = await supabase
         .from('media_library_items')
- feat/media-library-persistence-sync
-        .select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at')
-        .order('created_at', { ascending: false })
-        .limit(100);
-      if (loadError) throw loadError;
-      setItems((data ?? []) as MediaItem[]);
-=======
         .select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at,storage_path')
         .order('created_at', { ascending: false })
         .limit(100);
@@ -147,7 +134,6 @@ export default function MediaLibrary({ userId }: Props) {
       } else {
         setItems(loadedItems);
       }
- main
     } catch (cause) {
       setError(cause instanceof Error && cause.message.includes('media_library_items')
         ? 'La vidéothèque persistante attend la migration Supabase. Actualisez après la mise à jour du schéma.'
@@ -158,42 +144,26 @@ export default function MediaLibrary({ userId }: Props) {
   }, []);
 
   const loadConnections = useCallback(async () => {
- feat/media-library-persistence-sync
-    if (!supabase) return;
-    const { data, error: invokeError } = await supabase.functions.invoke('media-integrations?action=status', { body: {} });
-    if (invokeError) { setProviderError('Le service de connexion média n’est pas encore disponible. Vérifiez le déploiement de la fonction Supabase.'); return; }
-    setConnections(((data?.connections ?? []) as ProviderConnection[]));
-=======
     if (!supabase) return [] as ProviderConnection[];
     const { data, error: invokeError } = await supabase.functions.invoke('media-integrations?action=status', { body: {} });
     if (invokeError) { setProviderError('Le service de connexion média n’est pas encore disponible. Vérifiez le déploiement de la fonction Supabase.'); return [] as ProviderConnection[]; }
     const loadedConnections = (data?.connections ?? []) as ProviderConnection[];
     setConnections(loadedConnections);
     return loadedConnections;
- main
   }, []);
 
   useEffect(() => {
     void load();
- feat/media-library-persistence-sync
-    void loadConnections();
-=======
     void loadConnections().then((loadedConnections) => {
       const staleBefore = Date.now() - 12 * 60 * 60 * 1000;
       for (const connection of loadedConnections) {
         if (!connection.last_synced_at || new Date(connection.last_synced_at).getTime() < staleBefore) void syncProvider(connection.platform);
       }
     });
- main
     const configuredUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
     const allowedOrigin = configuredUrl ? new URL(configuredUrl).origin : '';
     const onOAuthMessage = (event: MessageEvent) => {
       if (!allowedOrigin || event.origin !== allowedOrigin || event.data?.type !== 'nexora-media-oauth') return;
- feat/media-library-persistence-sync
-      if (event.data.ok) setProviderNotice('Compte connecté. Vous pouvez synchroniser ses vidéos.');
-      else setProviderError('La connexion a échoué. Vérifiez la configuration de la plateforme et réessayez.');
-      void loadConnections();
-=======
       if (event.data.ok) {
         setProviderNotice('Compte connecté. Première synchronisation en cours…');
         const platform = event.data.platform;
@@ -204,7 +174,6 @@ export default function MediaLibrary({ userId }: Props) {
         setProviderError('La connexion a échoué. Vérifiez la configuration de la plateforme et réessayez.');
         void loadConnections();
       }
- main
     };
     window.addEventListener('message', onOAuthMessage);
     return () => window.removeEventListener('message', onOAuthMessage);
@@ -290,11 +259,7 @@ export default function MediaLibrary({ userId }: Props) {
         content_type: contentType === 'video' ? embed.contentType : contentType,
         visibility,
         sync_source: 'manual',
- feat/media-library-persistence-sync
-      }).select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at').single();
-=======
       }).select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at,storage_path').single();
- main
       if (insertError) throw insertError;
       setItems((current) => [data as MediaItem, ...current]);
       setSourceUrl('');
@@ -310,8 +275,6 @@ export default function MediaLibrary({ userId }: Props) {
     }
   }
 
- feat/media-library-persistence-sync
-=======
   async function uploadOwnedFile() {
     if (!supabase || !uploadFile) return;
     setError(''); setNotice('');
@@ -362,18 +325,14 @@ export default function MediaLibrary({ userId }: Props) {
     }
   }
 
- main
   async function removeMedia(item: MediaItem) {
     if (!supabase || item.owner_id !== userId) return;
     setBusyId(item.id); setError(''); setNotice('');
     try {
- feat/media-library-persistence-sync
-=======
       if (item.storage_path) {
         const { error: storageError } = await supabase.storage.from('nexora-media').remove([item.storage_path]);
         if (storageError) throw storageError;
       }
- main
       const { error: deleteError } = await supabase.from('media_library_items').delete().eq('id', item.id).eq('owner_id', userId);
       if (deleteError) throw deleteError;
       setItems((current) => current.filter((candidate) => candidate.id !== item.id));
@@ -392,11 +351,7 @@ export default function MediaLibrary({ userId }: Props) {
       const { data, error: updateError } = await supabase.from('media_library_items')
         .update({ visibility: nextVisibility })
         .eq('id', item.id).eq('owner_id', userId)
- feat/media-library-persistence-sync
-        .select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at').single();
-=======
         .select('id,owner_id,title,source_url,embed_url,platform,content_type,creator_name,thumbnail_url,description,visibility,created_at,storage_path').single();
- main
       if (updateError) throw updateError;
       setItems((current) => current.map((candidate) => candidate.id === item.id ? data as MediaItem : candidate));
       setNotice(nextVisibility === 'public' ? 'Ce média est maintenant visible dans le catalogue public NEXORA.' : 'Ce média est désormais privé.');
@@ -447,15 +402,12 @@ export default function MediaLibrary({ userId }: Props) {
       <select id="media-kind" value={contentType} onChange={(event) => setContentType(event.target.value as MediaKind)}>
         <option value="video">Vidéo</option><option value="interview">Interview</option><option value="podcast">Podcast</option><option value="audio">Audio</option><option value="short">Vidéo courte</option><option value="other">Autre</option>
       </select>
- feat/media-library-persistence-sync
-=======
       <div className="media-file-upload">
         <label htmlFor="media-file">Ou importer un fichier vidéo/audio (maximum 500 Mo)</label>
         <input id="media-file" type="file" accept="video/mp4,video/webm,video/quicktime,audio/mpeg,audio/mp4,audio/ogg,audio/wav,audio/webm" onChange={(event) => setUploadFile(event.target.files?.[0] ?? null)} />
         <button type="button" className="primary-button" onClick={() => void uploadOwnedFile()} disabled={!uploadFile || uploadingFile}><Film size={16} /> {uploadingFile ? 'Importation…' : 'Héberger et lire dans NEXORA'}</button>
         <p className="muted">Pour les vidéos appartenant à votre compte ou pour lesquelles vous disposez des droits. Les médias importés sont stockés dans un espace privé.</p>
       </div>
- main
       <label htmlFor="media-url">Lien du média</label>
       <input id="media-url" type="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} required placeholder="https://www.youtube.com/watch?v=…" />
       <label htmlFor="media-visibility">Visibilité initiale</label>
@@ -480,11 +432,6 @@ export default function MediaLibrary({ userId }: Props) {
     </div> : <div className="media-grid">
       {filtered.map((item) => <article className="media-card" key={item.id}>
         <div className={'media-player-wrap ' + (item.content_type === 'podcast' || item.content_type === 'audio' ? 'media-audio' : '')}>
- feat/media-library-persistence-sync
-          <iframe src={item.embed_url} title={item.title} loading="lazy"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
-=======
           {item.storage_path ? (item.playback_url ? (item.content_type === 'audio' || item.content_type === 'podcast'
             ? <audio className="media-native-audio" controls preload="metadata" src={item.playback_url}>Votre navigateur ne prend pas en charge la lecture audio.</audio>
             : <video className="media-native-video" controls playsInline preload="metadata" poster={item.thumbnail_url ?? undefined} src={item.playback_url}>Votre navigateur ne prend pas en charge la lecture vidéo.</video>)
@@ -492,7 +439,6 @@ export default function MediaLibrary({ userId }: Props) {
             : <iframe src={item.embed_url} title={item.title} loading="lazy"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />}
- main
         </div>
         <div className="media-card-details">
           <div className="media-card-title"><span>{platformIcon(item.platform)}</span><h3>{item.title}</h3></div>
@@ -507,10 +453,6 @@ export default function MediaLibrary({ userId }: Props) {
       </article>)}
     </div>}
 
- feat/media-library-persistence-sync
-    <p className="workspace-footnote">La bibliothèque est désormais persistante dans Supabase. Les lecteurs officiels permettent de regarder les contenus compatibles dans NEXORA, mais n’en téléchargent pas les fichiers. La synchronisation automatique de comptes YouTube, TikTok et Instagram nécessite encore les identifiants API/OAuth, les autorisations de chaque plateforme et la validation de leurs applications. Les contenus privés ou non intégrables resteront indisponibles sans autorisation explicite.</p>
-=======
     <p className="workspace-footnote">La bibliothèque est persistante dans Supabase. Les fichiers dont vous détenez les droits peuvent être hébergés et lus directement dans NEXORA ; les autres plateformes utilisent leur lecteur officiel. La synchronisation automatique de comptes YouTube, TikTok et Instagram nécessite encore les identifiants API/OAuth, les autorisations de chaque plateforme et la validation de leurs applications. Les contenus privés ou non intégrables resteront indisponibles sans autorisation explicite.</p>
- main
   </section>;
 }
