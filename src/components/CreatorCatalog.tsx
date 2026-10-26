@@ -83,8 +83,8 @@ export default function CreatorCatalog() {
     </div>
     <form className="creator-catalog-form" onSubmit={add}>
       <label htmlFor="creator-channel-url">URL officielle de la chaîne</label>
-      <div className="creator-catalog-input-row"><input id="creator-channel-url" type="url" value={channelUrl} onChange={(event) => setChannelUrl(event.target.value)} required placeholder="https://www.youtube.com/channel/UC…" /><button className="primary-button" type="submit" disabled={busy !== null || !channelUrl.trim()}><Plus size={15} /> {busy === 'add' ? 'Ajout…' : 'Ajouter et synchroniser'}</button></div>
-      <p className="muted">Pour cette première version, utilisez l’URL qui contient <code>/channel/UC…</code>. Les liens courts et les identifiants @nom seront pris en charge après la mise en place de la résolution officielle des chaînes.</p>
+      <div className="creator-catalog-input-row"><input id="creator-channel-url" type="url" value={channelUrl} onChange={(event) => setChannelUrl(event.target.value)} required placeholder="https://www.youtube.com/@nom" /><button className="primary-button" type="submit" disabled={busy !== null || !channelUrl.trim()}><Plus size={15} /> {busy === 'add' ? 'Ajout…' : 'Ajouter et synchroniser'}</button></div>
+      <p className="muted">Vous pouvez coller l’URL officielle <code>youtube.com/@nom</code> ou <code>youtube.com/channel/UC…</code>. NEXORA vérifie le nom @ auprès de YouTube avant de l’enregistrer.</p>
     </form>
     {error && <p className="feedback error" role="alert">{error}</p>}
     {notice && <p className="feedback success" role="status">{notice}</p>}
