@@ -35,6 +35,7 @@ Deno.serve(async (req) => {
       const xml = await response.text();
       const items = [...xml.matchAll(/<item\b[^>]*>[\s\S]*?<\/item\s*>/gi)].map(m => m[0]).slice(0, 30);
       if (items.length === 0) throw new Error('Aucun élément RSS <item> détecté ; le flux a été récupéré mais son contenu n’a pas été analysé.');
+      let importedForSource = 0;
       for (const item of items) {
         const title = tag(item, 'title');
         const linkTag = item.match(/<link\b[^>]*\bhref=["']([^"']+)["'][^>]*\/?\s*>/i);
@@ -54,8 +55,10 @@ Deno.serve(async (req) => {
           updated_at: new Date().toISOString(),
         }, { onConflict: 'source_id,external_id', ignoreDuplicates: true });
         if (upsertError) throw upsertError;
+        importedForSource++;
         processed++;
       }
+      if (importedForSource === 0) throw new Error('Éléments RSS détectés, mais aucun épisode avec titre et lien HTTP valide n’a été importé');
       if (/^the tim ferriss show$/i.test(source.name.trim())) {
         const { error: publishError } = await db.from('nexora_resources')
           .update({
@@ -67,11 +70,12 @@ Deno.serve(async (req) => {
           .eq('source_id', source.id);
         if (publishError) throw publishError;
       }
-      await db.from('nexora_resource_sources').update({ last_synced_at: new Date().toISOString() }).eq('id', source.id);
+      const { error: syncError } = await db.from('nexora_resource_sources').update({ last_synced_at: new Date().toISOString() }).eq('id', source.id);
+      if (syncError) throw syncError;
     } catch (cause) {
       failed++;
       issues.push(source.name + ': ' + (cause instanceof Error ? cause.message : 'Erreur inconnue'));
     }
   }
-  return new Response(JSON.stringify({ success: failed === 0, sources: sources?.length ?? 0, processed, failed, issues }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify({ success: failed === 0, sources: sources?.length ?? 0, processed, failed, issues }), { status: failed === 0 ? 200 : 207, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 });
