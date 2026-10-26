@@ -10,8 +10,11 @@ function xmlText(value: string | null): string {
   return (value ?? '').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').replace(/<[^>]*>/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
 }
 function tag(item: string, name: string): string {
-  const match = item.match(new RegExp('<(?:[\\w.-]+:)?' + name + '(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?' + name + '>', 'i'));
-  return xmlText(match?.[1] ?? '');
+  // Prefer the simple RSS 2.0 tag form, then fall back to namespace-prefixed XML tags.
+  const plain = item.match(new RegExp('<' + name + '\\b[^>]*>([\\s\\S]*?)<\\/' + name + '\\s*>', 'i'));
+  if (plain?.[1] != null) return xmlText(plain[1]);
+  const namespaced = item.match(new RegExp('<(?:[\\w.-]+:)?' + name + '\\b[^>]*>([\\s\\S]*?)<\\/(?:[\\w.-]+:)?' + name + '\\s*>', 'i'));
+  return xmlText(namespaced?.[1] ?? '');
 }
 
 Deno.serve(async (req) => {
