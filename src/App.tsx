@@ -574,8 +574,8 @@ export default function App() {
           <div className="workspace-heading">
             <div>
               <p className="eyebrow">VOTRE ESPACE DE TRAVAIL</p>
-              <h1>Bonjour, <span>créateur.</span></h1>
-              <p className="hero-description">Organisez vos idées et retrouvez vos projets au même endroit.</p>
+              <h1>Votre écosystème <span>digital.</span></h1>
+              <p className="hero-description">Pilotez les acteurs que vous avez sélectionnés, les médias et les parcours de formation dans un espace de travail unifié.</p>
               <p className="user-email"><ShieldCheck size={14} /> {session.user.email}</p>
             </div>
             <div className="workspace-mark"><FolderKanban size={30} /></div>
