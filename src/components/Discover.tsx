@@ -7,6 +7,7 @@ type Entrepreneur = {
   name: string;
   slug: string;
   summary: string | null;
+  biography: string | null;
   country: string | null;
   industry: string | null;
   website_url: string | null;
@@ -35,7 +36,7 @@ export default function Discover({ userId }: Props) {
     if (!supabase) { setLoading(false); setError('Supabase n’est pas configuré.'); return; }
     setLoading(true); setError('');
     let request = supabase.from('entrepreneurs')
-      .select('id,name,slug,summary,country,industry,website_url,verification_status')
+      .select('id,name,slug,summary,biography,country,industry,website_url,verification_status')
       .eq('visibility', 'public').order('name', { ascending: true }).limit(100);
     if (country.trim()) request = request.ilike('country', '%' + country.trim() + '%');
     if (industry.trim()) request = request.ilike('industry', '%' + industry.trim() + '%');
@@ -67,7 +68,7 @@ export default function Discover({ userId }: Props) {
 
   return <section id="discover" className="project-panel discover-panel">
     <div className="section-heading">
-      <div><p className="eyebrow">DISCOVER · VEILLE ENTREPRENEURIALE</p><h2><Compass size={21} /> Découvrir des entrepreneurs</h2><p className="muted">Un répertoire documenté, prêt à accueillir des profils et leurs sources publiques.</p></div>
+      <div><p className="eyebrow">DISCOVER · VEILLE ENTREPRENEURIALE</p><h2><Compass size={21} /> Découvrir des entrepreneurs</h2><p className="muted">Explorez les créateurs de contenu, fondateurs de SaaS et créateurs de produits numériques. Les profils sont sourcés et leur statut de vérification reste visible.</p></div>
       <div className="discover-heading-actions"><button className="icon-button" type="button" onClick={() => void load()} disabled={loading} aria-label="Actualiser Discover"><RefreshCw size={16}/></button><button className="primary-button discover-add" type="button" onClick={() => setShowForm(v => !v)}><Plus size={16}/> Ajouter un profil</button></div>
     </div>
     <div className="discover-filters">
@@ -88,7 +89,7 @@ export default function Discover({ userId }: Props) {
     </form>}
     {error && <p className="feedback error" role="alert">{error}</p>}
     {message && <p className="feedback success" role="status">{message}</p>}
-    {loading ? <p className="empty-state">Chargement du répertoire…</p> : items.length === 0 ? <div className="empty-state"><div className="empty-icon"><Compass size={24}/></div><h3>Aucun profil trouvé</h3><p>Ajoutez un profil ou modifiez les filtres. Les sources et les faits doivent être vérifiés avant publication.</p></div> : <div className="discover-list">{items.map(item => <article className="discover-item" key={item.id}><div className="discover-avatar"><Compass size={20}/></div><div className="discover-item-main"><h3>{item.name}</h3><div className="discover-meta">{item.country && <span>{item.country}</span>}{item.industry && <span>{item.industry}</span>}<span className={'verification-tag verification-' + item.verification_status}><ShieldCheck size={12}/>{item.verification_status === 'verified' ? 'Vérifié' : item.verification_status === 'reviewed' ? 'Relu' : 'À vérifier'}</span></div>{item.summary && <p>{item.summary}</p>}{item.website_url && <a href={item.website_url} target="_blank" rel="noreferrer">{item.website_url.replace(/^https?:\/\//, '')} <ExternalLink size={12}/></a>}</div></article>)}</div>}
+    {loading ? <p className="empty-state">Chargement du répertoire…</p> : items.length === 0 ? <div className="empty-state"><div className="empty-icon"><Compass size={24}/></div><h3>Aucun profil trouvé</h3><p>Ajoutez un profil ou modifiez les filtres. Les sources et les faits doivent être vérifiés avant publication.</p></div> : <div className="discover-list">{items.map(item => <article className="discover-item" key={item.id}><div className="discover-avatar"><Compass size={20}/></div><div className="discover-item-main"><h3>{item.name}</h3><div className="discover-meta">{item.country && <span>{item.country}</span>}{item.industry && <span>{item.industry}</span>}<span className={'verification-tag verification-' + item.verification_status}><ShieldCheck size={12}/>{item.verification_status === 'verified' ? 'Vérifié' : item.verification_status === 'reviewed' ? 'Relu' : 'À vérifier'}</span></div>{item.summary && <p>{item.summary}</p>}{item.biography && <details className="discover-biography"><summary>Parcours et pistes d’apprentissage</summary><p>{item.biography}</p></details>}{item.website_url && <a href={item.website_url} target="_blank" rel="noreferrer">{item.website_url.replace(/^https?:\/\//, '')} <ExternalLink size={12}/></a>}</div></article>)}</div>}
     <p className="workspace-footnote">Les profils ajoutés par un utilisateur sont identifiés dans la base. Le statut « vérifié » ne doit être attribué qu’après contrôle des sources.</p>
   </section>;
 }
