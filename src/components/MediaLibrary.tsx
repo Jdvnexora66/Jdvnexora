@@ -367,26 +367,26 @@ export default function MediaLibrary({ userId }: Props) {
       <div>
         <p className="eyebrow">NEXORA MEDIA · VIDÉOTHÈQUE</p>
         <h2><Play size={21} /> Vidéos, interviews et podcasts dans NEXORA</h2>
-        <p className="muted">Retrouvez vos médias dans l’application, avec une lecture intégrée et une bibliothèque synchronisée.</p>
+        <p className="muted">Conservez des liens et médias de référence utiles à vos recherches. Cette bibliothèque est complémentaire au catalogue des créateurs.</p>
       </div>
       <button className="icon-button" type="button" onClick={() => void load()} disabled={loading} aria-label="Actualiser la vidéothèque"><RefreshCw size={16} /></button>
     </div>
 
     <section className="media-provider-panel" aria-labelledby="media-provider-title">
-      <div className="media-provider-heading"><div><h3 id="media-provider-title"><Link2 size={17} /> Connecter vos comptes officiels</h3><p>Autorisez NEXORA à récupérer les contenus de vos propres comptes, puis synchronisez-les ici.</p></div><span className="media-provider-badge">API officielle</span></div>
+      <div className="media-provider-heading"><div><h3 id="media-provider-title"><Link2 size={17} /> Intégrations personnelles (optionnelles)</h3><p>Facultatif : connectez un compte uniquement si vous souhaitez importer vos propres contenus autorisés. Ce n’est pas nécessaire pour découvrir les créateurs référencés dans NEXORA.</p></div><span className="media-provider-badge">API officielle</span></div>
       <div className="media-provider-grid">
         {(['youtube','tiktok','instagram'] as const).map((platform) => {
           const connection = connections.find((item) => item.platform === platform);
           const label = platform === 'youtube' ? 'YouTube' : platform === 'tiktok' ? 'TikTok' : 'Instagram';
           return <article className="media-provider-card" key={platform}>
             <div className="media-provider-card-top"><strong>{label}</strong><span className={connection ? 'media-provider-status connected' : 'media-provider-status'}>{connection ? 'Connecté' : 'Non connecté'}</span></div>
-            {connection ? <><p className="media-provider-account">{connection.account_name || 'Compte autorisé'}</p><p className="media-provider-last-sync">{connection.last_synced_at ? 'Dernière synchronisation : ' + new Date(connection.last_synced_at).toLocaleString('fr-FR') : 'Aucune synchronisation effectuée'}</p><div className="media-provider-actions"><button type="button" className="primary-button" disabled={providerBusy === platform} onClick={() => void syncProvider(platform)}><RefreshCw size={14} /> {providerBusy === platform ? 'Synchronisation…' : 'Synchroniser'}</button><button type="button" className="media-remove-button" disabled={providerBusy === platform} onClick={() => void disconnectProvider(platform)}><Unplug size={14} /> Déconnecter</button></div></> : <><p className="media-provider-last-sync">Connectez le compte du créateur pour importer ses vidéos autorisées.</p><button type="button" className="primary-button" disabled={providerBusy === platform} onClick={() => void connectProvider(platform)}><Link2 size={14} /> {providerBusy === platform ? 'Préparation…' : 'Connecter ' + label}</button></>}
+            {connection ? <><p className="media-provider-account">{connection.account_name || 'Compte autorisé'}</p><p className="media-provider-last-sync">{connection.last_synced_at ? 'Dernière synchronisation : ' + new Date(connection.last_synced_at).toLocaleString('fr-FR') : 'Aucune synchronisation effectuée'}</p><div className="media-provider-actions"><button type="button" className="primary-button" disabled={providerBusy === platform} onClick={() => void syncProvider(platform)}><RefreshCw size={14} /> {providerBusy === platform ? 'Synchronisation…' : 'Synchroniser'}</button><button type="button" className="media-remove-button" disabled={providerBusy === platform} onClick={() => void disconnectProvider(platform)}><Unplug size={14} /> Déconnecter</button></div></> : <><p className="media-provider-last-sync">Connexion facultative : importez uniquement les contenus de votre propre compte ou ceux que vous êtes autorisé à gérer.</p><button type="button" className="primary-button" disabled={providerBusy === platform} onClick={() => void connectProvider(platform)}><Link2 size={14} /> {providerBusy === platform ? 'Préparation…' : 'Connecter ' + label}</button></>}
           </article>;
         })}
       </div>
       {providerError && <p className="feedback error" role="alert">{providerError}</p>}
       {providerNotice && <p className="feedback success" role="status">{providerNotice}</p>}
-      <p className="workspace-footnote">La synchronisation automatique concerne uniquement les comptes autorisés par leur propriétaire. Les identifiants développeur OAuth doivent être configurés comme secrets côté Supabase avant de pouvoir connecter YouTube, TikTok ou Instagram. Les vidéos sont intégrées depuis leurs plateformes ; aucun fichier protégé n’est téléchargé.</p>
+      <p className="workspace-footnote">Cette intégration est secondaire et facultative ; le répertoire des créateurs fonctionne sans connexion à vos comptes personnels. La synchronisation automatique concerne uniquement les comptes autorisés par leur propriétaire. Les identifiants développeur OAuth doivent être configurés comme secrets côté Supabase avant de pouvoir connecter YouTube, TikTok ou Instagram. Les vidéos sont intégrées depuis leurs plateformes ; aucun fichier protégé n’est téléchargé.</p>
     </section>
 
     <form className="media-import-form" onSubmit={addMedia}>
