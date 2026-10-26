@@ -551,3 +551,80 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
     transition: none;
   }
 }
+
+
+/* NEXORA interface system — final consistency pass for the 12 interface areas */
+.workspace-nav {
+  scrollbar-width: thin;
+  scrollbar-color: #344363 transparent;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+.workspace-nav::-webkit-scrollbar { width: 7px; height: 7px; }
+.workspace-nav::-webkit-scrollbar-track { background: transparent; border-radius: 20px; }
+.workspace-nav::-webkit-scrollbar-thumb {
+  background: #344363;
+  border: 1px solid #101a2e;
+  border-radius: 20px;
+}
+.workspace-nav::-webkit-scrollbar-thumb:hover { background: #6478a5; }
+.workspace-nav::-webkit-scrollbar-corner { background: transparent; }
+
+.workspace-nav-link:focus-visible,
+.topbar-activity-button:focus-visible,
+.topbar-account:focus-visible,
+.quick-access-card:focus-visible,
+.pipeline-card:focus-visible,
+.project-form button:focus-visible,
+.project-form input:focus-visible,
+.project-form select:focus-visible,
+.project-form textarea:focus-visible {
+  outline: 2px solid #73dfc9;
+  outline-offset: 2px;
+}
+.workspace-nav-link { scroll-margin-block: 10px; }
+.workspace > section,
+.workspace > .dashboard-stats,
+.workspace > .quick-access { scroll-margin-top: 92px; }
+.project-panel,
+.pipeline-section,
+.quick-access-card,
+.stat-card { min-width: 0; }
+.project-item > .muted { flex: 0 0 auto; white-space: nowrap; font-size: 11px; }
+.project-info, .pipeline-card, .quick-access-card > span { min-width: 0; }
+.pipeline-card-description { overflow-wrap: anywhere; }
+.topbar-account { overflow: hidden; }
+.topbar-account span { min-width: 0; }
+button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+
+@media (max-width: 1050px) {
+  .workspace-nav {
+    scrollbar-width: none;
+    scrollbar-gutter: auto;
+  }
+  .workspace-nav::-webkit-scrollbar { display: none; }
+}
+@media (max-width: 640px) {
+  .page-shell { padding-left: 14px; padding-right: 14px; }
+  .workspace-heading h1 { font-size: clamp(27px, 7vw, 38px); overflow-wrap: anywhere; }
+  .workspace-heading .hero-description { font-size: 13px; line-height: 1.65; }
+  .dashboard-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat-card { min-width: 0; }
+  .stat-card strong { overflow-wrap: anywhere; }
+  .project-item { flex-wrap: wrap; }
+  .project-item > .muted { margin-left: auto; }
+  .project-item .open-project-button { margin-left: auto; }
+  .section-heading { gap: 10px; }
+  .section-heading h2 { overflow-wrap: anywhere; }
+  .quick-access-card { gap: 9px; }
+}
+@media (max-width: 380px) {
+  .workspace-nav { grid-template-columns: minmax(0, 1fr); }
+  .dashboard-stats { grid-template-columns: minmax(0, 1fr); }
+  .topbar-actions { align-items: stretch; }
+  .topbar-account { max-width: calc(100vw - 36px); }
+  .project-item > .muted { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
