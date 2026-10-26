@@ -498,3 +498,56 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .topbar-account{max-width:240px;color:#e0e7f6}
 .topbar-account span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media(max-width:640px){.topbar{align-items:flex-start;gap:14px;flex-wrap:wrap}.topbar-actions{justify-content:flex-start;width:100%;gap:7px}.topbar-actions .secure-label{font-size:11px}.topbar-activity-button,.topbar-account{min-height:36px;padding:8px 9px;font-size:11px}.topbar-account{max-width:180px}.topbar-actions .logout-button{margin-left:auto}}
+
+
+/* Finition premium — cartes, états de chargement et retours d’action */
+.dashboard-stats .stat-card,
+.pipeline-lane,
+.recent-activity-panel,
+.quick-access-card {
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.dashboard-stats .stat-card:hover,
+.quick-access-card:hover {
+  border-color: rgba(115,223,201,.34);
+  box-shadow: 0 14px 34px rgba(0,0,0,.2), 0 0 0 1px rgba(115,223,201,.05);
+}
+.pipeline-lane { min-width: 0; }
+.recent-activity-panel { scroll-margin-top: 24px; }
+.feedback[role="alert"] {
+  border-color: rgba(255,116,137,.32);
+  background: rgba(255,91,120,.09);
+  color: #ffc0ca;
+}
+.feedback:not(.error), .notice {
+  border-color: rgba(115,223,201,.22);
+  background: rgba(67,190,159,.07);
+  color: #b8f4e2;
+}
+.workspace button:disabled {
+  cursor: not-allowed;
+}
+.workspace .empty-state[role="status"],
+.workspace [aria-busy="true"] {
+  cursor: progress;
+}
+.workspace input:focus-visible,
+.workspace select:focus-visible,
+.workspace textarea:focus-visible {
+  outline: 2px solid #8b9aff;
+  outline-offset: 2px;
+}
+@media (hover: none) {
+  .dashboard-stats .stat-card:hover,
+  .quick-access-card:hover {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-stats .stat-card,
+  .pipeline-lane,
+  .recent-activity-panel,
+  .quick-access-card {
+    transition: none;
+  }
+}
