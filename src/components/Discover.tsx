@@ -23,7 +23,6 @@ export default function Discover({ userId }: Props) {
   const [sourcesByProfile, setSourcesByProfile] = useState<Record<string, CreatorSource[]>>({});
   const [country, setCountry] = useState('');
   const [basketSearches, setBasketSearches] = useState<Record<string, string>>({ content: '', saas: '', digital: '' });
-  const [activeBasket, setActiveBasket] = useState<'content' | 'saas' | 'digital'>('content');
   const [name, setName] = useState('');
   const [summary, setSummary] = useState('');
   const [website, setWebsite] = useState('');
@@ -120,13 +119,21 @@ export default function Discover({ userId }: Props) {
     if (!name.trim()) return;
     setSaving(true); setError(''); setMessage('');
     const slug = name.trim().toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Math.random().toString(36).slice(2, 7);
-    const { error: insertError } = await supabase.from('entrepreneurs').insert({
+    const { data: createdProfile, error: insertError } = await supabase.from('entrepreneurs').insert({
       name: name.trim(), slug, summary: summary.trim() || null,
       country: newCountry.trim() || null, industry: newIndustry.trim() || null,
       website_url: website.trim() || null, created_by: userId, visibility: 'public',
-    });
+    }).select('id,name,website_url').single();
     setSaving(false);
     if (insertError) { setError(insertError.message.includes('entrepreneurs') ? 'La table Discover n’est pas encore disponible. Appliquez la migration Supabase.' : insertError.message); return; }
+    if (createdProfile?.website_url) {
+      const { error: sourceError } = await supabase.from('content_sources').insert({
+        entrepreneur_id: createdProfile.id, title: createdProfile.name + ' — site de référence',
+        source_url: createdProfile.website_url, source_type: 'website', publisher: createdProfile.name,
+        credibility_note: 'Lien ajouté lors de la création du profil. Vérifier les faits et la date de consultation avant validation.', created_by: userId,
+      });
+      if (sourceError) setMessage('Profil ajouté. Le lien officiel n’a pas pu être enregistré comme source : ' + sourceError.message);
+    }
     setName(''); setSummary(''); setWebsite(''); setNewCountry(''); setNewIndustry(''); setShowForm(false);
     setMessage('Créateur ajouté au panier « ' + baskets.find(basket => basket.id === formBasket)?.title + ' ». Le profil reste à vérifier.'); await load();
   }
