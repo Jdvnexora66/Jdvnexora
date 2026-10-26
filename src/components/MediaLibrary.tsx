@@ -2,6 +2,8 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Film, Headphones, Play, Plus, Search, Trash2, Youtube, Video, RefreshCw, Globe2, LockKeyhole, Link2, Unplug } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import './media-provider.css';
+import CreatorCatalog from './CreatorCatalog';
+import './creator-catalog.css';
 
 type Platform = 'YouTube' | 'TikTok' | 'Instagram' | 'Spotify' | 'SoundCloud';
 type PlatformDb = 'youtube' | 'tiktok' | 'instagram' | 'spotify' | 'soundcloud';
@@ -363,6 +365,7 @@ export default function MediaLibrary({ userId }: Props) {
   }
 
   return <section id="media-library" className="project-panel media-library-panel">
+    <CreatorCatalog />
     <div className="section-heading">
       <div>
         <p className="eyebrow">NEXORA MEDIA · VIDÉOTHÈQUE</p>
