@@ -91,8 +91,6 @@ export default function Discover({ userId }: Props) {
   }
 
   const visibleItems = showFollowedOnly ? items.filter(item => followedIds.includes(item.id)) : items;
-
-  const visibleItems = showFollowedOnly ? items.filter(item => followedIds.includes(item.id)) : items;
   const baskets = [
     { id: 'content' as const, title: 'Créateurs de contenu', description: 'YouTube, médias, éducation, podcasts et création éditoriale.', terms: ['contenu', 'youtube', 'podcast', 'créateur', 'media', 'média', 'divertissement'] },
     { id: 'saas' as const, title: 'Créateurs de SaaS et startups', description: 'Logiciels, applications, fintech et entreprises technologiques.', terms: ['saas', 'logiciel', 'startup', 'technologie', 'tech', 'fintech', 'marketplace', 'commerce en ligne'] },
