@@ -61,7 +61,13 @@ Deno.serve(async (req) => {
         importedForSource++;
         processed++;
       }
-      if (importedForSource === 0) throw new Error('Éléments RSS détectés, mais aucun épisode avec titre et lien HTTP valide n’a été importé');
+      if (importedForSource === 0) {
+        const sample = items[0] ?? '';
+        const sampleTitle = tag(sample, 'title').slice(0, 120) || '(titre vide)';
+        const sampleLink = tag(sample, 'link').slice(0, 180) || '(lien vide)';
+        const rawLinkTag = sample.match(/<link\\b[^>]*>([\\s\\S]*?)<\\/link\\s*>/i)?.[1]?.slice(0, 180) || '(aucun tag link standard)';
+        throw new Error('Éléments RSS détectés (' + items.length + '), aucun import valide. Exemple titre=' + sampleTitle + '; lien extrait=' + sampleLink + '; contenu link brut=' + rawLinkTag);
+      }
       if (/^the tim ferriss show$/i.test(source.name.trim())) {
         const { error: publishError } = await db.from('nexora_resources')
           .update({
