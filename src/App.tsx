@@ -14,6 +14,7 @@ import StudioIA from './components/StudioIA';
 import CollaborationPanel from './components/CollaborationPanel';
 import BillingPanel from './components/BillingPanel';
 import AdminPanel from './components/AdminPanel';
+import ProfessionalPages from './components/ProfessionalPages';
 
 type AuthMode = 'signin' | 'signup';
 type UserProfile = { id: string; display_name: string | null; preferred_language: string; timezone: string; role: string; };
@@ -624,6 +625,14 @@ export default function App() {
             <a className="workspace-nav-link" href="#profile-title" onClick={(event) => { event.preventDefault(); document.getElementById('profile-title')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}><UserRound size={17} /> <span>Profil & préférences</span></a>
             <a className="workspace-nav-link" href="#billing" onClick={(event) => { event.preventDefault(); document.getElementById('billing')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ShieldCheck size={17} /> <span>Facturation & sécurité</span></a>
             <a className="workspace-nav-link" href="#administration" onClick={(event) => { event.preventDefault(); document.getElementById('administration')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ShieldCheck size={17} /> <span>Administration</span></a>
+            <div className="nav-section-label">PAGES PROFESSIONNELLES</div>
+            <a className="workspace-nav-link" href="#ai-catalog" onClick={(event) => { event.preventDefault(); document.getElementById('ai-catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Sparkles size={17} /> <span>Catalogue IA</span></a>
+            <a className="workspace-nav-link" href="#notifications" onClick={(event) => { event.preventDefault(); document.getElementById('notifications')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Activity size={17} /> <span>Notifications</span></a>
+            <a className="workspace-nav-link" href="#account-security" onClick={(event) => { event.preventDefault(); document.getElementById('account-security')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ShieldCheck size={17} /> <span>Compte & sécurité</span></a>
+            <a className="workspace-nav-link" href="#help-center" onClick={(event) => { event.preventDefault(); document.getElementById('help-center')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><UserRound size={17} /> <span>Aide & support</span></a>
+            <a className="workspace-nav-link" href="#public-pages" onClick={(event) => { event.preventDefault(); document.getElementById('public-pages')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Globe2 size={17} /> <span>Site public</span></a>
+            <a className="workspace-nav-link" href="#legal-pages" onClick={(event) => { event.preventDefault(); document.getElementById('legal-pages')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Bookmark size={17} /> <span>Mentions légales</span></a>
+            <a className="workspace-nav-link" href="#system-pages" onClick={(event) => { event.preventDefault(); document.getElementById('system-pages')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ShieldCheck size={17} /> <span>Pages système</span></a>
             <button className="workspace-nav-link" type="button" onClick={() => { if (!confirmDiscardUnsavedChapterChanges()) return; setSearchQuery(''); setStatusFilter('all'); setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); void loadProjects(); }}><RefreshCw size={17} /> <span>Actualiser</span></button>
           </nav>
 
@@ -698,6 +707,8 @@ export default function App() {
           {!activeProject && <BillingPanel userId={session.user.id} role={profile?.role ?? 'user'} />}
 
           {!activeProject && <AdminPanel userId={session.user.id} role={profile?.role ?? 'user'} />}
+
+          {!activeProject && <ProfessionalPages userId={session.user.id} role={profile?.role ?? 'user'} />}
 
           {!activeProject && <section className="quick-access" aria-label="Accès rapides">
             <div className="quick-access-heading"><div><p className="eyebrow">CENTRE DE COMMANDE</p><h2>Accès rapides</h2><p className="muted">Reprenez votre travail ou démarrez une nouvelle création.</p></div></div>
