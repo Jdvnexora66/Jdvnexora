@@ -618,6 +618,34 @@ export default function App() {
             <article className="stat-card"><span className="stat-icon"><Sparkles size={18} /></span><div><p>Brouillons</p><strong>{loadingProjects ? '…' : projects.filter((project) => project.status === 'draft').length}</strong><small>Idées à développer</small></div></article>
           </div>
 
+          {!activeProject && <section className="pipeline-section" aria-labelledby="pipeline-title">
+            <div className="pipeline-heading">
+              <div><p className="eyebrow">FLUX DE PRODUCTION</p><h2 id="pipeline-title">Pipeline des projets</h2><p className="muted">Visualisez l’avancement de vos créations et ouvrez un projet en un clic.</p></div>
+              <span className="pipeline-total">{projects.length} projet{projects.length > 1 ? 's' : ''}</span>
+            </div>
+            <div className="pipeline-board" aria-busy={loadingProjects}>
+              {([
+                { key: 'draft', title: 'À cadrer', note: 'Idées et brouillons' },
+                { key: 'in_progress', title: 'En production', note: 'Travail en cours' },
+                { key: 'completed', title: 'Finalisés', note: 'Prêts à livrer' },
+                { key: 'archived', title: 'Archives', note: 'Mis de côté' },
+              ] as const).map((lane) => {
+                const laneProjects = projects.filter((project) => project.status === lane.key);
+                return <section className={'pipeline-lane pipeline-lane-' + lane.key} key={lane.key} aria-label={lane.title}>
+                  <div className="pipeline-lane-heading"><div><h3>{lane.title}</h3><p>{lane.note}</p></div><span>{laneProjects.length}</span></div>
+                  <div className="pipeline-lane-cards">
+                    {laneProjects.length === 0 ? <p className="pipeline-empty">{loadingProjects ? 'Chargement…' : 'Aucun projet ici'}</p> : laneProjects.map((project) => <button type="button" className="pipeline-card" key={project.id} onClick={() => void openProject(project)} disabled={busy}>
+                      <span className="pipeline-card-type">{projectLabel[project.project_type] || project.project_type}</span>
+                      <strong>{project.title}</strong>
+                      <span className="pipeline-card-description">{project.description || 'Ajoutez une description pour clarifier la prochaine étape.'}</span>
+                      <span className="pipeline-card-footer"><span>{new Date(project.created_at).toLocaleDateString('fr-FR')}</span><span>Ouvrir <ArrowRight size={13} /></span></span>
+                    </button>)}
+                  </div>
+                </section>;
+              })}
+            </div>
+          </section>}
+
           {!activeProject && <section className="project-panel recent-activity-panel" aria-labelledby="recent-activity-title" aria-busy={loadingProjects}>
             <div className="section-heading">
               <div><p className="eyebrow">VUE D’ENSEMBLE</p><h2 id="recent-activity-title">Activité récente</h2><p className="muted">Retrouvez rapidement les derniers projets enregistrés dans votre espace.</p></div>
