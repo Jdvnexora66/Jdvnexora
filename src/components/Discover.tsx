@@ -21,15 +21,16 @@ type Props = { userId: string };
 export default function Discover({ userId }: Props) {
   const [items, setItems] = useState<Entrepreneur[]>([]);
   const [sourcesByProfile, setSourcesByProfile] = useState<Record<string, CreatorSource[]>>({});
-  const [query, setQuery] = useState('');
   const [country, setCountry] = useState('');
-  const [industry, setIndustry] = useState('');
+  const [basketSearches, setBasketSearches] = useState<Record<string, string>>({ content: '', saas: '', digital: '' });
+  const [activeBasket, setActiveBasket] = useState<'content' | 'saas' | 'digital'>('content');
   const [name, setName] = useState('');
   const [summary, setSummary] = useState('');
   const [website, setWebsite] = useState('');
   const [newCountry, setNewCountry] = useState('');
   const [newIndustry, setNewIndustry] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [formBasket, setFormBasket] = useState<'content' | 'saas' | 'digital'>('content');
   const [followedIds, setFollowedIds] = useState<string[]>([]);
   const [showFollowedOnly, setShowFollowedOnly] = useState(false);
   const [followingBusyId, setFollowingBusyId] = useState<string | null>(null);
@@ -43,10 +44,8 @@ export default function Discover({ userId }: Props) {
     setLoading(true); setError('');
     let request = supabase.from('entrepreneurs')
       .select('id,name,slug,summary,biography,country,industry,website_url,verification_status')
-      .eq('visibility', 'public').order('name', { ascending: true }).limit(100);
+      .eq('visibility', 'public').order('name', { ascending: true }).limit(200);
     if (country.trim()) request = request.ilike('country', '%' + country.trim() + '%');
-    if (industry.trim()) request = request.ilike('industry', '%' + industry.trim() + '%');
-    if (query.trim()) request = request.or('name.ilike.%' + query.trim().replace(/[,%()]/g, '') + '%,summary.ilike.%' + query.trim().replace(/[,%()]/g, '') + '%');
     const { data, error: loadError } = await request;
     if (loadError) setError(loadError.message.includes('entrepreneurs') ? 'Le module Discover attend l’application de la migration Supabase.' : loadError.message);
     else {
@@ -65,7 +64,7 @@ export default function Discover({ userId }: Props) {
       } else setSourcesByProfile({});
     }
     setLoading(false);
-  }, [query, country, industry]);
+  }, [country]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -94,6 +93,27 @@ export default function Discover({ userId }: Props) {
 
   const visibleItems = showFollowedOnly ? items.filter(item => followedIds.includes(item.id)) : items;
 
+  const visibleItems = showFollowedOnly ? items.filter(item => followedIds.includes(item.id)) : items;
+  const baskets = [
+    { id: 'content' as const, title: 'Créateurs de contenu', description: 'YouTube, médias, éducation, podcasts et création éditoriale.', terms: ['contenu', 'youtube', 'podcast', 'créateur', 'media', 'média', 'divertissement'] },
+    { id: 'saas' as const, title: 'Créateurs de SaaS et startups', description: 'Logiciels, applications, fintech et entreprises technologiques.', terms: ['saas', 'logiciel', 'startup', 'technologie', 'tech', 'fintech', 'marketplace', 'commerce en ligne'] },
+    { id: 'digital' as const, title: 'Créateurs de produits numériques', description: 'E-books, formations, cours, templates et produits vendus en ligne.', terms: ['produit', 'formation', 'ebook', 'numérique', 'digital', 'cours', 'template', 'auteur'] },
+  ];
+  function belongsToBasket(item: Entrepreneur, basketId: 'content' | 'saas' | 'digital') {
+    const basket = baskets.find(value => value.id === basketId)!;
+    const haystack = [item.industry, item.summary, item.name].filter(Boolean).join(' ').toLocaleLowerCase('fr');
+    return basket.terms.some(term => haystack.includes(term));
+  }
+  function itemsForBasket(basketId: 'content' | 'saas' | 'digital') {
+    const term = basketSearches[basketId].trim().toLocaleLowerCase('fr');
+    return visibleItems.filter(item => belongsToBasket(item, basketId) && (!term || [item.name, item.summary, item.biography, item.country, item.industry].filter(Boolean).join(' ').toLocaleLowerCase('fr').includes(term)));
+  }
+  function openAddForm(basketId: 'content' | 'saas' | 'digital') {
+    setFormBasket(basketId);
+    const defaults = { content: 'Création de contenu', saas: 'SaaS · Technologie', digital: 'Produits numériques' };
+    setNewIndustry(defaults[basketId]);
+    setShowForm(true);
+  }
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase) return;
@@ -108,7 +128,7 @@ export default function Discover({ userId }: Props) {
     setSaving(false);
     if (insertError) { setError(insertError.message.includes('entrepreneurs') ? 'La table Discover n’est pas encore disponible. Appliquez la migration Supabase.' : insertError.message); return; }
     setName(''); setSummary(''); setWebsite(''); setNewCountry(''); setNewIndustry(''); setShowForm(false);
-    setMessage('Profil ajouté au répertoire.'); await load();
+    setMessage('Créateur ajouté au panier « ' + baskets.find(basket => basket.id === formBasket)?.title + ' ». Le profil reste à vérifier.'); await load();
   }
 
   return <section id="discover" className="project-panel discover-panel">
