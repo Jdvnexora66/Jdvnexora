@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { FormEvent, useState } from 'react';
+import { supabase } from '../lib/supabase';
 import { Activity, Bell, BookOpen, CheckCircle2, CircleHelp, FileText, Globe, LifeBuoy, LockKeyhole, MessageCircle, Search, Settings2, ShieldCheck, Sparkles, Users, WandSparkles } from 'lucide-react';
 
 type ProfessionalPagesProps = { userId: string; role: string };
@@ -15,10 +16,39 @@ export default function ProfessionalPages({ userId, role }: ProfessionalPagesPro
   const [supportTopic, setSupportTopic] = useState('Compte et connexion');
   const [supportMessage, setSupportMessage] = useState('');
   const [supportSent, setSupportSent] = useState(false);
+  const [supportSaving, setSupportSaving] = useState(false);
+  const [supportError, setSupportError] = useState('');
   const [notificationsRead, setNotificationsRead] = useState(false);
   const [emailUpdates, setEmailUpdates] = useState(true);
   const [marketingTab, setMarketingTab] = useState<'features' | 'pricing' | 'about' | 'contact'>('features');
   const filteredTools = tools.filter((tool) => (tool.name + ' ' + tool.description + ' ' + tool.category).toLocaleLowerCase().includes(query.toLocaleLowerCase()));
+
+  async function submitSupport(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSupportError('');
+    if (!supabase) {
+      setSupportError('Le service de support n’est pas configuré. Réessayez plus tard.');
+      return;
+    }
+    const message = supportMessage.trim();
+    if (!message) {
+      setSupportError('Décrivez votre demande avant de l’envoyer.');
+      return;
+    }
+    setSupportSaving(true);
+    const { error } = await supabase.from('support_tickets').insert({
+      user_id: userId,
+      topic: supportTopic,
+      message,
+    });
+    setSupportSaving(false);
+    if (error) {
+      setSupportError('La demande n’a pas pu être enregistrée. Vérifiez votre connexion puis réessayez.');
+      return;
+    }
+    setSupportMessage(message);
+    setSupportSent(true);
+  }
 
   return <div className="professional-pages">
     <section id="ai-catalog" className="project-panel pro-page" aria-labelledby="ai-catalog-title">
@@ -50,7 +80,7 @@ export default function ProfessionalPages({ userId, role }: ProfessionalPagesPro
 
     <section id="help-center" className="project-panel pro-page" aria-labelledby="help-center-title">
       <div className="section-heading"><div><p className="eyebrow">ASSISTANCE</p><h2 id="help-center-title"><LifeBuoy size={20}/> Centre d’aide et support</h2><p className="muted">Décrivez votre demande pour préparer un message de support.</p></div></div>
-      {supportSent ? <div className="pro-success"><CheckCircle2 size={20}/><div><strong>Demande préparée</strong><p>Votre message est affiché ci-dessous. L’envoi automatique nécessite encore un service de tickets ou une fonction serveur.</p><blockquote>{supportMessage}</blockquote><button className="logout-button" type="button" onClick={() => { setSupportSent(false); setSupportMessage(''); }}>Nouvelle demande</button></div></div> : <form className="project-form pro-support-form" onSubmit={(event) => { event.preventDefault(); if (supportMessage.trim()) setSupportSent(true); }}><label htmlFor="support-topic">Sujet</label><select id="support-topic" value={supportTopic} onChange={(event) => setSupportTopic(event.target.value)}><option>Compte et connexion</option><option>Projets et fichiers</option><option>Studio IA</option><option>Facturation</option><option>Signaler un problème</option></select><label htmlFor="support-message">Votre demande</label><textarea id="support-message" rows={4} maxLength={2000} required value={supportMessage} onChange={(event) => setSupportMessage(event.target.value)} placeholder="Expliquez le problème rencontré et ce que vous souhaitiez faire…"/><button className="primary-button" type="submit">Préparer la demande <MessageCircle size={16}/></button></form>}
+      {supportSent ? <div className="pro-success"><CheckCircle2 size={20}/><div><strong>Demande enregistrée</strong><p>Votre demande a été enregistrée de manière sécurisée dans votre espace support. Conservez ce récapitulatif pour votre suivi.</p><blockquote>{supportMessage}</blockquote><button className="logout-button" type="button" onClick={() => { setSupportSent(false); setSupportMessage(''); setSupportError(''); }}>Nouvelle demande</button></div></div> : <form className="project-form pro-support-form" onSubmit={(event) => void submitSupport(event)}><label htmlFor="support-topic">Sujet</label><select id="support-topic" value={supportTopic} onChange={(event) => setSupportTopic(event.target.value)}><option>Compte et connexion</option><option>Projets et fichiers</option><option>Studio IA</option><option>Facturation</option><option>Signaler un problème</option></select><label htmlFor="support-message">Votre demande</label><textarea id="support-message" rows={4} maxLength={2000} required value={supportMessage} onChange={(event) => setSupportMessage(event.target.value)} placeholder="Expliquez le problème rencontré et ce que vous souhaitiez faire…"/>{supportError && <p className="feedback error" role="alert">{supportError}</p>}<button className="primary-button" type="submit" disabled={supportSaving}>{supportSaving ? 'Envoi en cours…' : 'Envoyer la demande'} <MessageCircle size={16}/></button></form>}
       <div className="pro-faq"><h3><CircleHelp size={17}/> Questions fréquentes</h3><details><summary>Pourquoi mes projets ne s’affichent-ils pas ?</summary><p>Vérifiez la connexion, actualisez la page et contrôlez les politiques RLS des tables de projets.</p></details><details><summary>Comment récupérer mon mot de passe ?</summary><p>Déconnectez-vous puis utilisez le lien de réinitialisation sur la page de connexion.</p></details><details><summary>Le catalogue IA est-il entièrement connecté ?</summary><p>Cette première version présente les entrées de catalogue. Chaque outil doit être relié à son service et à ses autorisations avant mise en production.</p></details></div>
     </section>
 
