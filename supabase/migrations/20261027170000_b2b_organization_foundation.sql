@@ -155,15 +155,6 @@ create policy organization_members_select_members on public.organization_members
 for select to authenticated
 using (private.is_org_member(organization_id));
 
-drop policy if exists organization_invitations_insert_managers on public.organization_invitations;
-create policy organization_invitations_insert_managers on public.organization_invitations
-for insert to authenticated
-with check (
-  invited_by = (select auth.uid())
-  and private.has_org_role(organization_id, array['owner','admin','manager'])
-  and (role <> 'admin' or private.has_org_role(organization_id, array['owner']))
-);
-
 drop policy if exists usage_records_select_self_or_org_admin on public.usage_records;
 create policy usage_records_select_self_or_org_admin on public.usage_records
 for select to authenticated
