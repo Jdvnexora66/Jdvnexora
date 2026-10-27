@@ -1,6 +1,10 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
+ feature/secure-organization-invitations
+import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Building2, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film } from 'lucide-react';
+=======
 import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette } from 'lucide-react';
+ main
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import Discover from './components/Discover';
 import MediaLibrary from './components/MediaLibrary';
@@ -14,8 +18,12 @@ import StudioIA from './components/StudioIA';
 import CollaborationPanel from './components/CollaborationPanel';
 import BillingPanel from './components/BillingPanel';
 import AdminPanel from './components/AdminPanel';
+ feature/secure-organization-invitations
+import OrganizationPanel from './components/OrganizationPanel';
+=======
 import VisualDesignStudio from './components/VisualDesignStudio';
 import PublishedVisualLayout from './components/PublishedVisualLayout';
+ main
 
 type AuthMode = 'signin' | 'signup';
 type UserProfile = { id: string; display_name: string | null; preferred_language: string; timezone: string; role: string; };
@@ -614,6 +622,7 @@ export default function App() {
             <a className="workspace-nav-link" href="#timeline" onClick={(event) => { event.preventDefault(); document.getElementById('timeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><CalendarDays size={17} /> <span>Timeline</span></a>
             <a className="workspace-nav-link" href="#insights" onClick={(event) => { event.preventDefault(); document.getElementById('insights')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Sparkles size={17} /> <span>Insights</span></a>
             <div className="nav-section-label">COMPTE & OUTILS</div>
+            <a className="workspace-nav-link" href="#organizations" onClick={(event) => { event.preventDefault(); document.getElementById('organizations')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Building2 size={17} /> <span>Organisations & équipe</span></a>
             <a className="workspace-nav-link" href="#profile-title" onClick={(event) => { event.preventDefault(); document.getElementById('profile-title')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}><UserRound size={17} /> <span>Profil & préférences</span></a>
             <a className="workspace-nav-link" href="#billing" onClick={(event) => { event.preventDefault(); document.getElementById('billing')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ShieldCheck size={17} /> <span>Facturation & sécurité</span></a>
             <a className="workspace-nav-link" href="#administration" onClick={(event) => { event.preventDefault(); document.getElementById('administration')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ShieldCheck size={17} /> <span>Administration</span></a>
@@ -629,6 +638,8 @@ export default function App() {
             <article className="stat-card"><span className="stat-icon"><ShieldCheck size={18} /></span><div><p>Terminés</p><strong>{loadingProjects ? '…' : projects.filter((project) => project.status === 'completed').length}</strong><small>Projets finalisés</small></div></article>
             <article className="stat-card"><span className="stat-icon"><Sparkles size={18} /></span><div><p>Brouillons</p><strong>{loadingProjects ? '…' : projects.filter((project) => project.status === 'draft').length}</strong><small>Idées à développer</small></div></article>
           </div>
+
+          {!activeProject && <OrganizationPanel userId={session.user.id} />}
 
           {!activeProject && <section className="pipeline-section" aria-labelledby="pipeline-title">
             <div className="pipeline-heading">

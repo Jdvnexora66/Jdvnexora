@@ -128,14 +128,14 @@ create or replace function private.prevent_organization_creator_change()
 returns trigger
 language plpgsql
 set search_path = pg_catalog, public
-as $
+as $$
 begin
   if new.created_by is distinct from old.created_by then
     raise exception 'Organization creator is immutable';
   end if;
   return new;
 end;
-$;
+$$;
 
 revoke all on function private.prevent_organization_creator_change() from public, anon, authenticated;
 
