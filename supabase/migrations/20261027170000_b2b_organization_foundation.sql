@@ -147,7 +147,7 @@ for each row execute function private.prevent_organization_creator_change();
 drop trigger if exists organizations_touch_updated_at on public.organizations;
 create trigger organizations_touch_updated_at
 before update on public.organizations
-for each row execute function public.touch_updated_at();
+for each row execute function public.nexora_set_updated_at();
 
 alter table public.organizations enable row level security;
 alter table public.organization_members enable row level security;
