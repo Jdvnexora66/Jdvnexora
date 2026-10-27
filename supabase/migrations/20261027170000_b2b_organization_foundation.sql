@@ -1,5 +1,7 @@
 -- JDV NEXORA B2B foundation: additive migration, no existing data is dropped.
 create schema if not exists private;
+revoke all on schema private from public, anon;
+grant usage on schema private to authenticated;
 
 create table if not exists public.organizations (
   id uuid primary key default gen_random_uuid(),
@@ -64,6 +66,14 @@ create index if not exists usage_records_user_created_idx
   on public.usage_records(user_id, created_at desc);
 create index if not exists usage_records_org_created_idx
   on public.usage_records(organization_id, created_at desc);
+create index if not exists organizations_created_by_idx
+  on public.organizations(created_by);
+create index if not exists organization_members_user_id_idx
+  on public.organization_members(user_id);
+create index if not exists organization_invitations_invited_by_idx
+  on public.organization_invitations(invited_by);
+create index if not exists usage_records_request_id_idx
+  on public.usage_records(request_id) where request_id is not null;
 
 create or replace function private.is_org_member(p_organization_id uuid)
 returns boolean
@@ -132,7 +142,7 @@ using (private.is_org_member(id));
 drop policy if exists organizations_insert_self on public.organizations;
 create policy organizations_insert_self on public.organizations
 for insert to authenticated
-with check (created_by = (select auth.uid()));
+with check (created_by = (select auth.uid()) and status = 'active');
 
 drop policy if exists organizations_update_owner_admin on public.organizations;
 create policy organizations_update_owner_admin on public.organizations
