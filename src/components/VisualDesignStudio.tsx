@@ -1,0 +1,213 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ArrowDown, ArrowUp, Check, Clock3, Copy, Eye, EyeOff, LayoutDashboard, Palette, Plus, Save, ShieldCheck, Smartphone, Tablet, Trash2, Undo2, Redo2, Monitor, Rocket, RotateCcw } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+
+type StudioBlock = {
+  id: string;
+  type: 'heading' | 'text' | 'stat' | 'action' | 'card' | 'divider';
+  title: string;
+  content?: string;
+  color?: string;
+  background?: string;
+  radius?: number;
+  padding?: number;
+  width?: 'full' | 'half' | 'third';
+  hidden?: boolean;
+};
+type StudioConfig = { schemaVersion: 1; theme: 'nexora-dark' | 'nexora-light' | 'ocean'; components: StudioBlock[] };
+type LayoutRow = { id: string; name: string; draft_config: StudioConfig; published_config: StudioConfig | null; version: number; is_default: boolean; updated_at: string; published_at: string | null };
+type VersionRow = { id: string; layout_id: string; version: number; snapshot: StudioConfig; action: string; created_at: string };
+
+const presets: Array<{ type: StudioBlock['type']; title: string; content?: string }> = [
+  { type: 'heading', title: 'Titre de section', content: 'Un espace pour vos idées' },
+  { type: 'text', title: 'Bloc de texte', content: 'Présentez une information utile à vos utilisateurs.' },
+  { type: 'stat', title: 'Carte statistique', content: 'Connectez ici une vraie source de données avant publication.' },
+  { type: 'card', title: 'Carte de contenu', content: 'Une carte réutilisable pour organiser les contenus.' },
+  { type: 'action', title: 'Action rapide', content: 'Action de démonstration non connectée' },
+  { type: 'divider', title: 'Séparateur' },
+];
+const starter: StudioConfig = { schemaVersion: 1, theme: 'nexora-dark', components: [
+  { id: 'welcome-title', type: 'heading', title: 'Bienvenue dans votre espace', content: 'Configurez votre tableau de bord NEXORA', color: '#f4f6ff', width: 'full', padding: 16 },
+  { id: 'welcome-text', type: 'text', title: 'Votre espace de travail', content: 'Ajoutez des blocs, personnalisez leur apparence et enregistrez votre brouillon.', color: '#b8c3df', width: 'full', padding: 12 },
+  { id: 'welcome-card', type: 'card', title: 'Vos projets', content: 'Connectez ce bloc à un module métier existant avant de l’utiliser pour des données opérationnelles.', background: '#182440', color: '#f4f6ff', radius: 16, padding: 20, width: 'half' },
+] };
+const themes: Record<StudioConfig['theme'], { background: string; surface: string; accent: string; text: string }> = {
+  'nexora-dark': { background: '#0b1120', surface: '#141e34', accent: '#8995ff', text: '#f4f6ff' },
+  'nexora-light': { background: '#f2f5fb', surface: '#ffffff', accent: '#4f5ed7', text: '#172039' },
+  ocean: { background: '#071b2b', surface: '#103449', accent: '#48d7c0', text: '#ecfeff' },
+};
+const safeConfig = (value: unknown): StudioConfig => {
+  if (!value || typeof value !== 'object') return starter;
+  const input = value as Partial<StudioConfig>;
+  if (input.schemaVersion !== 1 || !Array.isArray(input.components) || input.components.length > 80) return starter;
+  const allowed = new Set(['heading','text','stat','action','card','divider']);
+  const components = input.components.filter((x): x is StudioBlock => Boolean(x && typeof x === 'object' && typeof x.id === 'string' && typeof x.title === 'string' && allowed.has((x as StudioBlock).type))).map(x => ({
+    id: x.id.slice(0, 80), type: x.type, title: x.title.slice(0, 120), content: typeof x.content === 'string' ? x.content.slice(0, 1000) : '',
+    color: /^#[0-9a-f]{6}$/i.test(x.color ?? '') ? x.color : undefined,
+    background: /^#[0-9a-f]{6}$/i.test(x.background ?? '') ? x.background : undefined,
+    radius: Number.isFinite(x.radius) ? Math.max(0, Math.min(32, x.radius!)) : 12,
+    padding: Number.isFinite(x.padding) ? Math.max(0, Math.min(48, x.padding!)) : 16,
+    width: ['full','half','third'].includes(x.width ?? '') ? x.width : 'full', hidden: Boolean(x.hidden),
+  }));
+  return { schemaVersion: 1, theme: ['nexora-dark','nexora-light','ocean'].includes(input.theme ?? '') ? input.theme! : 'nexora-dark', components };
+};
+
+export default function VisualDesignStudio({ userId, role }: { userId: string; role: string }) {
+  const [layouts, setLayouts] = useState<LayoutRow[]>([]);
+  const [versions, setVersions] = useState<VersionRow[]>([]);
+  const [selectedId, setSelectedId] = useState('');
+  const [selectedBlockId, setSelectedBlockId] = useState('');
+  const [name, setName] = useState('Mon tableau de bord');
+  const [config, setConfig] = useState<StudioConfig>(starter);
+  const [savedConfig, setSavedConfig] = useState<StudioConfig>(starter);
+  const [preview, setPreview] = useState<'desktop'|'tablet'|'mobile'>('desktop');
+  const [notice, setNotice] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [history, setHistory] = useState<StudioConfig[]>([]);
+  const [future, setFuture] = useState<StudioConfig[]>([]);
+  const isAdmin = role === 'admin';
+  const selectedBlock = config.components.find(block => block.id === selectedBlockId) ?? null;
+  const dirty = useMemo(() => JSON.stringify(config) !== JSON.stringify(savedConfig), [config, savedConfig]);
+  const theme = themes[config.theme];
+
+  const loadLayouts = useCallback(async () => {
+    if (!supabase || !isAdmin) return;
+    setBusy(true); setError('');
+    const { data, error: loadError } = await supabase.from('visual_studio_layouts').select('id,name,draft_config,published_config,version,is_default,updated_at,published_at').order('updated_at', { ascending: false });
+    if (loadError) setError('Chargement des dispositions impossible : ' + loadError.message);
+    else {
+      const rows = (data ?? []) as LayoutRow[];
+      setLayouts(rows);
+      if (rows.length && !selectedId) {
+        const row = rows[0]; setSelectedId(row.id); setName(row.name);
+        const safe = safeConfig(row.draft_config); setConfig(safe); setSavedConfig(safe);
+      }
+    }
+    setBusy(false);
+  }, [isAdmin, selectedId]);
+
+  const loadVersions = useCallback(async (layoutId: string) => {
+    if (!supabase || !layoutId || !isAdmin) return;
+    const { data, error: versionsError } = await supabase.from('visual_studio_versions').select('id,layout_id,version,snapshot,action,created_at').eq('layout_id', layoutId).order('created_at', { ascending: false }).limit(30);
+    if (versionsError) setError('Historique indisponible : ' + versionsError.message);
+    else setVersions((data ?? []) as VersionRow[]);
+  }, [isAdmin]);
+
+  useEffect(() => { void loadLayouts(); }, [loadLayouts]);
+  useEffect(() => { if (selectedId) void loadVersions(selectedId); }, [selectedId, loadVersions]);
+
+  function selectLayout(row: LayoutRow) {
+    if (dirty && !window.confirm('Abandonner les modifications non enregistrées ?')) return;
+    const next = safeConfig(row.draft_config);
+    setSelectedId(row.id); setName(row.name); setConfig(next); setSavedConfig(next); setSelectedBlockId(''); setHistory([]); setFuture([]);
+  }
+  function changeConfig(next: StudioConfig) { setHistory(items => [...items.slice(-29), config]); setFuture([]); setConfig(safeConfig(next)); }
+  function changeBlock(patch: Partial<StudioBlock>) {
+    if (!selectedBlock) return;
+    changeConfig({ ...config, components: config.components.map(block => block.id === selectedBlock.id ? { ...block, ...patch } : block) });
+  }
+  function addBlock(type: StudioBlock['type']) {
+    if (config.components.length >= 80) { setError('Limite de 80 composants atteinte.'); return; }
+    const preset = presets.find(item => item.type === type)!;
+    const id = `block-${Date.now().toString(36)}`;
+    changeConfig({ ...config, components: [...config.components, { id, type, title: preset.title, content: preset.content ?? '', color: theme.text, background: theme.surface, radius: 12, padding: 16, width: 'full' }] });
+    setSelectedBlockId(id);
+  }
+  function moveBlock(from: string, to: string) {
+    if (from === to) return;
+    const list = [...config.components]; const fromIndex = list.findIndex(item => item.id === from); const toIndex = list.findIndex(item => item.id === to);
+    if (fromIndex < 0 || toIndex < 0) return;
+    const [item] = list.splice(fromIndex, 1); list.splice(toIndex, 0, item); changeConfig({ ...config, components: list });
+  }
+  async function createLayout() {
+    if (!supabase || !isAdmin) return;
+    setBusy(true); setError(''); setNotice('');
+    const payload = { name: name.trim() || 'Nouvelle disposition', scope: 'dashboard', draft_config: config, created_by: userId, updated_by: userId };
+    const { data, error: insertError } = await supabase.from('visual_studio_layouts').insert(payload).select('id,name,draft_config,published_config,version,is_default,updated_at,published_at').single();
+    if (insertError) { setError('Création impossible : ' + insertError.message); setBusy(false); return; }
+    const row = data as LayoutRow; setLayouts(items => [row, ...items]); setSelectedId(row.id); setName(row.name); setSavedConfig(safeConfig(row.draft_config)); setConfig(safeConfig(row.draft_config)); setSelectedBlockId(''); setNotice('Disposition créée. Enregistrez le brouillon pour conserver vos prochaines modifications.'); setBusy(false);
+  }
+  async function saveDraft() {
+    if (!supabase || !isAdmin || !selectedId) { setError('Créez ou sélectionnez une disposition avant de sauvegarder.'); return; }
+    const nextVersion = (layouts.find(row => row.id === selectedId)?.version ?? 0) + 1;
+    setBusy(true); setError(''); setNotice('');
+    const { data, error: saveError } = await supabase.from('visual_studio_layouts').update({ name: name.trim() || 'Disposition sans nom', draft_config: config, version: nextVersion, updated_by: userId, updated_at: new Date().toISOString() }).eq('id', selectedId).select('id,name,draft_config,published_config,version,is_default,updated_at,published_at').single();
+    if (saveError) { setError('Sauvegarde refusée : ' + saveError.message); setBusy(false); return; }
+    const row = data as LayoutRow;
+    const { error: historyError } = await supabase.from('visual_studio_versions').insert({ layout_id: selectedId, version: nextVersion, snapshot: config, action: 'draft_saved', actor_id: userId });
+    if (historyError) { setError('Brouillon sauvegardé, mais l’historique n’a pas pu être écrit : ' + historyError.message); }
+    setLayouts(items => items.map(item => item.id === row.id ? row : item)); setSavedConfig(safeConfig(row.draft_config)); setNotice(historyError ? '' : 'Brouillon enregistré dans Supabase.'); await loadVersions(selectedId); setBusy(false);
+  }
+  async function publish() {
+    if (!supabase || !isAdmin || !selectedId) return;
+    if (dirty && !window.confirm('Le brouillon contient des modifications non enregistrées. Publier quand même cette version ?')) return;
+    if (dirty) { setError('Enregistrez d’abord le brouillon, puis publiez-le.'); return; }
+    const current = layouts.find(row => row.id === selectedId); if (!current) return;
+    const nextVersion = current.version + 1;
+    setBusy(true); setError(''); setNotice('');
+    const { data, error: publishError } = await supabase.from('visual_studio_layouts').update({ published_config: config, version: nextVersion, updated_by: userId, updated_at: new Date().toISOString(), published_at: new Date().toISOString() }).eq('id', selectedId).select('id,name,draft_config,published_config,version,is_default,updated_at,published_at').single();
+    if (publishError) { setError('Publication impossible : ' + publishError.message); setBusy(false); return; }
+    const { error: historyError } = await supabase.from('visual_studio_versions').insert({ layout_id: selectedId, version: nextVersion, snapshot: config, action: 'published', actor_id: userId });
+    if (historyError) setError('Version publiée, mais son journal est incomplet : ' + historyError.message);
+    setLayouts(items => items.map(item => item.id === selectedId ? data as LayoutRow : item)); setNotice(historyError ? '' : 'Version publiée et enregistrée.'); await loadVersions(selectedId); setBusy(false);
+  }
+  async function restore(version: VersionRow) {
+    if (!supabase || !isAdmin || !selectedId || !window.confirm(`Restaurer la version ${version.version} dans le brouillon ?`)) return;
+    const restored = safeConfig(version.snapshot); const nextVersion = (layouts.find(row => row.id === selectedId)?.version ?? 0) + 1;
+    setBusy(true); setError(''); setNotice('');
+    const { data, error: restoreError } = await supabase.from('visual_studio_layouts').update({ draft_config: restored, version: nextVersion, updated_by: userId, updated_at: new Date().toISOString() }).eq('id', selectedId).select('id,name,draft_config,published_config,version,is_default,updated_at,published_at').single();
+    if (restoreError) { setError('Restauration impossible : ' + restoreError.message); setBusy(false); return; }
+    const { error: historyError } = await supabase.from('visual_studio_versions').insert({ layout_id: selectedId, version: nextVersion, snapshot: restored, action: 'restored', actor_id: userId });
+    setConfig(restored); setSavedConfig(restored); setLayouts(items => items.map(item => item.id === selectedId ? data as LayoutRow : item)); await loadVersions(selectedId); setNotice(historyError ? 'Version restaurée, mais l’historique n’a pas été écrit.' : 'Version restaurée dans le brouillon. La publication reste manuelle.'); setBusy(false);
+  }
+  async function setDefault() {
+    if (!supabase || !isAdmin || !selectedId) return;
+    setBusy(true); setError(''); setNotice('');
+    const { error: clearError } = await supabase.from('visual_studio_layouts').update({ is_default: false, updated_by: userId }).neq('id', selectedId);
+    if (clearError) { setError('Impossible de changer la disposition par défaut : ' + clearError.message); setBusy(false); return; }
+    const { data, error: updateError } = await supabase.from('visual_studio_layouts').update({ is_default: true, updated_by: userId }).eq('id', selectedId).select('id,name,draft_config,published_config,version,is_default,updated_at,published_at').single();
+    if (updateError) setError('Disposition enregistrée, mais impossible de la définir par défaut : ' + updateError.message);
+    else setLayouts(items => items.map(item => ({ ...item, is_default: item.id === selectedId })));
+    setBusy(false);
+  }
+  function duplicate() {
+    setSelectedId(''); setName(`${name} — copie`); setNotice('Copie prête : cliquez sur « Créer la disposition » pour la sauvegarder.'); setError('');
+  }
+
+  if (!isAdmin) return <></>;
+  const displayed = config.components.filter(block => !block.hidden);
+  return <section className="project-panel visual-studio" id="visual-design-studio" aria-labelledby="visual-studio-title">
+    <div className="section-heading"><div><p className="eyebrow">OUTIL ADMINISTRATEUR</p><h2 id="visual-studio-title"><Palette size={21}/> Studio de conception visuelle</h2><p className="muted">Composez une disposition autorisée, ajustez les styles et publiez explicitement après validation.</p></div><span className="visual-studio-badge"><ShieldCheck size={14}/> Administrateur</span></div>
+    <div className="visual-studio-toolbar">
+      <label>Disposition<select value={selectedId} onChange={event => { const row = layouts.find(item => item.id === event.target.value); if (row) selectLayout(row); else setSelectedId(''); }}><option value="">Choisir une disposition…</option>{layouts.map(row => <option key={row.id} value={row.id}>{row.name}{row.is_default ? ' · Par défaut' : ''}</option>)}</select></label>
+      <label>Nom<input value={name} maxLength={100} onChange={event => setName(event.target.value)} /></label>
+      <button type="button" className="logout-button" onClick={() => void createLayout()} disabled={busy}><Plus size={15}/> Créer</button>
+      <button type="button" className="logout-button" onClick={duplicate} disabled={busy || !selectedId}><Copy size={15}/> Dupliquer</button>
+      <span className={dirty ? 'visual-studio-dirty' : 'visual-studio-clean'}>{dirty ? 'Modifications non enregistrées' : 'Brouillon synchronisé'}</span>
+    </div>
+    <div className="visual-studio-workbench">
+      <aside className="visual-studio-library"><h3><LayoutDashboard size={16}/> Composants</h3><p>Blocs prédéfinis uniquement. Aucun script libre n’est exécuté.</p>{presets.map(item => <button key={item.type} type="button" className="visual-studio-preset" onClick={() => addBlock(item.type)}><Plus size={14}/><span>{item.title}</span></button>)}<div className="visual-studio-theme"><h3><Palette size={16}/> Thème global</h3><select aria-label="Thème global" value={config.theme} onChange={event => changeConfig({ ...config, theme: event.target.value as StudioConfig['theme'] })}><option value="nexora-dark">NEXORA sombre</option><option value="nexora-light">NEXORA clair</option><option value="ocean">Océan</option></select><div className="visual-studio-swatches">{Object.entries(themes[config.theme]).map(([key,value]) => <span key={key} title={key} style={{ background:value }} />)}</div><button type="button" className="logout-button" onClick={() => changeConfig(starter)}><RotateCcw size={14}/> Réinitialiser</button></div></aside>
+      <div className="visual-studio-canvas-wrap"><div className="visual-studio-canvas-tools"><div><button type="button" className={preview==='desktop'?'active':''} onClick={() => setPreview('desktop')} aria-label="Aperçu ordinateur"><Monitor size={15}/></button><button type="button" className={preview==='tablet'?'active':''} onClick={() => setPreview('tablet')} aria-label="Aperçu tablette"><Tablet size={15}/></button><button type="button" className={preview==='mobile'?'active':''} onClick={() => setPreview('mobile')} aria-label="Aperçu téléphone"><Smartphone size={15}/></button></div><span><Eye size={14}/> Aperçu du brouillon</span></div>
+        <div className={`visual-studio-canvas frame-${preview}`} style={{ background:theme.background,color:theme.text }}>
+          {displayed.map(block => <article key={block.id} draggable onDragStart={event => event.dataTransfer.setData('text/plain',block.id)} onDragOver={event => event.preventDefault()} onDrop={event => {event.preventDefault();moveBlock(event.dataTransfer.getData('text/plain'),block.id);}} onClick={() => setSelectedBlockId(block.id)} className={`visual-studio-block width-${block.width ?? 'full'} ${selectedBlockId===block.id?'selected':''}`} style={{ background:block.background ?? theme.surface,color:block.color ?? theme.text,borderRadius:block.radius ?? 12,padding:block.padding ?? 16 }}>
+            {block.type==='heading'?<h3>{block.title}</h3>:block.type==='divider'?<div className="visual-studio-divider"/>:<><strong>{block.title}</strong><p>{block.content}</p>{block.type==='stat'&&<small>Source de données à connecter</small>}{block.type==='action'&&<span className="visual-studio-fake-button">Action non connectée</span>}</>}
+          </article>)}
+          {!displayed.length&&<p className="visual-studio-empty">Ajoutez un composant depuis la bibliothèque.</p>}
+        </div>
+      </div>
+      <aside className="visual-studio-properties"><h3>Propriétés</h3>{selectedBlock?<><p className="visual-studio-help">Élément sélectionné : {selectedBlock.type}</p><label>Libellé<input value={selectedBlock.title} maxLength={120} onChange={event=>changeBlock({title:event.target.value})}/></label>{selectedBlock.type!=='divider'&&<label>Contenu<textarea value={selectedBlock.content??''} maxLength={1000} rows={3} onChange={event=>changeBlock({content:event.target.value})}/></label>}<label>Largeur<select value={selectedBlock.width??'full'} onChange={event=>changeBlock({width:event.target.value as StudioBlock['width']})}><option value="full">Pleine largeur</option><option value="half">Moitié</option><option value="third">Un tiers</option></select></label><label>Couleur du texte<input type="color" value={selectedBlock.color??theme.text} onChange={event=>changeBlock({color:event.target.value})}/></label><label>Arrière-plan<input type="color" value={selectedBlock.background??theme.surface} onChange={event=>changeBlock({background:event.target.value})}/></label><label>Arrondi <input type="range" min="0" max="32" value={selectedBlock.radius??12} onChange={event=>changeBlock({radius:Number(event.target.value)})}/></label><label>Espacement intérieur <input type="range" min="0" max="48" value={selectedBlock.padding??16} onChange={event=>changeBlock({padding:Number(event.target.value)})}/></label><div className="visual-studio-property-actions"><button type="button" className="logout-button" onClick={()=>changeBlock({hidden:!selectedBlock.hidden})}>{selectedBlock.hidden?<Eye size={14}/>:<EyeOff size={14}/>} {selectedBlock.hidden?'Afficher':'Masquer'}</button><button type="button" className="logout-button" onClick={()=>{const copy={...selectedBlock,id:`block-${Date.now().toString(36)}`,title:`${selectedBlock.title} (copie)`};changeConfig({...config,components:[...config.components,copy]});setSelectedBlockId(copy.id);}}><Copy size={14}/> Dupliquer</button><button type="button" className="logout-button" onClick={()=>{changeConfig({...config,components:config.components.filter(item=>item.id!==selectedBlock.id)});setSelectedBlockId('');}}><Trash2 size={14}/> Supprimer</button><button type="button" className="logout-button" onClick={()=>moveBlock(selectedBlock.id,config.components[Math.max(0,config.components.findIndex(item=>item.id===selectedBlock.id)-1)]?.id)}><ArrowUp size={14}/> Monter</button><button type="button" className="logout-button" onClick={()=>moveBlock(selectedBlock.id,config.components[Math.min(config.components.length-1,config.components.findIndex(item=>item.id===selectedBlock.id)+1)]?.id)}><ArrowDown size={14}/> Descendre</button></div></>:<p className="visual-studio-help">Sélectionnez un bloc dans l’aperçu pour modifier ses propriétés.</p>}
+      </aside>
+    </div>
+    <div className="visual-studio-footer"><div className="visual-studio-history"><h3><Clock3 size={16}/> Historique des versions</h3>{versions.length?versions.map(version=><div className="visual-studio-version" key={version.id}><span>v{version.version} · {version.action}</span><time>{new Date(version.created_at).toLocaleString('fr-FR')}</time><button type="button" className="logout-button" onClick={()=>void restore(version)} disabled={busy}><Undo2 size={14}/> Restaurer en brouillon</button></div>):<p>Aucune version enregistrée pour le moment.</p>}</div><div className="visual-studio-publish"><p>{layouts.find(row=>row.id===selectedId)?.published_at?'Une version publiée existe.':'Aucune version publiée pour cette disposition.'}</p><button type="button" className="logout-button" onClick={()=>void setDefault()} disabled={busy||!selectedId}><Check size={14}/> Définir par défaut</button><button type="button" className="logout-button" onClick={()=>void saveDraft()} disabled={busy||!selectedId||!dirty}><Save size={14}/> {busy?'Enregistrement…':'Enregistrer le brouillon'}</button><button type="button" className="primary-button" onClick={()=>void publish()} disabled={busy||!selectedId||dirty}><Rocket size={15}/> Publier la version enregistrée</button></div></div>
+    {error&&<p className="feedback error" role="alert">{error}</p>}{notice&&<p className="feedback success" role="status">{notice}</p>}
+    <style>{`
+      .visual-studio{margin-top:28px}.visual-studio-badge{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(105,215,187,.24);background:rgba(105,215,187,.08);color:#8be5cf;border-radius:999px;padding:7px 10px;font-size:11px;white-space:nowrap}
+      .visual-studio-toolbar{display:flex;align-items:end;gap:10px;flex-wrap:wrap;padding:18px 0;border-bottom:1px solid rgba(181,194,231,.12)}.visual-studio-toolbar label,.visual-studio-properties label{display:grid;gap:7px;color:#aeb8d1;font-size:11px;flex:1;min-width:130px}.visual-studio-toolbar input,.visual-studio-toolbar select,.visual-studio-properties input:not([type=color]):not([type=range]),.visual-studio-properties select,.visual-studio-properties textarea{width:100%;border:1px solid #2a3552;background:#0b1121;border-radius:8px;padding:10px;color:#f3f5ff;font:inherit}
+      .visual-studio-dirty,.visual-studio-clean{font-size:10px;padding:8px 10px;border-radius:8px}.visual-studio-dirty{color:#ffd28a;background:#3a2b1b}.visual-studio-clean{color:#82e4ca;background:#15342f}
+      .visual-studio-workbench{display:grid;grid-template-columns:180px minmax(0,1fr) 220px;gap:14px;padding-top:16px}.visual-studio-library,.visual-studio-properties{border:1px solid rgba(181,194,231,.13);border-radius:12px;padding:12px;min-width:0}.visual-studio-library h3,.visual-studio-properties h3,.visual-studio-history h3{font-size:12px;display:flex;align-items:center;gap:7px;margin:0 0 10px}.visual-studio-library p,.visual-studio-help,.visual-studio-history>p{font-size:10px;color:#8f9bbd;line-height:1.6}.visual-studio-preset{display:flex;align-items:center;gap:6px;width:100%;text-align:left;border:1px solid #2a3552;background:#111a2e;color:#dfe6fb;border-radius:8px;padding:9px 7px;font-size:10px;margin:6px 0;cursor:pointer}.visual-studio-preset:hover{border-color:#8995ff}.visual-studio-theme{border-top:1px solid rgba(181,194,231,.12);margin-top:14px;padding-top:14px}.visual-studio-theme select{width:100%;background:#0b1121;color:#eef2ff;border:1px solid #2a3552;border-radius:8px;padding:8px}.visual-studio-swatches{display:flex;gap:5px;margin:10px 0}.visual-studio-swatches span{width:22px;height:22px;border-radius:6px;border:1px solid #ffffff22}.visual-studio-canvas-wrap{min-width:0;border:1px solid rgba(181,194,231,.13);border-radius:12px;overflow:hidden}.visual-studio-canvas-tools{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;border-bottom:1px solid rgba(181,194,231,.12);font-size:10px;color:#9aa6c2}.visual-studio-canvas-tools>div{display:flex;gap:4px}.visual-studio-canvas-tools button{display:inline-flex;align-items:center;justify-content:center;padding:7px;border:1px solid #2a3552;background:#111a2e;color:#aab5ce;border-radius:7px}.visual-studio-canvas-tools button.active{border-color:#8995ff;color:#b9c1ff}.visual-studio-canvas{display:flex;align-content:start;align-items:start;gap:12px;flex-wrap:wrap;padding:16px;min-height:380px;transition:width .15s}.visual-studio-canvas.frame-tablet{max-width:620px;margin:auto}.visual-studio-canvas.frame-mobile{max-width:360px;margin:auto;display:flex;flex-direction:column}.visual-studio-block{border:1px solid transparent;min-width:0;cursor:grab;box-shadow:0 8px 24px #00000010}.visual-studio-block.selected{border-color:#8995ff;outline:2px solid #8995ff33}.visual-studio-block.width-full{width:100%}.visual-studio-block.width-half{width:calc(50% - 6px)}.visual-studio-block.width-third{width:calc(33.333% - 8px)}.visual-studio-block h3{margin:0;font-size:clamp(15px,2vw,22px)}.visual-studio-block p{font-size:12px;line-height:1.65;margin:8px 0 0;overflow-wrap:anywhere}.visual-studio-block small{display:block;font-size:10px;opacity:.7;margin-top:8px}.visual-studio-fake-button{display:inline-block;font-size:10px;border-radius:7px;padding:7px 9px;background:#ffffff18;margin-top:10px}.visual-studio-divider{height:1px;background:currentColor;opacity:.25}.visual-studio-empty{font-size:12px;opacity:.65}.visual-studio-properties{display:flex;flex-direction:column;gap:10px}.visual-studio-properties input[type=color]{width:100%;height:35px;border:1px solid #2a3552;background:#0b1121;border-radius:8px;padding:3px}.visual-studio-properties input[type=range]{width:100%;accent-color:#8995ff}.visual-studio-property-actions{display:flex;gap:6px;flex-wrap:wrap}.visual-studio-property-actions button{font-size:10px;padding:7px}.visual-studio-footer{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(220px,1fr);gap:18px;margin-top:18px;padding-top:16px;border-top:1px solid rgba(181,194,231,.12)}.visual-studio-version{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid rgba(181,194,231,.08);font-size:10px}.visual-studio-version time{color:#8f9bbd}.visual-studio-publish{display:flex;flex-direction:column;align-items:stretch;gap:8px}.visual-studio-publish p{font-size:11px;color:#a0abc5}.visual-studio-publish .primary-button{width:auto;font-size:11px;padding:11px}.visual-studio button:disabled{opacity:.5;cursor:not-allowed}
+      @media(max-width:1050px){.visual-studio-workbench{grid-template-columns:160px minmax(0,1fr)}.visual-studio-properties{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}.visual-studio-properties h3,.visual-studio-properties .visual-studio-help,.visual-studio-property-actions{grid-column:1/-1}}
+      @media(max-width:680px){.visual-studio-workbench{grid-template-columns:1fr}.visual-studio-properties{grid-template-columns:repeat(2,minmax(0,1fr))}.visual-studio-footer{grid-template-columns:1fr}.visual-studio-toolbar label{min-width:100%}.visual-studio-canvas{padding:10px}.visual-studio-block.width-third,.visual-studio-block.width-half{width:100%}.visual-studio-version{align-items:flex-start}.visual-studio-badge{display:none}}
+    `}</style>
+  </section>;
+}
