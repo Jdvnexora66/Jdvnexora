@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, Check, Clock3, Copy, Eye, EyeOff, LayoutDashboard, Palette, Plus, Save, ShieldCheck, Smartphone, Tablet, Trash2, Undo2, Redo2, Monitor, Rocket, RotateCcw } from 'lucide-react';
+import { ArrowDown, ArrowUp, Check, Clock3, Copy, Eye, EyeOff, LayoutDashboard, Palette, Plus, Save, ShieldCheck, Smartphone, Tablet, Trash2, Undo2, Monitor, Rocket, RotateCcw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 type StudioBlock = {
@@ -65,7 +65,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<StudioConfig[]>([]);
-  const [future, setFuture] = useState<StudioConfig[]>([]);
+  const [, setFuture] = useState<StudioConfig[]>([]);
   const isAdmin = role === 'admin';
   const selectedBlock = config.components.find(block => block.id === selectedBlockId) ?? null;
   const dirty = useMemo(() => JSON.stringify(config) !== JSON.stringify(savedConfig), [config, savedConfig]);
@@ -166,7 +166,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
     setBusy(true); setError(''); setNotice('');
     const { error: clearError } = await supabase.from('visual_studio_layouts').update({ is_default: false, updated_by: userId }).neq('id', selectedId);
     if (clearError) { setError('Impossible de changer la disposition par défaut : ' + clearError.message); setBusy(false); return; }
-    const { data, error: updateError } = await supabase.from('visual_studio_layouts').update({ is_default: true, updated_by: userId }).eq('id', selectedId).select('id,name,draft_config,published_config,version,is_default,updated_at,published_at').single();
+    const { error: updateError } = await supabase.from('visual_studio_layouts').update({ is_default: true, updated_by: userId }).eq('id', selectedId);
     if (updateError) setError('Disposition enregistrée, mais impossible de la définir par défaut : ' + updateError.message);
     else setLayouts(items => items.map(item => ({ ...item, is_default: item.id === selectedId })));
     setBusy(false);
