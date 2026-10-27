@@ -732,7 +732,6 @@ input:focus,select:focus,textarea:focus{border-color:#6c67ff;box-shadow:0 0 0 3p
 @media(max-width:760px){.reference-dashboard{grid-template-columns:1fr}.reference-right-column{grid-template-columns:repeat(2,minmax(0,1fr))}.reference-hero{min-height:220px}.reference-orb{right:-45px;opacity:.45}.reference-hero-copy{max-width:100%}}
 @media(max-width:520px){.reference-right-column{grid-template-columns:1fr}.reference-module-grid{grid-template-columns:1fr 1fr}.reference-module{grid-template-columns:38px minmax(0,1fr);padding:10px}.reference-module>span{width:36px;height:36px}.reference-project-summary{grid-template-columns:1fr 1fr}.reference-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.reference-hero h1{font-size:23px}}
 
-/* Correctif de disposition du tableau de bord NEXORA */
 @media (min-width: 1051px) {
   .workspace {
     display: grid;
