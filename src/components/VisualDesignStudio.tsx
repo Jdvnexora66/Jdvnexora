@@ -148,9 +148,11 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
     setBusy(true); setError(''); setNotice('');
     const { data, error: publishError } = await supabase.from('visual_studio_layouts').update({ published_config: config, version: nextVersion, updated_by: userId, updated_at: new Date().toISOString(), published_at: new Date().toISOString() }).eq('id', selectedId).select('id,name,draft_config,published_config,version,is_default,updated_at,published_at').single();
     if (publishError) { setError('Publication impossible : ' + publishError.message); setBusy(false); return; }
+    const { error: publicError } = await supabase.from('visual_studio_publications').upsert({ layout_id: selectedId, name: current.name, config, is_default: current.is_default, published_by: userId, published_at: new Date().toISOString() });
     const { error: historyError } = await supabase.from('visual_studio_versions').insert({ layout_id: selectedId, version: nextVersion, snapshot: config, action: 'published', actor_id: userId });
-    if (historyError) setError('Version publiée, mais son journal est incomplet : ' + historyError.message);
-    setLayouts(items => items.map(item => item.id === selectedId ? data as LayoutRow : item)); setNotice(historyError ? '' : 'Version publiée et enregistrée.'); await loadVersions(selectedId); setBusy(false);
+    if (publicError) setError('La version est enregistrée dans l’historique administrateur, mais sa publication publique a échoué : ' + publicError.message);
+    else if (historyError) setError('Version publiée, mais son journal est incomplet : ' + historyError.message);
+    setLayouts(items => items.map(item => item.id === selectedId ? data as LayoutRow : item)); setNotice(publicError || historyError ? '' : 'Version publiée et disponible dans le tableau de bord.'); await loadVersions(selectedId); setBusy(false);
   }
   async function restore(version: VersionRow) {
     if (!supabase || !isAdmin || !selectedId || !window.confirm(`Restaurer la version ${version.version} dans le brouillon ?`)) return;
@@ -164,10 +166,16 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
   async function setDefault() {
     if (!supabase || !isAdmin || !selectedId) return;
     setBusy(true); setError(''); setNotice('');
+    const target = layouts.find(row => row.id === selectedId);
+    if (!target?.published_config) { setError('Publiez d’abord cette disposition avant de la définir par défaut.'); setBusy(false); return; }
+    const { error: clearPublishedError } = await supabase.from('visual_studio_publications').update({ is_default: false }).neq('layout_id', selectedId);
+    if (clearPublishedError) { setError('Impossible de retirer la disposition par défaut précédente : ' + clearPublishedError.message); setBusy(false); return; }
+    const { error: publicDefaultError } = await supabase.from('visual_studio_publications').update({ is_default: true }).eq('layout_id', selectedId);
+    if (publicDefaultError) { setError('Impossible d’activer la disposition par défaut : ' + publicDefaultError.message); setBusy(false); return; }
     const { error: clearError } = await supabase.from('visual_studio_layouts').update({ is_default: false, updated_by: userId }).neq('id', selectedId);
-    if (clearError) { setError('Impossible de changer la disposition par défaut : ' + clearError.message); setBusy(false); return; }
+    if (clearError) { setError('Disposition publique définie, mais synchronisation administrateur incomplète : ' + clearError.message); setBusy(false); return; }
     const { error: updateError } = await supabase.from('visual_studio_layouts').update({ is_default: true, updated_by: userId }).eq('id', selectedId);
-    if (updateError) setError('Disposition enregistrée, mais impossible de la définir par défaut : ' + updateError.message);
+    if (updateError) setError('Disposition publique définie, mais synchronisation administrateur incomplète : ' + updateError.message);
     else setLayouts(items => items.map(item => ({ ...item, is_default: item.id === selectedId })));
     setBusy(false);
   }
