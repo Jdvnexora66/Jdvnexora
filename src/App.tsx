@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import Discover from './components/Discover';
 import MediaLibrary from './components/MediaLibrary';
@@ -14,6 +14,8 @@ import StudioIA from './components/StudioIA';
 import CollaborationPanel from './components/CollaborationPanel';
 import BillingPanel from './components/BillingPanel';
 import AdminPanel from './components/AdminPanel';
+import VisualDesignStudio from './components/VisualDesignStudio';
+import PublishedVisualLayout from './components/PublishedVisualLayout';
 
 type AuthMode = 'signin' | 'signup';
 type UserProfile = { id: string; display_name: string | null; preferred_language: string; timezone: string; role: string; };
@@ -615,8 +617,11 @@ export default function App() {
             <a className="workspace-nav-link" href="#profile-title" onClick={(event) => { event.preventDefault(); document.getElementById('profile-title')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}><UserRound size={17} /> <span>Profil & préférences</span></a>
             <a className="workspace-nav-link" href="#billing" onClick={(event) => { event.preventDefault(); document.getElementById('billing')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ShieldCheck size={17} /> <span>Facturation & sécurité</span></a>
             <a className="workspace-nav-link" href="#administration" onClick={(event) => { event.preventDefault(); document.getElementById('administration')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ShieldCheck size={17} /> <span>Administration</span></a>
+            {profile?.role === 'admin' && <a className="workspace-nav-link" href="#visual-design-studio" onClick={(event) => { event.preventDefault(); document.getElementById('visual-design-studio')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Palette size={17} /> <span>Studio de conception visuelle</span></a>}
             <button className="workspace-nav-link" type="button" onClick={() => { if (!confirmDiscardUnsavedChapterChanges()) return; setSearchQuery(''); setStatusFilter('all'); setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); void loadProjects(); }}><RefreshCw size={17} /> <span>Actualiser</span></button>
           </nav>
+
+          {!activeProject && <PublishedVisualLayout />}
 
           <div className="dashboard-stats" aria-label="Résumé de vos projets" aria-busy={loadingProjects}>
             <article className="stat-card"><span className="stat-icon"><FolderKanban size={18} /></span><div><p>Total des projets</p><strong>{loadingProjects ? '…' : projects.length}</strong><small>Tous vos espaces</small></div></article>
@@ -689,6 +694,8 @@ export default function App() {
           {!activeProject && <BillingPanel userId={session.user.id} role={profile?.role ?? 'user'} />}
 
           {!activeProject && <AdminPanel userId={session.user.id} role={profile?.role ?? 'user'} />}
+
+          {!activeProject && profile?.role === 'admin' && <VisualDesignStudio userId={session.user.id} role={profile.role} />}
 
           {!activeProject && <section className="quick-access" aria-label="Accès rapides">
             <div className="quick-access-heading"><div><p className="eyebrow">CENTRE DE COMMANDE</p><h2>Accès rapides</h2><p className="muted">Reprenez votre travail ou démarrez une nouvelle création.</p></div></div>
