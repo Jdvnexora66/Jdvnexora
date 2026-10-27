@@ -124,6 +124,26 @@ create trigger organizations_add_owner
 after insert on public.organizations
 for each row execute function private.add_organization_owner();
 
+create or replace function private.prevent_organization_creator_change()
+returns trigger
+language plpgsql
+set search_path = pg_catalog, public
+as $
+begin
+  if new.created_by is distinct from old.created_by then
+    raise exception 'Organization creator is immutable';
+  end if;
+  return new;
+end;
+$;
+
+revoke all on function private.prevent_organization_creator_change() from public, anon, authenticated;
+
+drop trigger if exists organizations_creator_immutable on public.organizations;
+create trigger organizations_creator_immutable
+before update of created_by on public.organizations
+for each row execute function private.prevent_organization_creator_change();
+
 drop trigger if exists organizations_touch_updated_at on public.organizations;
 create trigger organizations_touch_updated_at
 before update on public.organizations
@@ -163,7 +183,7 @@ using (
   or (organization_id is not null and private.has_org_role(organization_id, array['owner','admin']))
 );
 
--- Client roles can never create or alter usage/billing facts directly.
+-- Client roles cannot directly mutate membership rows; trusted server-side flows manage membership changes.
 revoke insert, update, delete on public.organization_members from anon, authenticated;
 
 -- Client roles can never create or alter usage/billing facts directly.
