@@ -80,11 +80,13 @@ export default function StudioIA() {
     setMessages((current) => [...current, { role: 'user', content: question }]);
     setBusy(true);
 
+    let savedUserMessageId: string | null = null;
     try {
-      const { error: saveUserError } = await supabase.from('studio_ai_messages').insert({
+      const { data: savedUserMessage, error: saveUserError } = await supabase.from('studio_ai_messages').insert({
         conversation_id: conversationId, user_id: userId, role: 'user', content: question,
-      });
-      if (saveUserError) throw new Error('Votre demande n’a pas pu être enregistrée. Réessayez.');
+      }).select('id').single();
+      if (saveUserError || !savedUserMessage) throw new Error('Votre demande n’a pas pu être enregistrée. Réessayez.');
+      savedUserMessageId = savedUserMessage.id;
 
       const { data, error: invokeError } = await supabase.functions.invoke('studio-ai', {
         body: { prompt: question, history: previousMessages.slice(-8) },
@@ -102,6 +104,11 @@ export default function StudioIA() {
       }
       setMessages((current) => [...current, { role: 'assistant', content: answer }]);
     } catch (cause) {
+      if (savedUserMessageId && supabase) {
+        const { error: rollbackError } = await supabase.from('studio_ai_messages').delete()
+          .eq('id', savedUserMessageId).eq('user_id', userId);
+        if (rollbackError) setError('La réponse IA a échoué et votre demande reste dans l’historique. Vous pouvez la retrouver après actualisation.');
+      }
       setMessages((current) => {
         const last = current[current.length - 1];
         return last?.role === 'user' && last.content === question ? current.slice(0, -1) : current;
