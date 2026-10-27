@@ -1,4 +1,7 @@
 -- Secure server-side organization invitation lifecycle.
+create unique index if not exists organization_invitations_one_pending_per_email_idx
+  on public.organization_invitations (organization_id, lower(email)) where status = 'pending';
+
 -- Apply only after the B2B foundation migration has been reviewed and applied.
 create or replace function public.create_organization_invitation(
  p_organization_id uuid,p_inviter_id uuid,p_email text,p_role text,p_token_hash text
@@ -17,7 +20,7 @@ begin
  elsif v_inviter_role='admin' and p_role in ('manager','member','viewer') then null;
  elsif v_inviter_role='manager' and p_role in ('member','viewer') then null;
  else raise exception 'Role cannot invite the requested role' using errcode='42501'; end if;
- if exists(select 1 from public.organization_members m join auth.users u on u.id=m.user_id where m.organization_id=p_organization_id and m.status='active' and lower(u.email)=v_email) then
+ if exists(select 1 from public.organization_members m join auth.users u on u.id=m.user_id where m.organization_id=p_organization_id and lower(u.email)=v_email) then
   raise exception 'This email already belongs to an active member' using errcode='23505';
  end if;
  update public.organization_invitations set status='revoked' where organization_id=p_organization_id and lower(email)=v_email and status='pending';
