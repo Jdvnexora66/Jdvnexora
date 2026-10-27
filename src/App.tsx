@@ -542,6 +542,7 @@ export default function App() {
           <span>JDV <strong>NEXORA</strong><small>AI STUDIO</small></span>
         </a>
         <div className="topbar-actions">
+          <a className="logout-button" href="/presentation">Présentation officielle</a>
           <span className="secure-label"><ShieldCheck size={16} /> Espace sécurisé</span>
           {session && <>
             <button className="topbar-activity-button" type="button" onClick={() => document.getElementById('recent-activity-title')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} aria-label="Accéder à l’activité récente">
