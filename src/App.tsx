@@ -15,6 +15,7 @@ import CollaborationPanel from './components/CollaborationPanel';
 import BillingPanel from './components/BillingPanel';
 import AdminPanel from './components/AdminPanel';
 import ProfessionalPages from './components/ProfessionalPages';
+import OfficialLandingPage from './components/OfficialLandingPage';
 
 type AuthMode = 'signin' | 'signup';
 type UserProfile = { id: string; display_name: string | null; preferred_language: string; timezone: string; role: string; };
@@ -530,6 +531,8 @@ export default function App() {
   const statusLabel: Record<string, string> = {
     draft: 'Brouillon', in_progress: 'En cours', completed: 'Terminé', archived: 'Archivé',
   };
+
+  if (window.location.pathname === '/presentation') return <OfficialLandingPage />;
 
   return (
     <main className="page-shell">
