@@ -1,10 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
- feature/secure-organization-invitations
-import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Building2, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film } from 'lucide-react';
-=======
-import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette } from 'lucide-react';
- main
+import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Building2, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import Discover from './components/Discover';
 import MediaLibrary from './components/MediaLibrary';
@@ -18,12 +14,9 @@ import StudioIA from './components/StudioIA';
 import CollaborationPanel from './components/CollaborationPanel';
 import BillingPanel from './components/BillingPanel';
 import AdminPanel from './components/AdminPanel';
- feature/secure-organization-invitations
 import OrganizationPanel from './components/OrganizationPanel';
-=======
 import VisualDesignStudio from './components/VisualDesignStudio';
 import PublishedVisualLayout from './components/PublishedVisualLayout';
- main
 
 type AuthMode = 'signin' | 'signup';
 type UserProfile = { id: string; display_name: string | null; preferred_language: string; timezone: string; role: string; };
