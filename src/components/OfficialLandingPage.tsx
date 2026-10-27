@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, BrainCircuit, BarChart3, CheckCircle2, Compass, Film, FolderKanban, GraduationCap, Layers3, LibraryBig, LockKeyhole, Sparkles, Users, Workflow, WandSparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, BrainCircuit, BarChart3, CheckCircle2, Compass, Film, FolderKanban, GraduationCap, Layers3, LibraryBig, LockKeyhole, Sparkles, ShieldCheck, Users, Workflow, WandSparkles } from 'lucide-react';
 
 const modules = [
   { icon: BrainCircuit, title: 'Studio IA', text: 'Un espace destiné à structurer les idées et accompagner la création. Les fonctions IA dépendent encore de la configuration des services côté serveur.' },
