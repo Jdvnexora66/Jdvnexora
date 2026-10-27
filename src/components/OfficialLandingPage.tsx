@@ -1,4 +1,4 @@
-import { ArrowRight, BookOpen, BrainCircuit, BarChart3, CheckCircle2, Compass, Film, FolderKanban, GraduationCap, Layers3, LibraryBig, LockKeyhole, Sparkles, Users, Sparkles, Workflow } from 'lucide-react';
+import { ArrowRight, BookOpen, BrainCircuit, BarChart3, CheckCircle2, Compass, Film, FolderKanban, GraduationCap, Layers3, LibraryBig, LockKeyhole, Sparkles, Users, Workflow } from 'lucide-react';
 
 const modules = [
   { icon: BrainCircuit, title: 'Studio IA', text: 'Un espace destiné à structurer les idées et accompagner la création. Les fonctions IA dépendent encore de la configuration des services côté serveur.' },
@@ -6,7 +6,7 @@ const modules = [
   { icon: Film, title: 'Médiathèque', text: 'Centralisez vos ressources et médias pour garder vos éléments utiles à portée de main.' },
   { icon: Compass, title: 'Découverte & ressources', text: 'Explorez les ressources, parcours et outils présents dans l’écosystème NEXORA.' },
   { icon: GraduationCap, title: 'Académie & apprentissage', text: 'Accédez aux espaces de formation et aux ressources pédagogiques disponibles dans la plateforme.' },
-  { icon: ChartNoAxesCombined, title: 'Insights & feuille de route', text: 'Prenez du recul sur vos projets et organisez les prochaines étapes de votre travail.' },
+  { icon: BarChart3, title: 'Insights & feuille de route', text: 'Prenez du recul sur vos projets et organisez les prochaines étapes de votre travail.' },
   { icon: Users, title: 'Collaboration', text: 'Retrouvez les outils de partage et de collaboration associés aux projets, selon les autorisations de votre compte.' },
   { icon: LibraryBig, title: 'Bibliothèque & parcours', text: 'Rassemblez les ressources utiles à vos projets et à votre progression.' },
 ];
