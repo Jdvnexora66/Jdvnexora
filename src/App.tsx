@@ -17,6 +17,7 @@ import AdminPanel from './components/AdminPanel';
 import OrganizationPanel from './components/OrganizationPanel';
 import VisualDesignStudio from './components/VisualDesignStudio';
 import PublishedVisualLayout from './components/PublishedVisualLayout';
+import ReferenceDashboard from './components/ReferenceDashboard';
 
 type AuthMode = 'signin' | 'signup';
 type UserProfile = { id: string; display_name: string | null; preferred_language: string; timezone: string; role: string; };
@@ -583,6 +584,15 @@ export default function App() {
             </div>
             <div className="workspace-mark"><FolderKanban size={30} /></div>
           </div>
+
+          {!activeProject && <ReferenceDashboard
+            displayName={profileName || (session.user.email ?? '').split('@')[0] || 'Créateur'}
+            projectCount={projects.length}
+            inProgressCount={projects.filter((project) => project.status === 'in_progress').length}
+            onNewProject={() => document.getElementById('create-project')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+            onOpenStudio={() => document.getElementById('studio-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            onOpenProjects={() => document.getElementById('pipeline-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          />}
 
           <section className="project-panel profile-panel" aria-labelledby="profile-title" aria-busy={loadingProfile || savingProfile}>
             <div className="section-heading">
