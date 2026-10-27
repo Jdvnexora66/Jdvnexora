@@ -155,42 +155,6 @@ create policy organization_members_select_members on public.organization_members
 for select to authenticated
 using (private.is_org_member(organization_id));
 
-drop policy if exists organization_members_insert_managers on public.organization_members;
-create policy organization_members_insert_managers on public.organization_members
-for insert to authenticated
-with check (
-  role <> 'owner'
-  and private.has_org_role(organization_id, array['owner','admin'])
-  and (role <> 'admin' or private.has_org_role(organization_id, array['owner']))
-);
-
-drop policy if exists organization_members_update_managers on public.organization_members;
-create policy organization_members_update_managers on public.organization_members
-for update to authenticated
-using (
-  private.has_org_role(organization_id, array['owner','admin'])
-  and (role <> 'owner' or private.has_org_role(organization_id, array['owner']))
-)
-with check (
-  role <> 'owner'
-  and private.has_org_role(organization_id, array['owner','admin'])
-  and (role <> 'admin' or private.has_org_role(organization_id, array['owner']))
-);
-
-drop policy if exists organization_members_delete_managers on public.organization_members;
-create policy organization_members_delete_managers on public.organization_members
-for delete to authenticated
-using (
-  role <> 'owner'
-  and private.has_org_role(organization_id, array['owner','admin'])
-  and (role <> 'admin' or private.has_org_role(organization_id, array['owner']))
-);
-
-drop policy if exists organization_invitations_select_managers on public.organization_invitations;
-create policy organization_invitations_select_managers on public.organization_invitations
-for select to authenticated
-using (private.has_org_role(organization_id, array['owner','admin','manager']));
-
 drop policy if exists organization_invitations_insert_managers on public.organization_invitations;
 create policy organization_invitations_insert_managers on public.organization_invitations
 for insert to authenticated
@@ -199,11 +163,6 @@ with check (
   and private.has_org_role(organization_id, array['owner','admin','manager'])
   and (role <> 'admin' or private.has_org_role(organization_id, array['owner']))
 );
-
-drop policy if exists organization_invitations_delete_managers on public.organization_invitations;
-create policy organization_invitations_delete_managers on public.organization_invitations
-for delete to authenticated
-using (private.has_org_role(organization_id, array['owner','admin','manager']));
 
 drop policy if exists usage_records_select_self_or_org_admin on public.usage_records;
 create policy usage_records_select_self_or_org_admin on public.usage_records
@@ -214,12 +173,14 @@ using (
 );
 
 -- Client roles can never create or alter usage/billing facts directly.
+revoke insert, update, delete on public.organization_members from anon, authenticated;
+
+-- Client roles can never create or alter usage/billing facts directly.
 revoke insert, update, delete on public.usage_records from anon, authenticated;
 grant select on public.usage_records to authenticated;
 
--- Invitation tokens and acceptance status must be managed by trusted server code.
-revoke insert, update on public.organization_invitations from anon, authenticated;
-grant select, delete on public.organization_invitations to authenticated;
+-- Invitation metadata and token hashes are server-only; manage through trusted Edge Functions.
+revoke all on public.organization_invitations from anon, authenticated;
 
 -- Organizations are archived/suspended through status, not deleted from the client.
 
