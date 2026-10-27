@@ -9,7 +9,7 @@ type Props = {
   onOpenProjects: () => void;
 };
 export default function ReferenceDashboard({displayName,projectCount,inProgressCount,onNewProject,onOpenStudio,onOpenProjects}:Props) {
-  const name = displayName.trim().split(/\\s+/)[0] || 'Créateur';
+const name = displayName.trim().split(/\s+/)[0] || 'Créateur';
   return <section className="reference-dashboard" aria-label="Tableau de bord NEXORA">
     <div className="reference-main-column">
       <section className="reference-hero">
