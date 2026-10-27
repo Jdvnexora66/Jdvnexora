@@ -21,5 +21,5 @@ Deno.serve(async(req:Request)=>{
  const {data,error}=await db.rpc("create_organization_invitation",{p_organization_id:body.organization_id,p_inviter_id:user.id,p_email:email,p_role:body.role,p_token_hash:await sha256(token)});
  if(error){const status=error.code==="42501"?403:error.code==="23505"?409:400;return respond({error:status===403?"Vous n’êtes pas autorisé à inviter ce rôle.":status===409?"Cette adresse est déjà membre de l’organisation.":"Impossible de créer l’invitation."},status);}
  const row=Array.isArray(data)?data[0]:data,origin=(Deno.env.get("APP_ORIGIN")??"").replace(/\/$/,"");
- return respond({invitation:{id:row?.invitation_id,email,role:body.role,expires_at:row?.expires_at},token,invitation_url:origin?origin+"/accept-invitation?token="+encodeURIComponent(token):null,delivery:"manual",message:"Invitation créée. Transmettez le lien uniquement au destinataire ; l’acceptation exige un compte avec e-mail vérifié correspondant."},201);
+ return respond({invitation:{id:row?.invitation_id,email,role:body.role,expires_at:row?.expires_at},token,invitation_url:origin?origin+"/?token="+encodeURIComponent(token):null,delivery:"manual",message:"Invitation créée. Transmettez le lien uniquement au destinataire ; l’acceptation exige un compte avec e-mail vérifié correspondant."},201);
 });
