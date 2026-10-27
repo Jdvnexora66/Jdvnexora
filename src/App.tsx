@@ -16,6 +16,7 @@ import BillingPanel from './components/BillingPanel';
 import AdminPanel from './components/AdminPanel';
 import ProfessionalPages from './components/ProfessionalPages';
 import OfficialLandingPage from './components/OfficialLandingPage';
+import PublicInfoPage from './components/PublicInfoPage';
 
 type AuthMode = 'signin' | 'signup';
 type UserProfile = { id: string; display_name: string | null; preferred_language: string; timezone: string; role: string; };
@@ -532,6 +533,9 @@ export default function App() {
     draft: 'Brouillon', in_progress: 'En cours', completed: 'Terminé', archived: 'Archivé',
   };
 
+  const publicRoutes: Record<string, 'features' | 'about' | 'contact' | 'faq'> = { '/features': 'features', '/about': 'about', '/contact': 'contact', '/faq': 'faq' };
+  const publicPage = publicRoutes[window.location.pathname];
+  if (publicPage) return <PublicInfoPage page={publicPage} />;
   if (window.location.pathname === '/presentation') return <OfficialLandingPage />;
 
   return (
