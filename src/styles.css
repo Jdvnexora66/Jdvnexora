@@ -731,3 +731,61 @@ input:focus,select:focus,textarea:focus{border-color:#6c67ff;box-shadow:0 0 0 3p
 @media(max-width:1100px){.reference-dashboard{grid-template-columns:minmax(0,1fr) 250px}.reference-module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.reference-project-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.reference-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:760px){.reference-dashboard{grid-template-columns:1fr}.reference-right-column{grid-template-columns:repeat(2,minmax(0,1fr))}.reference-hero{min-height:220px}.reference-orb{right:-45px;opacity:.45}.reference-hero-copy{max-width:100%}}
 @media(max-width:520px){.reference-right-column{grid-template-columns:1fr}.reference-module-grid{grid-template-columns:1fr 1fr}.reference-module{grid-template-columns:38px minmax(0,1fr);padding:10px}.reference-module>span{width:36px;height:36px}.reference-project-summary{grid-template-columns:1fr 1fr}.reference-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.reference-hero h1{font-size:23px}}
+
+/* Correctif de disposition du tableau de bord NEXORA */
+@media (min-width: 1051px) {
+  .workspace {
+    display: grid;
+    grid-template-columns: 244px minmax(0, 1fr);
+    align-items: start;
+    column-gap: 16px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .workspace-nav {
+    position: sticky;
+    top: 74px;
+    left: auto;
+    width: 100%;
+    max-height: calc(100vh - 90px);
+    overflow-y: auto;
+    margin: 0;
+    min-width: 0;
+    z-index: 2;
+  }
+
+  .reference-dashboard {
+    grid-column: 2;
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 1050px) {
+  .workspace {
+    display: block;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .reference-dashboard {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.reference-dashboard,
+.reference-main-column,
+.reference-right-column {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.reference-hero-copy {
+  min-width: 0;
+}
+
+.reference-hero h1 {
+  overflow-wrap: anywhere;
+}
