@@ -184,14 +184,14 @@ using (
 );
 
 -- Explicit table grants: RLS policies are the row-level boundary; grants define allowed operations.
-revoke all on public.organizations from anon;
+revoke all on public.organizations from public, anon;
 revoke delete on public.organizations from authenticated;
 grant select, insert, update on public.organizations to authenticated;
 
-revoke all on public.organization_members from anon;
+revoke all on public.organization_members from public, anon;
 grant select on public.organization_members to authenticated;
 
-revoke all on public.usage_records from anon;
+revoke all on public.usage_records from public, anon;
 revoke insert, update, delete on public.usage_records from anon, authenticated;
 grant select on public.usage_records to authenticated;
 
@@ -200,7 +200,7 @@ revoke insert, update, delete on public.organization_members from anon, authenti
 
 -- Client roles can never create or alter usage/billing facts directly.
 -- Invitation metadata and token hashes are server-only; manage through trusted Edge Functions.
-revoke all on public.organization_invitations from anon, authenticated;
+revoke all on public.organization_invitations from public, anon, authenticated;
 
 -- Organizations are archived/suspended through status, not deleted from the client.
 
