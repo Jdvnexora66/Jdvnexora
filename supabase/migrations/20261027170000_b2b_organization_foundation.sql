@@ -183,13 +183,22 @@ using (
   or (organization_id is not null and private.has_org_role(organization_id, array['owner','admin']))
 );
 
+-- Explicit table grants: RLS policies are the row-level boundary; grants define allowed operations.
+revoke all on public.organizations from anon;
+revoke delete on public.organizations from authenticated;
+grant select, insert, update on public.organizations to authenticated;
+
+revoke all on public.organization_members from anon;
+grant select on public.organization_members to authenticated;
+
+revoke all on public.usage_records from anon;
+revoke insert, update, delete on public.usage_records from anon, authenticated;
+grant select on public.usage_records to authenticated;
+
 -- Client roles cannot directly mutate membership rows; trusted server-side flows manage membership changes.
 revoke insert, update, delete on public.organization_members from anon, authenticated;
 
 -- Client roles can never create or alter usage/billing facts directly.
-revoke insert, update, delete on public.usage_records from anon, authenticated;
-grant select on public.usage_records to authenticated;
-
 -- Invitation metadata and token hashes are server-only; manage through trusted Edge Functions.
 revoke all on public.organization_invitations from anon, authenticated;
 
