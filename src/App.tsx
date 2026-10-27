@@ -15,6 +15,7 @@ import CollaborationPanel from './components/CollaborationPanel';
 import BillingPanel from './components/BillingPanel';
 import AdminPanel from './components/AdminPanel';
 import VisualDesignStudio from './components/VisualDesignStudio';
+import PublishedVisualLayout from './components/PublishedVisualLayout';
 
 type AuthMode = 'signin' | 'signup';
 type UserProfile = { id: string; display_name: string | null; preferred_language: string; timezone: string; role: string; };
@@ -619,6 +620,8 @@ export default function App() {
             {profile?.role === 'admin' && <a className="workspace-nav-link" href="#visual-design-studio" onClick={(event) => { event.preventDefault(); document.getElementById('visual-design-studio')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Palette size={17} /> <span>Studio de conception visuelle</span></a>}
             <button className="workspace-nav-link" type="button" onClick={() => { if (!confirmDiscardUnsavedChapterChanges()) return; setSearchQuery(''); setStatusFilter('all'); setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); void loadProjects(); }}><RefreshCw size={17} /> <span>Actualiser</span></button>
           </nav>
+
+          {!activeProject && <PublishedVisualLayout />}
 
           <div className="dashboard-stats" aria-label="Résumé de vos projets" aria-busy={loadingProjects}>
             <article className="stat-card"><span className="stat-icon"><FolderKanban size={18} /></span><div><p>Total des projets</p><strong>{loadingProjects ? '…' : projects.length}</strong><small>Tous vos espaces</small></div></article>
