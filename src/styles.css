@@ -633,3 +633,29 @@ hr { border: 0; border-top: 1px solid var(--line); }
 /* Dashboard layout refinement */
 .reference-activity{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;min-width:0;padding:9px 0}.reference-activity>div{display:grid;min-width:0;gap:3px}.reference-activity b,.reference-activity small{display:block;overflow-wrap:anywhere;line-height:1.45}.reference-progress-body{display:grid;grid-template-columns:72px minmax(0,1fr);align-items:center;gap:12px}.reference-progress-lines{display:grid;gap:8px;min-width:0}.reference-progress-lines>span{display:flex;flex-wrap:wrap;align-items:center;gap:5px;min-width:0}.reference-resource{display:grid;grid-template-columns:24px minmax(0,1fr) 16px;gap:10px}.reference-resource span{display:grid;min-width:0;gap:3px}.reference-resource b,.reference-resource small{overflow-wrap:anywhere}.reference-hero h1{font-size:clamp(2rem,2.9vw,2.8rem);line-height:1.08}.reference-orb{flex:0 0 auto;margin-left:auto;padding-left:12px}
 @media(max-width:680px){.reference-orb{display:none}.reference-progress-body{grid-template-columns:60px minmax(0,1fr)}.reference-right-column{grid-template-columns:minmax(0,1fr)}}
+
+
+/* Robust module isolation: works whether a module ID is on its root or nested inside it. */
+.workspace-main[data-active-section] > * { display: none !important; }
+.workspace-main[data-active-section="dashboard"] > :is(.reference-dashboard,.dashboard-stats,.pipeline-section,.recent-activity-panel,.quick-access) { display: block !important; }
+.workspace-main[data-active-section="dashboard"] > .reference-dashboard { display: grid !important; }
+.workspace-main[data-active-section="dashboard"] > :has(.reference-dashboard) { display: block !important; }
+.workspace-main[data-active-section="dashboard"] > :has(.dashboard-stats),
+.workspace-main[data-active-section="dashboard"] > :has(.pipeline-section),
+.workspace-main[data-active-section="dashboard"] > :has(.recent-activity-panel),
+.workspace-main[data-active-section="dashboard"] > :has(.quick-access) { display: block !important; }
+.workspace-main[data-active-section="studio"] > :is(#studio-ia,:has(#studio-ia)) { display: block !important; }
+.workspace-main[data-active-section="media"] > :is(#media-library,:has(#media-library)) { display: block !important; }
+.workspace-main[data-active-section="discover"] > :is(#discover,:has(#discover)) { display: block !important; }
+.workspace-main[data-active-section="library"] > :is(#library,:has(#library)) { display: block !important; }
+.workspace-main[data-active-section="academy"] > :is(#academy,:has(#academy)) { display: block !important; }
+.workspace-main[data-active-section="resources"] > :is(#resource-library,:has(#resource-library)) { display: block !important; }
+.workspace-main[data-active-section="projects"] > :is(.project-layout,:has(.project-layout)) { display: grid !important; }
+.workspace-main[data-active-section="roadmap"] > :is(#roadmap,:has(#roadmap)) { display: block !important; }
+.workspace-main[data-active-section="timeline"] > :is(#timeline,:has(#timeline)) { display: block !important; }
+.workspace-main[data-active-section="insights"] > :is(#insights,:has(#insights)) { display: block !important; }
+.workspace-main[data-active-section="organizations"] > :is(#organizations,:has(#organizations),.organization-panel,:has(.organization-panel)) { display: block !important; }
+.workspace-main[data-active-section="profile"] > :is(.profile-panel,:has(.profile-panel)) { display: block !important; }
+.workspace-main[data-active-section="billing"] > :is(#billing,:has(#billing),.billing-panel,:has(.billing-panel)) { display: block !important; }
+.workspace-main[data-active-section="administration"] > :is(#administration,:has(#administration),.admin-panel,:has(.admin-panel)) { display: block !important; }
+.workspace-main[data-active-section="design"] > :is(#visual-design-studio,:has(#visual-design-studio),.visual-design-studio,:has(.visual-design-studio)) { display: block !important; }
