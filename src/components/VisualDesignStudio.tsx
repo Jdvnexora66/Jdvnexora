@@ -20,7 +20,7 @@ type StudioConfig = { schemaVersion: 1; theme: 'nexora-dark' | 'nexora-light' | 
 type LayoutRow = { id: string; name: string; draft_config: StudioConfig; published_config: StudioConfig | null; version: number; is_default: boolean; updated_at: string; published_at: string | null };
 type VersionRow = { id: string; layout_id: string; version: number; snapshot: StudioConfig; action: string; created_at: string };
 
-const presets: Array<{ type: StudioBlock['type']; title: string; content?: string }> = [
+const presets: Array<{ type: StudioBlock['type']; title: string; content?: string; url?: string }> = [
   { type: 'heading', title: 'Titre de section', content: 'Un espace pour vos idées' },
   { type: 'text', title: 'Bloc de texte', content: 'Présentez une information utile à vos utilisateurs.' },
   { type: 'stat', title: 'Carte statistique', content: 'Connectez ici une vraie source de données avant publication.' },
