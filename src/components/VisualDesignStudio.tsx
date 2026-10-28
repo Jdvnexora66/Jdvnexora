@@ -6,7 +6,9 @@ type StudioBlock = {
   id: string;
   type: 'heading' | 'text' | 'stat' | 'action' | 'card' | 'divider' | 'image' | 'video';
   title: string;
-  content?: string;\n  url?: string;\n  objectFit?: 'cover' | 'contain';
+  content?: string;
+  url?: string;
+  objectFit?: 'cover' | 'contain';
   color?: string;
   background?: string;
   radius?: number;
@@ -24,7 +26,9 @@ const presets: Array<{ type: StudioBlock['type']; title: string; content?: strin
   { type: 'stat', title: 'Carte statistique', content: 'Connectez ici une vraie source de données avant publication.' },
   { type: 'card', title: 'Carte de contenu', content: 'Une carte réutilisable pour organiser les contenus.' },
   { type: 'action', title: 'Action rapide', content: 'Action de démonstration non connectée' },
-  { type: 'divider', title: 'Séparateur' },\n  { type: 'image', title: 'Image', content: 'Description de l’image' },\n  { type: 'video', title: 'Vidéo', content: 'Vidéo intégrée', url: 'https://www.youtube-nocookie.com/embed/ScMzIvxBSi4' },
+  { type: 'divider', title: 'Séparateur' },
+  { type: 'image', title: 'Image', content: 'Description de l’image' },
+  { type: 'video', title: 'Vidéo', content: 'Vidéo intégrée', url: 'https://www.youtube-nocookie.com/embed/ScMzIvxBSi4' },
 ];
 const starter: StudioConfig = { schemaVersion: 1, theme: 'nexora-dark', components: [
   { id: 'welcome-title', type: 'heading', title: 'Bienvenue dans votre espace', content: 'Configurez votre tableau de bord NEXORA', color: '#f4f6ff', width: 'full', padding: 16 },
@@ -42,7 +46,8 @@ const safeConfig = (value: unknown): StudioConfig => {
   if (input.schemaVersion !== 1 || !Array.isArray(input.components) || input.components.length > 80) return starter;
   const allowed = new Set(['heading','text','stat','action','card','divider','image','video']);
   const components = input.components.filter((x): x is StudioBlock => Boolean(x && typeof x === 'object' && typeof x.id === 'string' && typeof x.title === 'string' && allowed.has((x as StudioBlock).type))).map(x => ({
-    id: x.id.slice(0, 80), type: x.type, title: x.title.slice(0, 120), content: typeof x.content === 'string' ? x.content.slice(0, 1000) : '',\n    url: (x.type === 'image' && typeof x.url === 'string' && /^https:\\/\\//i.test(x.url) && !/^(javascript|data):/i.test(x.url)) || (x.type === 'video' && typeof x.url === 'string' && /^https:\\/\\/(www\\.)?(youtube-nocookie\\.com\\/embed\\/|player\\.vimeo\\.com\\/video\\/)/i.test(x.url)) ? x.url.slice(0, 2000) : undefined, objectFit: x.objectFit === 'contain' ? 'contain' : 'cover',
+    id: x.id.slice(0, 80), type: x.type, title: x.title.slice(0, 120), content: typeof x.content === 'string' ? x.content.slice(0, 1000) : '',
+    url: (x.type === 'image' && typeof x.url === 'string' && /^https:\/\//i.test(x.url) && !/^(javascript|data):/i.test(x.url)) || (x.type === 'video' && typeof x.url === 'string' && /^https:\/\/(www\\.)?(youtube-nocookie\\.com\/embed\/|player\\.vimeo\\.com\/video\/)/i.test(x.url)) ? x.url.slice(0, 2000) : undefined, objectFit: x.objectFit === 'contain' ? 'contain' : 'cover',
     color: /^#[0-9a-f]{6}$/i.test(x.color ?? '') ? x.color : undefined,
     background: /^#[0-9a-f]{6}$/i.test(x.background ?? '') ? x.background : undefined,
     radius: Number.isFinite(x.radius) ? Math.max(0, Math.min(32, x.radius!)) : 12,
