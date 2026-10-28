@@ -1,5 +1,5 @@
 begin;
-select plan(14);
+select plan(15);
 
 select has_column('public', 'studio_projects', 'organization_id',
   'studio projects support nullable organization ownership');
@@ -71,6 +71,12 @@ select ok(
 select ok(
   position('private.is_admin()' in pg_get_functiondef('private.can_manage_studio_project(uuid,uuid)'::regprocedure)) > 0,
   'platform admin override remains available for project management'
+);
+
+select ok(
+  position('new.organization_id is distinct from old.organization_id' in pg_get_functiondef('private.validate_studio_project_tenant()'::regprocedure)) > 0
+  and position('tg_op = ''UPDATE''' in pg_get_functiondef('private.validate_studio_project_tenant()'::regprocedure)) > 0,
+  'project tenant ownership cannot be changed by a normal update'
 );
 
 select * from finish();
