@@ -4,3 +4,9 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Local TypeScript build cache
+*.tsbuildinfo
+
+# Supabase CLI local metadata (project linkage and cached versions)
+supabase/.temp/
