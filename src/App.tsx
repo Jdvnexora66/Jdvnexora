@@ -554,8 +554,10 @@ export default function App() {
           <span className="brand-mark"><Sparkles size={20} /></span>
           <span>JDV <strong>NEXORA</strong><small>AI STUDIO</small></span>
         </a>
+        {session && <label className="mockup-global-search"><Search size={16}/><input aria-label="Rechercher" placeholder="Rechercher un projet, une ressource, une formation…" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} /><kbd>⌘ K</kbd></label>}
         <div className="topbar-actions">
           <span className="secure-label"><ShieldCheck size={16} /> Espace sécurisé</span>
+          {session && <span className="mockup-user-chip"><span className="mockup-avatar">{(profileName || session.user.email || 'N').slice(0,1).toUpperCase()}</span><span><b>{profileName || (session.user.email ?? '').split('@')[0] || 'Créateur'}</b><small>{profile?.role === 'admin' ? 'Administrateur' : 'Créateur'}</small></span></span>}
           {session && <button className="logout-button" onClick={signOut}><LogOut size={15} /> Déconnexion</button>}
         </div>
       </header>
@@ -621,6 +623,8 @@ export default function App() {
             <a className={activeSection === 'administration' ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#administration" onClick={(event) => { event.preventDefault(); navigateWorkspace('administration'); }}><ShieldCheck size={17} /> <span>Administration</span></a>
             {profile?.role === 'admin' && <a className={activeSection === 'design' ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#visual-design-studio" onClick={(event) => { event.preventDefault(); navigateWorkspace('design'); }}><Palette size={17} /> <span>Studio de conception visuelle</span></a>}
             <button className="workspace-nav-link" type="button" onClick={() => { if (!confirmDiscardUnsavedChapterChanges()) return; setSearchQuery(''); setStatusFilter('all'); setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); void loadProjects(); }}> <RefreshCw size={17} /> <span>Actualiser</span></button>
+            <div className="sidebar-upgrade"><span className="sidebar-crown">♛</span><b>Passez à la vitesse supérieure</b><p>Accédez à plus de modèles IA et d’outils avancés.</p><button type="button" onClick={() => navigateWorkspace('billing')}>Voir les offres <ArrowRight size={14}/></button></div>
+            <div className="sidebar-footer"><b>JDV NEXORA AI STUDIO</b><span>Créer · Apprendre · Partager · Innover</span></div>
           </nav>
           <div className="workspace-main" data-active-section={activeSection}>
 
