@@ -187,12 +187,9 @@ export default function App() {
       if (schemaProbe.error && schemaProbe.error.code !== '42703') throw schemaProbe.error;
       const hasTenantColumn = !schemaProbe.error;
       setTenantProjectsEnabled(hasTenantColumn);
-      const projectFields = hasTenantColumn
-        ? 'id, owner_id, title, description, project_type, status, created_at, organization_id'
-        : 'id, owner_id, title, description, project_type, status, created_at';
       const [ownedResult, membershipResult] = await Promise.all([
         supabase.from('studio_projects')
-          .select(projectFields)
+          .select('*')
           .eq('owner_id', session.user.id)
           .order('created_at', { ascending: false }),
         supabase.from('studio_project_members').select('project_id').eq('user_id', session.user.id),
