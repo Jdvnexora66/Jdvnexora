@@ -127,6 +127,8 @@ export default function App() {
       projectLoadRequest.current += 1;
       setLoadingProjects(false);
       setProjects([]);
+      setActiveOrganizationId('');
+      setTenantProjectsEnabled(null);
       setProfile(null);
       setProfileName('');
     }
