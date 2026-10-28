@@ -34,7 +34,7 @@ type StudioProject = {
 };
 
 export default function App() {
-  const [mode, setMode] = useState<AuthMode>('signin');
+  const [mode, setMode] = useState<AuthMode>(() => new URLSearchParams(window.location.search).get('mode') === 'signup' ? 'signup' : 'signin');
   const [activeSection, setActiveSection] = useState('dashboard');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
