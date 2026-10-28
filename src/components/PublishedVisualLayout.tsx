@@ -9,12 +9,32 @@ const themes: Record<string,{background:string;surface:string;text:string}> = {
   'nexora-light': {background:'#f2f5fb',surface:'#ffffff',text:'#172039'},
   ocean: {background:'#071b2b',surface:'#103449',text:'#ecfeff'},
 };
+function isAllowedImageUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && Boolean(url.hostname) && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
+function isAllowedVideoUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' &&
+      (((url.hostname === 'youtube-nocookie.com' || url.hostname === 'www.youtube-nocookie.com') && url.pathname.startsWith('/embed/')) ||
+       (url.hostname === 'player.vimeo.com' && url.pathname.startsWith('/video/')));
+  } catch {
+    return false;
+  }
+}
+
 function validate(value: unknown): Config | null {
   if (!value || typeof value !== 'object') return null;
   const config = value as Partial<Config>;
   if (config.schemaVersion !== 1 || !Array.isArray(config.components) || config.components.length > 80) return null;
   const allowed = new Set(['heading','text','stat','action','card','divider','image','video']);
-  const components = config.components.filter((item): item is Block => Boolean(item && typeof item === 'object' && typeof item.id === 'string' && typeof item.title === 'string' && allowed.has((item as Block).type))).map(item => ({...item, url: item.type === 'image' && typeof item.url === 'string' && /^https:\\/\\//i.test(item.url) ? item.url.slice(0,2000) : item.type === 'video' && typeof item.url === 'string' && /^https:\\/\\/(www\\.)?(youtube-nocookie\\.com\\/embed\\/|player\\.vimeo\\.com\\/video\\/)/i.test(item.url) ? item.url.slice(0,2000) : undefined, objectFit: item.objectFit === 'contain' ? 'contain' as const : 'cover' as const}));
+  const components = config.components.filter((item): item is Block => Boolean(item && typeof item === 'object' && typeof item.id === 'string' && typeof item.title === 'string' && allowed.has((item as Block).type))).map(item => ({...item, url: typeof item.url === 'string' && (item.type === 'image' ? isAllowedImageUrl(item.url) : item.type === 'video' ? isAllowedVideoUrl(item.url) : false) ? item.url.slice(0, 2000) : undefined, objectFit: item.objectFit === 'contain' ? 'contain' as const : 'cover' as const}));
   return {schemaVersion:1,theme:typeof config.theme === 'string' && themes[config.theme] ? config.theme : 'nexora-dark',components};
 }
 export default function PublishedVisualLayout() {
