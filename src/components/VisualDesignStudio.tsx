@@ -40,7 +40,7 @@ const themes: Record<StudioConfig['theme'], { background: string; surface: strin
   'nexora-light': { background: '#f2f5fb', surface: '#ffffff', accent: '#4f5ed7', text: '#172039' },
   ocean: { background: '#071b2b', surface: '#103449', accent: '#48d7c0', text: '#ecfeff' },
 };
-const safeConfig = (value: unknown): StudioConfig => {
+const isAllowedVideoUrl = (value: string): boolean => {\n  try {\n    const url = new URL(value);\n    return url.protocol === 'https:' && ((url.hostname === 'youtube-nocookie.com' || url.hostname === 'www.youtube-nocookie.com') && url.pathname.startsWith('/embed/') || url.hostname === 'player.vimeo.com' && url.pathname.startsWith('/video/'));\n  } catch { return false; }\n};\nconst safeConfig = (value: unknown): StudioConfig => {
   if (!value || typeof value !== 'object') return starter;
   const input = value as Partial<StudioConfig>;
   if (input.schemaVersion !== 1 || !Array.isArray(input.components) || input.components.length > 80) return starter;
