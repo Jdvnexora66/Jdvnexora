@@ -1,5 +1,5 @@
 begin;
-select plan(10);
+select plan(11);
 
 select has_column('public', 'studio_projects', 'organization_id',
   'studio projects support nullable organization ownership');
@@ -42,6 +42,13 @@ select ok(
   has_function_privilege('authenticated', 'private.can_access_studio_project(uuid,uuid)', 'EXECUTE')
   and not has_function_privilege('anon', 'private.can_access_studio_project(uuid,uuid)', 'EXECUTE'),
   'authorization helper is available to authenticated users only');
+
+select ok(
+  position('p_user_id = (select auth.uid())' in pg_get_functiondef('private.can_access_studio_project(uuid,uuid)'::regprocedure)) > 0
+  and position('p_user_id = (select auth.uid())' in pg_get_functiondef('private.can_edit_studio_project(uuid,uuid)'::regprocedure)) > 0
+  and position('p_user_id = (select auth.uid())' in pg_get_functiondef('private.can_manage_studio_project(uuid,uuid)'::regprocedure)) > 0,
+  'authorization helpers reject checks against another user id'
+);
 
 select * from finish();
 rollback;
