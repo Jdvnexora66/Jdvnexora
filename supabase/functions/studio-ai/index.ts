@@ -20,6 +20,9 @@ Deno.serve(async (req: Request) => {
   if (!supabaseUrl || !anonKey || !authorization) return respond({ error: "Authentification requise." }, 401);
 
   const authClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authorization } } });
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!serviceRoleKey) return respond({ error: "Configuration serveur incomplète pour sécuriser le quota IA." }, 503);
+  const usageClient = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: { user }, error: authError } = await authClient.auth.getUser();
   if (authError || !user) return respond({ error: "Session invalide. Reconnectez-vous." }, 401);
 
@@ -73,31 +76,22 @@ Deno.serve(async (req: Request) => {
     });
     const result = await response.json();
     if (!response.ok) {
-      await authClient.rpc("nexora_finalize_ai_usage", {
-        p_usage_id: quota.usage_id, p_status: "failed",
-        p_input_tokens: null, p_output_tokens: null,
-      });
+      // Failed requests remain reserved temporarily and stop counting after the 15-minute expiry.
       return respond({ error: response.status === 429 ? "Limite de requêtes IA atteinte. Réessayez plus tard." : "Le fournisseur IA a refusé la demande. Vérifiez la configuration du service." }, response.status === 429 ? 429 : 502);
     }
     const text = result?.choices?.[0]?.message?.content;
     if (typeof text !== "string" || !text.trim()) {
-      await authClient.rpc("nexora_finalize_ai_usage", {
-        p_usage_id: quota.usage_id, p_status: "failed",
-        p_input_tokens: null, p_output_tokens: null,
-      });
+      // Failed requests remain reserved temporarily and stop counting after the 15-minute expiry.
       return respond({ error: "Aucune réponse IA disponible." }, 502);
     }
-    await authClient.rpc("nexora_finalize_ai_usage", {
-      p_usage_id: quota.usage_id, p_status: "completed",
+    await usageClient.rpc("nexora_finalize_ai_usage", {
+      p_user_id: user.id, p_usage_id: quota.usage_id, p_status: "completed",
       p_input_tokens: Number.isInteger(result?.usage?.prompt_tokens) ? result.usage.prompt_tokens : null,
       p_output_tokens: Number.isInteger(result?.usage?.completion_tokens) ? result.usage.completion_tokens : null,
     });
     return respond({ text, usage: { quota: quota.quota, used: quota.used, remaining: Math.max(0, quota.quota - quota.used), plan: quota.plan_code } });
   } catch {
-    await authClient.rpc("nexora_finalize_ai_usage", {
-      p_usage_id: quota.usage_id, p_status: "failed",
-      p_input_tokens: null, p_output_tokens: null,
-    });
+    // Failed requests remain reserved temporarily and stop counting after the 15-minute expiry.
     return respond({ error: "Impossible de joindre le service IA pour le moment." }, 502);
   }
 });
