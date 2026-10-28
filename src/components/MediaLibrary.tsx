@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Film, Headphones, Play, Plus, Search, Trash2, Youtube, Video, RefreshCw, Globe2, LockKeyhole, Link2, Unplug, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import './media-provider.css';
@@ -99,6 +99,7 @@ function mediaKindLabel(kind: MediaKind) {
 }
 
 export default function MediaLibrary({ userId }: Props) {
+  const oauthPopupRef = useRef<Window | null>(null);
   const [items, setItems] = useState<MediaItem[]>([]);
   const [query, setQuery] = useState('');
   const [sourceUrl, setSourceUrl] = useState('');
@@ -172,7 +173,8 @@ export default function MediaLibrary({ userId }: Props) {
     const configuredUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
     const allowedOrigin = configuredUrl ? new URL(configuredUrl).origin : '';
     const onOAuthMessage = (event: MessageEvent) => {
-      if (!allowedOrigin || event.origin !== allowedOrigin || event.data?.type !== 'nexora-media-oauth') return;
+      if (!allowedOrigin || event.origin !== allowedOrigin || event.source !== oauthPopupRef.current || event.data?.type !== 'nexora-media-oauth') return;
+      oauthPopupRef.current = null;
       if (event.data.ok) {
         setProviderNotice('Compte connecté. Première synchronisation en cours…');
         const platform = event.data.platform;
@@ -202,7 +204,10 @@ export default function MediaLibrary({ userId }: Props) {
       if (!data?.authorization_url) throw new Error(data?.error || 'La plateforme n’a pas fourni de lien d’autorisation.');
       const popup = window.open(data.authorization_url, 'nexora-media-oauth', 'popup,width=600,height=760');
       if (!popup) window.location.assign(data.authorization_url);
-      else popup.focus();
+      else {
+        oauthPopupRef.current = popup;
+        popup.focus();
+      }
     } catch (cause) {
       setProviderError(cause instanceof Error ? cause.message : 'Connexion impossible. Vérifiez les secrets développeur dans Supabase.');
     } finally {
