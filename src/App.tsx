@@ -129,6 +129,10 @@ export default function App() {
     }
   }, [session?.user.id]);
 
+  useEffect(() => {
+    if (session?.user.id && activeOrganizationId) void loadProjects();
+  }, [activeOrganizationId]);
+
   async function loadProfile() {
     if (!supabase || !session?.user.id) return;
     setLoadingProfile(true);
