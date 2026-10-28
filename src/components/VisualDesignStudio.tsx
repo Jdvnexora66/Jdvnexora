@@ -20,7 +20,7 @@ type StudioConfig = { schemaVersion: 1; theme: 'nexora-dark' | 'nexora-light' | 
 type LayoutRow = { id: string; name: string; draft_config: StudioConfig; published_config: StudioConfig | null; version: number; is_default: boolean; updated_at: string; published_at: string | null };
 type VersionRow = { id: string; layout_id: string; version: number; snapshot: StudioConfig; action: string; created_at: string };
 
-const presets: Array<{ type: StudioBlock['type']; title: string; content?: string }> = [
+const presets: Array<{ type: StudioBlock['type']; title: string; content?: string; url?: string }> = [
   { type: 'heading', title: 'Titre de section', content: 'Un espace pour vos idées' },
   { type: 'text', title: 'Bloc de texte', content: 'Présentez une information utile à vos utilisateurs.' },
   { type: 'stat', title: 'Carte statistique', content: 'Connectez ici une vraie source de données avant publication.' },
@@ -67,7 +67,7 @@ const safeConfig = (value: unknown): StudioConfig => {
   const allowed = new Set(['heading','text','stat','action','card','divider','image','video']);
   const components = input.components.filter((x): x is StudioBlock => Boolean(x && typeof x === 'object' && typeof x.id === 'string' && typeof x.title === 'string' && allowed.has((x as StudioBlock).type))).map(x => ({
     id: x.id.slice(0, 80), type: x.type, title: x.title.slice(0, 120), content: typeof x.content === 'string' ? x.content.slice(0, 1000) : '',
-    url: typeof x.url === 'string' && (x.type === 'image' ? isAllowedImageUrl(x.url) : x.type === 'video' ? isAllowedVideoUrl(x.url) : false) ? x.url.slice(0, 2000) : undefined, objectFit: x.objectFit === 'contain' ? 'contain' : 'cover',
+    url: typeof x.url === 'string' && (x.type === 'image' ? isAllowedImageUrl(x.url) : x.type === 'video' ? isAllowedVideoUrl(x.url) : false) ? x.url.slice(0, 2000) : undefined, objectFit: (x.objectFit === 'contain' ? 'contain' : 'cover') as StudioBlock['objectFit'],
     color: /^#[0-9a-f]{6}$/i.test(x.color ?? '') ? x.color : undefined,
     background: /^#[0-9a-f]{6}$/i.test(x.background ?? '') ? x.background : undefined,
     radius: Number.isFinite(x.radius) ? Math.max(0, Math.min(32, x.radius!)) : 12,
@@ -136,7 +136,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
     if (config.components.length >= 80) { setError('Limite de 80 composants atteinte.'); return; }
     const preset = presets.find(item => item.type === type)!;
     const id = `block-${Date.now().toString(36)}`;
-    changeConfig({ ...config, components: [...config.components, { id, type, title: preset.title, content: preset.content ?? '', color: theme.text, background: theme.surface, radius: 12, padding: 16, width: 'full' }] });
+    changeConfig({ ...config, components: [...config.components, { id, type, title: preset.title, content: preset.content ?? '', url: preset.url, color: theme.text, background: theme.surface, radius: 12, padding: 16, width: 'full' }] });
     setSelectedBlockId(id);
   }
   function moveBlock(from: string, to: string) {
