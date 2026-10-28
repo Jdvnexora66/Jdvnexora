@@ -1,5 +1,5 @@
 begin;
-select plan(17);
+select plan(19);
 
 select has_table('public', 'nexora_courses', 'course catalog exists');
 select has_table('public', 'nexora_course_lessons', 'course lessons exist');
@@ -20,7 +20,10 @@ select ok(not has_function_privilege('anon', 'public.nexora_enroll_free_course(u
 select ok(has_function_privilege('authenticated', 'public.nexora_enroll_free_course(uuid)', 'EXECUTE'), 'signed-in users can request free enrollment through validated RPC');
 select ok(not has_function_privilege('anon', 'public.nexora_create_course_payment_order(uuid)', 'EXECUTE'), 'anonymous users cannot create paid-course orders');
 select ok(has_function_privilege('authenticated', 'public.nexora_create_course_payment_order(uuid)', 'EXECUTE'), 'signed-in users can create paid-course orders through validated RPC');
-select ok(not has_function_privilege('anon', 'public.nexora_finalize_ai_usage(bigint,text,integer,integer)', 'EXECUTE'), 'anonymous users cannot finalize AI quota usage');
+select ok(not has_function_privilege('anon', 'public.nexora_finalize_ai_usage(uuid,bigint,text,integer,integer)', 'EXECUTE'), 'anonymous users cannot finalize AI quota usage');
+select ok(not has_function_privilege('authenticated', 'public.nexora_finalize_ai_usage(uuid,bigint,text,integer,integer)', 'EXECUTE'), 'authenticated clients cannot forge AI usage finalization');
+select ok(has_function_privilege('service_role', 'public.nexora_finalize_ai_usage(uuid,bigint,text,integer,integer)', 'EXECUTE'), 'trusted server can finalize AI usage');
+select ok(to_regprocedure('public.nexora_finalize_ai_usage(bigint,text,integer,integer)') is null, 'old client-callable finalization RPC is removed');
 
 select * from finish();
 rollback;
