@@ -124,6 +124,8 @@ export default function App() {
       void loadProjects();
       void loadProfile();
     } else {
+      projectLoadRequest.current += 1;
+      setLoadingProjects(false);
       setProjects([]);
       setProfile(null);
       setProfileName('');
