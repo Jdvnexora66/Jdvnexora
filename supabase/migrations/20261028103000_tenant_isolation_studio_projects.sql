@@ -123,6 +123,13 @@ language plpgsql security definer
 set search_path = pg_catalog, public, private, auth
 as $$
 begin
+  -- Tenant ownership is immutable after creation. Cross-tenant transfers must
+  -- use an explicit, separately authorized workflow rather than a normal edit.
+  if tg_op = 'UPDATE' and new.organization_id is distinct from old.organization_id then
+    raise exception 'Project tenant cannot be changed after creation'
+      using errcode = '42501';
+  end if;
+
   if new.organization_id is null then
     -- A personal project must remain owned by its authenticated creator.
     if new.owner_id is distinct from (select auth.uid())
