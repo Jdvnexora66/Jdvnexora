@@ -33,7 +33,8 @@ export default function Academy({ userId }: { userId:string }) {
         supabase.from('nexora_learning_modules').select('id,path_id,title,summary,project_task,position').order('position'),
         supabase.from('nexora_learning_progress').select('module_id,status,notes').eq('user_id',userId),
         supabase.from('nexora_courses').select('id,slug,title,short_description,description,instructor_name,cover_image_url,price_xof,is_free,duration_minutes,level').eq('status','published').order('created_at',{ascending:false}),
-        supabase.from('nexora_course_enrollments').select('course_id').eq('user_id',userId).eq('status','active')
+        supabase.from('nexora_course_enrollments').select('course_id').eq('user_id',userId).eq('status','active'),
+        supabase.from('nexora_course_lessons').select('id,course_id,title,description,content_type,content,media_url,position,is_preview,is_published').order('position',{ascending:true})
       ]);
       if(p.error||m.error||g.error){setError('Le programme Académie nécessite l’application de la migration Supabase.');return;}
       const pathRows=(p.data??[]) as PathRow[];
