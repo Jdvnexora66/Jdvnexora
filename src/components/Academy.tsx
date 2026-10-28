@@ -13,6 +13,8 @@ export default function Academy({ userId }: { userId:string }) {
   const [paths,setPaths]=useState<PathRow[]>([]);
   const [modules,setModules]=useState<ModuleRow[]>([]);
   const [courses,setCourses]=useState<CourseRow[]>([]);
+  const [enrolledCourseIds,setEnrolledCourseIds]=useState<string[]>([]);
+  const [enrollingCourseId,setEnrollingCourseId]=useState('');
   const [progress,setProgress]=useState<Record<string,ProgressRow>>({});
   const [selected,setSelected]=useState('discover');
   const [loading,setLoading]=useState(true);
@@ -24,17 +26,19 @@ export default function Academy({ userId }: { userId:string }) {
     if(!supabase){setLoading(false);setError('Supabase n’est pas configuré.');return;}
     setLoading(true);setError('');
     try {
-      const [p,m,g,c]=await Promise.all([
+      const [p,m,g,c,e]=await Promise.all([
         supabase.from('nexora_learning_paths').select('id,title,audience,description,position').order('position'),
         supabase.from('nexora_learning_modules').select('id,path_id,title,summary,project_task,position').order('position'),
         supabase.from('nexora_learning_progress').select('module_id,status,notes').eq('user_id',userId),
-        supabase.from('nexora_courses').select('id,slug,title,short_description,description,instructor_name,cover_image_url,price_xof,is_free,duration_minutes,level').eq('status','published').order('created_at',{ascending:false})
+        supabase.from('nexora_courses').select('id,slug,title,short_description,description,instructor_name,cover_image_url,price_xof,is_free,duration_minutes,level').eq('status','published').order('created_at',{ascending:false}),
+        supabase.from('nexora_course_enrollments').select('course_id').eq('user_id',userId).eq('status','active')
       ]);
       if(p.error||m.error||g.error){setError('Le programme Académie nécessite l’application de la migration Supabase.');return;}
       const pathRows=(p.data??[]) as PathRow[];
       setPaths(pathRows);setModules((m.data??[]) as ModuleRow[]);
       setCourses((c.data??[]) as CourseRow[]);
       if(c.error) setMessage('Le catalogue des formations est temporairement indisponible.');
+      setEnrolledCourseIds(e.error?[]:(e.data??[]).map(row=>row.course_id as string));
       setProgress(Object.fromEntries(((g.data??[]) as ProgressRow[]).map(row=>[row.module_id,row])));
       setSelected(current => pathRows.length && !pathRows.some(row=>row.id===current) ? pathRows[0].id : current);
     } catch (cause) {
@@ -44,6 +48,20 @@ export default function Academy({ userId }: { userId:string }) {
     }
   },[userId]);
   useEffect(()=>{void load();},[load]);
+
+  async function enrollFreeCourse(course:CourseRow){
+    if(!supabase)return;
+    setEnrollingCourseId(course.id);setError('');setMessage('');
+    try {
+      const {data,error:e}=await supabase.rpc('nexora_enroll_free_course',{p_course_id:course.id});
+      if(e)throw new Error(e.message);
+      if(!data?.enrolled)throw new Error('L’inscription n’a pas été confirmée.');
+      setEnrolledCourseIds(current=>current.includes(course.id)?current:[...current,course.id]);
+      setMessage('Inscription confirmée. Vous pouvez accéder aux leçons publiées de cette formation.');
+    } catch(cause) {
+      setError(cause instanceof Error?cause.message:'Impossible de vous inscrire à cette formation. Réessayez.');
+    } finally {setEnrollingCourseId('');}
+  }
 
   async function setStatus(module:ModuleRow,status:ProgressRow['status']){
     if(!supabase)return;
@@ -76,7 +94,7 @@ export default function Academy({ userId }: { userId:string }) {
               </div>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginTop:'auto'}}>
                 <strong>{course.is_free||Number(course.price_xof)===0?'Gratuit':formatXof(Number(course.price_xof))}</strong>
-                <span className="muted" style={{fontSize:12}}>{course.is_free||Number(course.price_xof)===0?'Accès gratuit':'Inscription bientôt disponible'}</span>
+                {course.is_free||Number(course.price_xof)===0 ? (enrolledCourseIds.includes(course.id) ? <span className="status-badge status-completed">Inscrit</span> : <button type="button" className="primary-button" onClick={()=>void enrollFreeCourse(course)} disabled={enrollingCourseId===course.id}>{enrollingCourseId===course.id?'Inscription…':'S’inscrire gratuitement'}</button>) : <span className="muted" style={{fontSize:12}}>Paiement bientôt disponible</span>}
               </div>
             </article>)}
           </div>}
