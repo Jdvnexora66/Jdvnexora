@@ -579,3 +579,39 @@ hr { border: 0; border-top: 1px solid var(--line); }
   .workspace-main > #organizations, .workspace-main > #billing, .workspace-main > #administration,
   .workspace-main > #visual-design-studio, .workspace-main > .profile-panel { padding: 18px; border-radius: 15px; }
 }
+
+
+/* Navigation isolée : un module visible à la fois, sans mélanger les écrans */
+.workspace-main[data-active-section] > * { display: none; }
+.workspace-main[data-active-section="dashboard"] > .reference-dashboard,
+.workspace-main[data-active-section="dashboard"] > .dashboard-stats,
+.workspace-main[data-active-section="dashboard"] > .pipeline-section,
+.workspace-main[data-active-section="dashboard"] > .recent-activity-panel,
+.workspace-main[data-active-section="dashboard"] > .quick-access { display: block; }
+.workspace-main[data-active-section="dashboard"] > .dashboard-stats { display: grid; }
+.workspace-main[data-active-section="studio"] > #studio-ia,
+.workspace-main[data-active-section="media"] > #media-library,
+.workspace-main[data-active-section="discover"] > #discover,
+.workspace-main[data-active-section="library"] > #library,
+.workspace-main[data-active-section="academy"] > #academy,
+.workspace-main[data-active-section="resources"] > #resource-library,
+.workspace-main[data-active-section="roadmap"] > #roadmap,
+.workspace-main[data-active-section="timeline"] > #timeline,
+.workspace-main[data-active-section="insights"] > #insights,
+.workspace-main[data-active-section="organizations"] > #organizations,
+.workspace-main[data-active-section="profile"] > .profile-panel,
+.workspace-main[data-active-section="billing"] > #billing,
+.workspace-main[data-active-section="administration"] > #administration,
+.workspace-main[data-active-section="design"] > #visual-design-studio { display: block; }
+.workspace-main[data-active-section="projects"] > .project-layout { display: grid; }
+.workspace-main[data-active-section="projects"] > #studio-editor { display: block; }
+.workspace-main[data-active-section="projects"] > .project-panel:not(.profile-panel) { display: block; }
+.workspace-main[data-active-section="projects"] > .collaboration-panel { display: block; }
+.workspace-main[data-active-section="projects"] > .editor-panel { display: block; }
+.workspace-main[data-active-section="dashboard"] > .reference-dashboard { margin-bottom: 24px; }
+.workspace-main[data-active-section="dashboard"] > .dashboard-stats { margin-bottom: 24px; }
+.workspace-main[data-active-section="dashboard"] > .pipeline-section,
+.workspace-main[data-active-section="dashboard"] > .recent-activity-panel { margin-top: 24px; }
+@media (max-width: 760px) {
+  .workspace-main[data-active-section="dashboard"] > .dashboard-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
