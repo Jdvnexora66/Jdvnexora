@@ -25,7 +25,6 @@ type StudioAsset = { id: string; project_id: string; owner_id: string; title: st
 type StudioProject = {
   id: string;
   owner_id: string;
-  organization_id: string | null;
   title: string;
   description: string | null;
   project_type: string;
