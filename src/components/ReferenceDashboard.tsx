@@ -22,8 +22,8 @@ const name = displayName.trim().split(/\s+/)[0] || 'Créateur';
     <div className="reference-main-column">
       <section className="reference-hero">
         <div className="reference-hero-copy">
-          <p className="reference-eyebrow">VOTRE ESPACE CRÉATIF</p>
-          <h1>Bonjour {name},<br/><span>Bienvenue dans votre studio IA</span></h1>
+          <p className="reference-greeting">Bonjour {name},</p>
+          <h1>Bienvenue dans votre studio IA</h1>
           <p>Créez, apprenez, collaborez et donnez vie à vos idées avec la puissance de l’IA.</p>
           <div className="reference-hero-actions">
             <button type="button" className="reference-primary" onClick={onOpenStudio}><Bot size={17}/> Lancer une conversation IA</button>
@@ -41,8 +41,8 @@ const name = displayName.trim().split(/\s+/)[0] || 'Créateur';
       <section className="reference-projects">
         <div className="reference-section-head"><div><h2>Mes projets</h2><p>Reprenez là où vous en étiez ou créez un nouveau projet.</p></div><button onClick={onOpenProjects}>Voir tous <ArrowRight size={14}/></button></div>
         <div className="reference-project-summary">
-          {projects.slice(0,3).map((project,index)=><article key={project.id} className={`reference-live-project project-art-${index+1}`}>
-            <span className={`reference-project-art ${index===0?'art-book':index===1?'art-app':'art-doc'}`}>{index===0?<BookOpen/>:index===1?<Folder/>:<FileText/>}</span>
+          {projects.slice(0,4).map((project,index)=><article key={project.id} className={`reference-live-project project-art-${index+1}`}>
+            <span className={`reference-project-art ${index===0?'art-book':index===1?'art-app':index===2?'art-campaign':'art-doc'}`}>{index===0?<BookOpen/>:index===1?<Folder/>:index===2?<Compass/>:<FileText/>}</span>
             <b>{project.title}</b><strong>{project.status==='completed'?'Terminé':project.status==='in_progress'?'En cours':project.status==='archived'?'Archivé':'Brouillon'}</strong>
             <small>{project.description || 'Créé le '+new Date(project.created_at).toLocaleDateString('fr-FR')}</small>
           </article>)}
@@ -61,6 +61,19 @@ const name = displayName.trim().split(/\s+/)[0] || 'Créateur';
           <button onClick={onOpenProfile}><Settings/><span>Paramètres</span></button>
         </div>
       </section>
+      <div className="reference-bottom-grid">
+        <section className="reference-side-card reference-next-tasks">
+          <div className="reference-section-head"><h3>Vos prochaines tâches</h3><button onClick={onOpenProjects}>Voir les projets <ArrowRight size={14}/></button></div>
+          <button className="reference-task" onClick={onNewProject}><span className="reference-task-check"/><span><b>Créer votre prochain projet</b><small>Commencer une nouvelle réalisation</small></span><ArrowRight size={14}/></button>
+          <button className="reference-task" onClick={onOpenStudio}><span className="reference-task-check"/><span><b>Explorer le Studio IA</b><small>Transformer une idée en contenu</small></span><ArrowRight size={14}/></button>
+          <button className="reference-task" onClick={onOpenAcademy}><span className="reference-task-check"/><span><b>Découvrir une formation</b><small>Développer vos compétences</small></span><ArrowRight size={14}/></button>
+        </section>
+        <section className="reference-side-card reference-usage">
+          <h3>Utilisation de vos ressources</h3>
+          <div className="reference-usage-empty"><Activity/><b>Suivi des ressources</b><p>Les indicateurs apparaîtront ici lorsque les données de consommation seront connectées.</p></div>
+          <button className="reference-usage-link" onClick={onOpenProfile}>Gérer mes préférences <ArrowRight size={14}/></button>
+        </section>
+      </div>
     </div>
     <aside className="reference-right-column">
       <section className="reference-side-card reference-progress"><h3>Votre progression</h3><div className="reference-progress-body"><div className="reference-ring"><strong>{Math.min(100,Math.round((projectCount?Math.min(projectCount,10):0)/10*100))}%</strong></div><div className="reference-progress-lines"><span><Folder size={14}/> Projets <b>{Math.min(projectCount,10)} / 10</b></span><span><GraduationCap size={14}/> Cours <b>À découvrir</b></span><span><Activity size={14}/> Objectifs <b>À définir</b></span></div></div></section>
