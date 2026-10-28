@@ -1,7 +1,9 @@
 import { ArrowRight, Bot, Compass, Folder, Image, GraduationCap, Users, Settings, Plus, Sparkles, Activity, BookOpen, FileText, CircleHelp } from 'lucide-react';
 
+type ProjectPreview = { id: string; title: string; description: string | null; project_type: string; status: string; created_at: string };
 type Props = {
   displayName: string;
+  projects: ProjectPreview[];
   projectCount: number;
   inProgressCount: number;
   onNewProject: () => void;
@@ -14,7 +16,7 @@ type Props = {
   onOpenProfile: () => void;
   onOpenResources: () => void;
 };
-export default function ReferenceDashboard({displayName,projectCount,inProgressCount,onNewProject,onOpenStudio,onOpenProjects,onOpenDiscover,onOpenMedia,onOpenAcademy,onOpenTeam,onOpenProfile,onOpenResources}:Props) {
+export default function ReferenceDashboard({displayName,projects,projectCount,inProgressCount,onNewProject,onOpenStudio,onOpenProjects,onOpenDiscover,onOpenMedia,onOpenAcademy,onOpenTeam,onOpenProfile,onOpenResources}:Props) {
 const name = displayName.trim().split(/\s+/)[0] || 'Créateur';
   return <section className="reference-dashboard" aria-label="Tableau de bord NEXORA">
     <div className="reference-main-column">
@@ -39,9 +41,12 @@ const name = displayName.trim().split(/\s+/)[0] || 'Créateur';
       <section className="reference-projects">
         <div className="reference-section-head"><div><h2>Mes projets</h2><p>Reprenez là où vous en étiez ou créez un nouveau projet.</p></div><button onClick={onOpenProjects}>Voir tous <ArrowRight size={14}/></button></div>
         <div className="reference-project-summary">
-          <article><span className="reference-project-art art-book"><BookOpen/></span><b>Vos créations</b><strong>{projectCount} projet{projectCount===1?'':'s'}</strong><small>Enregistrés dans votre espace</small></article>
-          <article><span className="reference-project-art art-app"><Folder/></span><b>En cours</b><strong>{inProgressCount}</strong><small>À faire avancer</small></article>
-          <article><span className="reference-project-art art-doc"><FileText/></span><b>Nouvelle idée</b><strong>Donnez-lui vie</strong><small>Commencez en quelques clics</small></article>
+          {projects.slice(0,3).map((project,index)=><article key={project.id} className={`reference-live-project project-art-${index+1}`}>
+            <span className={`reference-project-art ${index===0?'art-book':index===1?'art-app':'art-doc'}`}>{index===0?<BookOpen/>:index===1?<Folder/>:<FileText/>}</span>
+            <b>{project.title}</b><strong>{project.status==='completed'?'Terminé':project.status==='in_progress'?'En cours':project.status==='archived'?'Archivé':'Brouillon'}</strong>
+            <small>{project.description || 'Créé le '+new Date(project.created_at).toLocaleDateString('fr-FR')}</small>
+          </article>)}
+          {projects.length===0 && <article><span className="reference-project-art art-book"><BookOpen/></span><b>Vos créations</b><strong>Prêt à démarrer</strong><small>Votre premier projet apparaîtra ici.</small></article>}
           <button className="reference-new-project" onClick={onNewProject}><Plus/><b>Nouveau projet</b><small>Créer une nouvelle réalisation</small></button>
         </div>
       </section>
