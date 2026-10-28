@@ -23,6 +23,7 @@ Prepare two confirmed users (A and B), two organizations (Org A and Org B), and 
 - [ ] Only owner/admin can delete an organization project or manage project membership.
 - [ ] An asset's owner_id alone does not grant access when its parent project is inaccessible.
 - [ ] A client cannot attach a project to an organization where they have no active membership.
+- [ ] An ordinary update cannot move a project from one organization to another; any future transfer must use an explicit privileged workflow.
 - [ ] Direct PostgREST calls and Edge Function calls enforce the same authorization as the UI.
 - [ ] Anonymous requests cannot access private projects, assets, or membership rows.
 - [ ] Existing project and asset row counts are unchanged after migration.
