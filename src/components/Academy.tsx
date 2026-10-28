@@ -5,14 +5,14 @@ import { supabase } from '../lib/supabase';
 type PathRow = { id:string; title:string; audience:string; description:string; position:number };
 type ModuleRow = { id:string; path_id:string; title:string; summary:string; project_task:string; position:number };
 type ProgressRow = { module_id:string; status:'not_started'|'in_progress'|'completed'; notes:string|null };
-type CourseRow = { id:string; slug:string; title:string; short_description:string; description:string; instructor_name:string|null; cover_image_url:string|null; price_xof:number; is_free:boolean; duration_minutes:number|null; level:string };
+type CourseRow = { id:string; slug:string; title:string; short_description:string; description:string; instructor_name:string|null; cover_image_url:string|null; price_xof:number; is_free:boolean; duration_minutes:number|null; level:string };\ntype LessonRow = { id:string; course_id:string; title:string; description:string; content_type:'text'|'video'|'document'|'external'; content:string|null; media_url:string|null; position:number; is_preview:boolean; is_published:boolean };
 const statusLabel = { not_started:'À commencer', in_progress:'En cours', completed:'Terminé' };
 const formatXof = (amount:number) => new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format(amount) + ' FCFA';
 
 export default function Academy({ userId }: { userId:string }) {
   const [paths,setPaths]=useState<PathRow[]>([]);
   const [modules,setModules]=useState<ModuleRow[]>([]);
-  const [courses,setCourses]=useState<CourseRow[]>([]);
+  const [courses,setCourses]=useState<CourseRow[]>([]);\n  const [lessons,setLessons]=useState<LessonRow[]>([]);
   const [enrolledCourseIds,setEnrolledCourseIds]=useState<string[]>([]);
   const [enrollingCourseId,setEnrollingCourseId]=useState('');
   const [progress,setProgress]=useState<Record<string,ProgressRow>>({});
@@ -26,7 +26,7 @@ export default function Academy({ userId }: { userId:string }) {
     if(!supabase){setLoading(false);setError('Supabase n’est pas configuré.');return;}
     setLoading(true);setError('');
     try {
-      const [p,m,g,c,e]=await Promise.all([
+      const [p,m,g,c,e,l]=await Promise.all([
         supabase.from('nexora_learning_paths').select('id,title,audience,description,position').order('position'),
         supabase.from('nexora_learning_modules').select('id,path_id,title,summary,project_task,position').order('position'),
         supabase.from('nexora_learning_progress').select('module_id,status,notes').eq('user_id',userId),
@@ -36,7 +36,7 @@ export default function Academy({ userId }: { userId:string }) {
       if(p.error||m.error||g.error){setError('Le programme Académie nécessite l’application de la migration Supabase.');return;}
       const pathRows=(p.data??[]) as PathRow[];
       setPaths(pathRows);setModules((m.data??[]) as ModuleRow[]);
-      setCourses((c.data??[]) as CourseRow[]);
+      setCourses((c.data??[]) as CourseRow[]);\n      setLessons(l.error?[]:(l.data??[]) as LessonRow[]);
       if(c.error) setMessage('Le catalogue des formations est temporairement indisponible.');
       setEnrolledCourseIds(e.error?[]:(e.data??[]).map(row=>row.course_id as string));
       setProgress(Object.fromEntries(((g.data??[]) as ProgressRow[]).map(row=>[row.module_id,row])));
@@ -96,6 +96,7 @@ export default function Academy({ userId }: { userId:string }) {
                 <strong>{course.is_free||Number(course.price_xof)===0?'Gratuit':formatXof(Number(course.price_xof))}</strong>
                 {course.is_free||Number(course.price_xof)===0 ? (enrolledCourseIds.includes(course.id) ? <span className="status-badge status-completed">Inscrit</span> : <button type="button" className="primary-button" onClick={()=>void enrollFreeCourse(course)} disabled={enrollingCourseId===course.id}>{enrollingCourseId===course.id?'Inscription…':'S’inscrire gratuitement'}</button>) : <span className="muted" style={{fontSize:12}}>Paiement bientôt disponible</span>}
               </div>
+              {lessons.filter(lesson=>lesson.course_id===course.id&&lesson.is_published).length>0&&<div className="project-list" style={{marginTop:4}}><h4>Leçons disponibles</h4>{lessons.filter(lesson=>lesson.course_id===course.id&&lesson.is_published).map((lesson,index)=><article key={lesson.id} className="project-item"><div className="project-type-icon"><BookOpen size={16}/></div><div className="project-info"><p className="eyebrow">LEÇON {lesson.position||index+1}{lesson.is_preview?' · APERÇU':''}</p><h4>{lesson.title}</h4>{lesson.description&&<p>{lesson.description}</p>}{lesson.content&&<p style={{whiteSpace:'pre-wrap'}}>{lesson.content}</p>}{lesson.media_url&&<a href={lesson.media_url} target="_blank" rel="noopener noreferrer">{lesson.content_type==='video'?'Ouvrir la vidéo':lesson.content_type==='document'?'Ouvrir le document':'Ouvrir la ressource'}</a>}</div></article>)}</div>}
             </article>)}
           </div>}
         <p className="muted" style={{fontSize:12}}>Le paiement et l’activation automatique des formations payantes ne sont pas encore ouverts : aucun paiement n’est demandé depuis cet écran.</p>
