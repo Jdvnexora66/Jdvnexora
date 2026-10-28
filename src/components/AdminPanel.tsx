@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import { Activity, RefreshCw, ShieldCheck, Users, GraduationCap, Plus, Save, Pencil, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -56,7 +57,7 @@ export default function AdminPanel({ userId, role }: { userId: string; role: str
     setError('');setNotice('');
   }
 
-  async function saveCourse(event:React.FormEvent<HTMLFormElement>) {
+  async function saveCourse(event:FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if(!supabase||!isAdmin)return;
     const price=Number(courseForm.price_xof);
