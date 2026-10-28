@@ -659,3 +659,69 @@ hr { border: 0; border-top: 1px solid var(--line); }
 .workspace-main[data-active-section="billing"] > :is(#billing,:has(#billing),.billing-panel,:has(.billing-panel)) { display: block !important; }
 .workspace-main[data-active-section="administration"] > :is(#administration,:has(#administration),.admin-panel,:has(.admin-panel)) { display: block !important; }
 .workspace-main[data-active-section="design"] > :is(#visual-design-studio,:has(#visual-design-studio),.visual-design-studio,:has(.visual-design-studio)) { display: block !important; }
+
+
+/* Maquette NEXORA — finition visuelle du tableau de bord */
+.workspace { max-width: 100%; }
+.workspace-heading { display: none; }
+.workspace-layout { grid-template-columns: 238px minmax(0,1fr); gap: 0; max-width: 1680px; margin: 0 auto; }
+.workspace-sidebar { top: 0; height: calc(100vh - 24px); overflow-y: auto; align-content: start; border-radius: 0 18px 18px 0; padding: 18px 14px; }
+.workspace-main { padding: 18px 20px 30px; gap: 14px; }
+.reference-dashboard { grid-template-columns: minmax(0,1fr) 300px; gap: 14px; }
+.reference-main-column { min-width: 0; gap: 14px; }
+.reference-right-column { min-width: 0; gap: 12px; }
+.reference-hero { position: relative; min-height: 208px; display: flex; align-items: center; border: 1px solid rgba(110,143,226,.22); background: radial-gradient(ellipse at 78% 45%,rgba(37,74,184,.36),transparent 40%), radial-gradient(ellipse at 60% 110%,rgba(24,170,222,.16),transparent 42%), linear-gradient(112deg,#080e1e 0%,#10152e 55%,#101b3d 100%); }
+.reference-hero::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg,rgba(5,10,22,.12),rgba(5,10,22,.04) 60%,rgba(5,10,22,.25)); }
+.reference-hero-copy { position: relative; z-index: 1; max-width: 780px; }
+.reference-eyebrow { display: none; }
+.reference-hero h1 { font-size: clamp(1.75rem,2.5vw,2.45rem); margin-bottom: 10px; }
+.reference-hero h1 span { color: #fff; }
+.reference-hero-copy > p:not(.reference-eyebrow) { color: #b8c8eb; max-width: 660px; margin-bottom: 16px; }
+.reference-orb { position: absolute; right: 24px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 150px; height: 150px; border-radius: 50%; color: #9c91ff; background: radial-gradient(circle,rgba(101,82,255,.28),rgba(34,179,232,.06) 55%,transparent 72%); filter: drop-shadow(0 0 26px rgba(75,112,255,.4)); }
+.reference-module-grid { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
+.reference-module { min-width: 0; display: grid; grid-template-columns: 46px minmax(0,1fr); align-content: center; align-items: center; column-gap: 11px; row-gap: 2px; min-height: 88px; text-align: left; border: 1px solid rgba(126,154,211,.17); background: linear-gradient(145deg,rgba(17,29,51,.96),rgba(10,18,33,.98)); }
+.reference-module > span { grid-row: span 2; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 13px; box-shadow: 0 0 0 4px rgba(139,124,255,.08),0 0 20px rgba(98,85,255,.18); }
+.reference-module b { font-size: .83rem; line-height: 1.3; }
+.reference-module small { font-size: .68rem; line-height: 1.35; }
+.reference-projects,.reference-quick,.reference-side-card,.reference-community { border: 1px solid rgba(126,154,211,.16); background: linear-gradient(150deg,rgba(16,26,45,.96),rgba(9,17,31,.98)); }
+.reference-project-summary { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.reference-project-summary > article { position: relative; overflow: hidden; min-height: 118px; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 4px; border-radius: 11px; background: linear-gradient(150deg,rgba(40,60,99,.45),rgba(9,17,31,.94)); }
+.reference-project-summary > article::before { content: ""; position: absolute; inset: 0 0 38% 0; background: radial-gradient(ellipse at 70% 25%,rgba(85,114,220,.35),transparent 50%),linear-gradient(125deg,rgba(38,171,223,.08),rgba(130,83,255,.16)); }
+.reference-project-summary > article > * { position: relative; }
+.reference-project-summary .reference-project-art { width: 30px; height: 30px; margin-bottom: 3px; }
+.reference-project-summary > article strong { font-size: .9rem; }
+.reference-project-summary > article small { font-size: .69rem; }
+.reference-new-project { min-height: 118px; align-items: flex-start; justify-content: center; border: 1px dashed rgba(139,124,255,.35); background: rgba(89,74,201,.07); }
+.reference-quick-grid { grid-template-columns: repeat(6,minmax(0,1fr)); gap: 9px; }
+.reference-quick-grid button { min-width: 0; min-height: 76px; gap: 7px; padding: 10px 5px; border: 1px solid rgba(126,154,211,.15); border-radius: 11px; background: rgba(7,14,27,.5); }
+.reference-quick-grid button svg { width: 22px; height: 22px; color: #8b7cff; }
+.reference-quick-grid button span { font-size: .68rem; }
+.reference-side-card { padding: 14px; }
+.reference-side-card h3 { font-size: .84rem; }
+.reference-progress-body { grid-template-columns: 72px minmax(0,1fr); }
+.reference-ring { border-color: #28c9e5; box-shadow: inset 0 0 18px rgba(40,201,229,.07); }
+.reference-progress-lines > span { padding-bottom: 7px; border-bottom: 1px solid rgba(126,154,211,.13); font-size: .72rem; }
+.reference-progress-lines > span:last-child { border-bottom: 0; padding-bottom: 0; }
+.reference-progress-lines b { margin-left: auto; font-size: .68rem; }
+.reference-activity { padding: 7px 0; }
+.reference-activity b,.reference-resource b { font-size: .72rem; }
+.reference-activity small,.reference-resource small { font-size: .65rem; }
+.reference-community { padding: 16px; }
+@media(max-width:1180px) {
+ .reference-dashboard { grid-template-columns: minmax(0,1fr); }
+ .reference-right-column { grid-template-columns: repeat(2,minmax(0,1fr)); }
+ .reference-community { grid-column: 1/-1; }
+ .reference-module-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:760px) {
+ .workspace-layout { grid-template-columns: minmax(0,1fr); }
+ .workspace-sidebar { position: relative; top: auto; height: auto; display: flex; flex-wrap: nowrap; overflow-x: auto; border-radius: 14px; margin: 10px; }
+ .workspace-sidebar .nav-section-label { display: none; }
+ .workspace-nav-link { width: auto; flex: 0 0 auto; }
+ .workspace-main { padding: 12px; }
+ .reference-hero { min-height: 0; }
+ .reference-orb { display: none; }
+ .reference-project-summary { grid-template-columns: repeat(2,minmax(0,1fr)); }
+ .reference-quick-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+ .reference-right-column { grid-template-columns: minmax(0,1fr); }
+}
