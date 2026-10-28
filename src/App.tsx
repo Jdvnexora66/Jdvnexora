@@ -612,7 +612,8 @@ export default function App() {
             </form>
           </section>
 
-          <nav className="workspace-nav" aria-label="Navigation principale NEXORA">
+          <div className="workspace-layout">
+          <nav className="workspace-sidebar" aria-label="Navigation principale NEXORA">
             <div className="nav-section-label">ESPACE DE TRAVAIL</div>
             <a className={!activeProject ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#projects" onClick={(event) => { event.preventDefault(); if (!confirmDiscardUnsavedChapterChanges()) return; setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); setError(''); setMessage(''); }}><FolderKanban size={17} /> <span>Tableau de bord</span></a>
             <div className="nav-section-label">CRÉATION</div>
@@ -632,6 +633,7 @@ export default function App() {
             {profile?.role === 'admin' && <a className="workspace-nav-link" href="#visual-design-studio" onClick={(event) => { event.preventDefault(); document.getElementById('visual-design-studio')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Palette size={17} /> <span>Studio de conception visuelle</span></a>}
             <button className="workspace-nav-link" type="button" onClick={() => { if (!confirmDiscardUnsavedChapterChanges()) return; setSearchQuery(''); setStatusFilter('all'); setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); void loadProjects(); }}><RefreshCw size={17} /> <span>Actualiser</span></button>
           </nav>
+          <div className="workspace-main">
 
           {!activeProject && <PublishedVisualLayout />}
 
@@ -788,6 +790,8 @@ export default function App() {
           {error && <p className="feedback error" role="alert">{error}</p>}
           {message && <p className="feedback success" role="status">{message}</p>}
           <p className="workspace-footnote">Studio IA est disponible pour les demandes authentifiées. Les réponses nécessitent la configuration du fournisseur côté serveur.</p>
+          </div>
+          </div>
         </section>
       ) : (
         <section className="hero-grid">
