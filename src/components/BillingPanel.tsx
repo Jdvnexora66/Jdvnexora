@@ -71,7 +71,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
     setPlans(current => current.map(item => item.id === plan.id ? { ...item, active: !plan.active } : item));
   }
 
-  function formatPrice(plan: Pick<Plan, 'code'|'price_minor'|'currency'|'billing_interval'|'features'>) {
+  function formatPrice(plan: Pick<Plan, 'price_minor'|'currency'|'billing_interval'> & Partial<Pick<Plan, 'code'|'features'>>) {
     if (plan.features?.billing_mode === 'quote') return 'Sur devis';
     if (plan.features?.billing_mode === 'free') return 'Gratuit';
     const amount = plan.currency === 'XOF' ? plan.price_minor : plan.price_minor / 100;
