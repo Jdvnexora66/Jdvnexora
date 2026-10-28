@@ -7,8 +7,14 @@ type Props = {
   onNewProject: () => void;
   onOpenStudio: () => void;
   onOpenProjects: () => void;
+  onOpenDiscover: () => void;
+  onOpenMedia: () => void;
+  onOpenAcademy: () => void;
+  onOpenTeam: () => void;
+  onOpenProfile: () => void;
+  onOpenResources: () => void;
 };
-export default function ReferenceDashboard({displayName,projectCount,inProgressCount,onNewProject,onOpenStudio,onOpenProjects}:Props) {
+export default function ReferenceDashboard({displayName,projectCount,inProgressCount,onNewProject,onOpenStudio,onOpenProjects,onOpenDiscover,onOpenMedia,onOpenAcademy,onOpenTeam,onOpenProfile,onOpenResources}:Props) {
 const name = displayName.trim().split(/\s+/)[0] || 'Créateur';
   return <section className="reference-dashboard" aria-label="Tableau de bord NEXORA">
     <div className="reference-main-column">
@@ -27,8 +33,8 @@ const name = displayName.trim().split(/\s+/)[0] || 'Créateur';
       <div className="reference-module-grid">
         <button className="reference-module module-purple" onClick={onOpenStudio}><span><Bot/></span><b>Studio IA</b><small>Chat · Génération · Analyse</small></button>
         <button className="reference-module module-blue" onClick={onOpenProjects}><span><Folder/></span><b>Mes projets</b><small>Organiser · Créer · Collaborer</small></button>
-        <button className="reference-module module-teal" onClick={()=>document.getElementById('discover')?.scrollIntoView({behavior:'smooth'})}><span><Compass/></span><b>Découverte & Insights</b><small>Sources · Actualités · Analyse</small></button>
-        <button className="reference-module module-pink" onClick={()=>document.getElementById('media-library')?.scrollIntoView({behavior:'smooth'})}><span><Image/></span><b>Bibliothèque & Design</b><small>Médias · Templates · Création</small></button>
+        <button className="reference-module module-teal" onClick={onOpenDiscover}><span><Compass/></span><b>Découverte & Insights</b><small>Sources · Actualités · Analyse</small></button>
+        <button className="reference-module module-pink" onClick={onOpenMedia}><span><Image/></span><b>Bibliothèque & Design</b><small>Médias · Templates · Création</small></button>
       </div>
       <section className="reference-projects">
         <div className="reference-section-head"><div><h2>Mes projets</h2><p>Reprenez là où vous en étiez ou créez un nouveau projet.</p></div><button onClick={onOpenProjects}>Voir tous <ArrowRight size={14}/></button></div>
@@ -45,17 +51,17 @@ const name = displayName.trim().split(/\s+/)[0] || 'Créateur';
           <button onClick={onNewProject}><Plus/><span>Nouveau projet</span></button>
           <button onClick={onOpenStudio}><Bot/><span>Studio IA</span></button>
           <button onClick={()=>document.getElementById('media-library')?.scrollIntoView({behavior:'smooth'})}><Folder/><span>Mes fichiers</span></button>
-          <button onClick={()=>document.getElementById('academy')?.scrollIntoView({behavior:'smooth'})}><GraduationCap/><span>Académie</span></button>
-          <button onClick={()=>document.getElementById('organizations')?.scrollIntoView({behavior:'smooth'})}><Users/><span>Équipe</span></button>
-          <button onClick={()=>document.getElementById('profile-title')?.scrollIntoView({behavior:'smooth'})}><Settings/><span>Paramètres</span></button>
+          <button onClick={onOpenAcademy}><GraduationCap/><span>Académie</span></button>
+          <button onClick={onOpenTeam}><Users/><span>Équipe</span></button>
+          <button onClick={onOpenProfile}><Settings/><span>Paramètres</span></button>
         </div>
       </section>
     </div>
     <aside className="reference-right-column">
       <section className="reference-side-card reference-progress"><h3>Votre progression</h3><div className="reference-progress-body"><div className="reference-ring"><strong>{Math.min(100,Math.round((projectCount?Math.min(projectCount,10):0)/10*100))}%</strong></div><div className="reference-progress-lines"><span><Folder size={14}/> Projets <b>{Math.min(projectCount,10)} / 10</b></span><span><GraduationCap size={14}/> Cours <b>0 / 8</b></span><span><Activity size={14}/> Objectifs <b>0 / 5</b></span></div></div></section>
       <section className="reference-side-card"><div className="reference-section-head"><h3>Activité récente</h3><span>En direct</span></div><div className="reference-activity"><span className="activity-purple"><Sparkles/></span><div><b>Espace de travail prêt</b><small>Votre studio IA est disponible</small></div></div><div className="reference-activity"><span className="activity-blue"><Folder/></span><div><b>Vos projets</b><small>{projectCount} projet(s) dans votre espace</small></div></div><div className="reference-activity"><span className="activity-teal"><GraduationCap/></span><div><b>Parcours de formation</b><small>Explorez les ressources de l’académie</small></div></div></section>
-      <section className="reference-side-card"><div className="reference-section-head"><h3>Ressources</h3><CircleHelp size={15}/></div><button className="reference-resource" onClick={()=>document.getElementById('resource-library')?.scrollIntoView({behavior:'smooth'})}><BookOpen/><span><b>Documentation</b><small>Guides et bonnes pratiques</small></span><ArrowRight/></button><button className="reference-resource" onClick={()=>document.getElementById('academy')?.scrollIntoView({behavior:'smooth'})}><GraduationCap/><span><b>Tutoriels & formation</b><small>Apprendre pas à pas</small></span><ArrowRight/></button><button className="reference-resource" onClick={()=>document.getElementById('organizations')?.scrollIntoView({behavior:'smooth'})}><Users/><span><b>Communauté</b><small>Créer ensemble</small></span><ArrowRight/></button></section>
-      <section className="reference-community"><Sparkles/><b>Ensemble, allons plus loin</b><p>Rejoignez votre espace de création et partagez vos projets.</p><button onClick={()=>document.getElementById('organizations')?.scrollIntoView({behavior:'smooth'})}>Découvrir l’espace équipe <ArrowRight size={14}/></button></section>
+      <section className="reference-side-card"><div className="reference-section-head"><h3>Ressources</h3><CircleHelp size={15}/></div><button className="reference-resource" onClick={onOpenResources}><BookOpen/><span><b>Documentation</b><small>Guides et bonnes pratiques</small></span><ArrowRight/></button><button className="reference-resource" onClick={()=>document.getElementById('academy')?.scrollIntoView({behavior:'smooth'})}><GraduationCap/><span><b>Tutoriels & formation</b><small>Apprendre pas à pas</small></span><ArrowRight/></button><button className="reference-resource" onClick={()=>document.getElementById('organizations')?.scrollIntoView({behavior:'smooth'})}><Users/><span><b>Communauté</b><small>Créer ensemble</small></span><ArrowRight/></button></section>
+      <section className="reference-community"><Sparkles/><b>Ensemble, allons plus loin</b><p>Rejoignez votre espace de création et partagez vos projets.</p><button onClick={onOpenTeam}>Découvrir l’espace équipe <ArrowRight size={14}/></button></section>
     </aside>
   </section>;
 }

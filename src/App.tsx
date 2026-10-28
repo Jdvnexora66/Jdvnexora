@@ -631,6 +631,12 @@ export default function App() {
             onNewProject={() => navigateWorkspace('projects')}
             onOpenStudio={() => navigateWorkspace('studio')}
             onOpenProjects={() => navigateWorkspace('projects')}
+            onOpenDiscover={() => navigateWorkspace('discover')}
+            onOpenMedia={() => navigateWorkspace('media')}
+            onOpenAcademy={() => navigateWorkspace('academy')}
+            onOpenTeam={() => navigateWorkspace('organizations')}
+            onOpenProfile={() => navigateWorkspace('profile')}
+            onOpenResources={() => navigateWorkspace('resources')}
           />}
 
           <section className="project-panel profile-panel" aria-labelledby="profile-title" aria-busy={loadingProfile || savingProfile}>
