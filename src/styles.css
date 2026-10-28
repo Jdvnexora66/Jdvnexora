@@ -821,3 +821,50 @@ body { background: #070c18; }
   .reference-quick-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
   .reference-right-column { grid-template-columns: minmax(0,1fr); }
 }
+
+
+/* CORRECTION VISUELLE FORTE — couleurs de la maquette NEXORA */
+:root {
+  --bg: #060916;
+  --bg-soft: #0a1024;
+  --panel: #111a35;
+  --panel-strong: #151f40;
+  --panel-hover: #202c55;
+  --primary: #7657ff;
+  --primary-strong: #5538e8;
+  --cyan: #00d4f5;
+}
+body { background: radial-gradient(ellipse at 12% 0%, rgba(85,56,232,.20), transparent 32%), #060916 !important; }
+.topbar { background: rgba(6,9,22,.98) !important; }
+.workspace-sidebar { background: #080d20 !important; }
+.workspace-nav-link.active { background: linear-gradient(100deg,rgba(118,87,255,.28),rgba(0,212,245,.08)) !important; border-color: rgba(118,87,255,.5) !important; color: #fff !important; }
+.reference-hero {
+  border-color: rgba(0,212,245,.38) !important;
+  background:
+    radial-gradient(ellipse at 88% 18%,rgba(0,212,245,.25),transparent 32%),
+    radial-gradient(ellipse at 68% 100%,rgba(118,87,255,.38),transparent 48%),
+    linear-gradient(112deg,#101632 0%,#17153d 52%,#102d50 100%) !important;
+}
+.reference-hero h1 span { color: #8c7bff !important; }
+.reference-primary { background: linear-gradient(115deg,#7858ff 0%,#5145e8 55%,#087fe8 100%) !important; box-shadow: 0 8px 24px rgba(93,69,232,.32) !important; }
+.reference-secondary { border-color: rgba(0,212,245,.35) !important; background: rgba(0,212,245,.08) !important; }
+.reference-module { background: #111a33 !important; border-color: rgba(130,151,220,.24) !important; }
+.reference-module.module-purple { background: linear-gradient(145deg,rgba(112,75,255,.23),#111a33 78%) !important; }
+.reference-module.module-blue { background: linear-gradient(145deg,rgba(31,117,255,.22),#111a33 78%) !important; }
+.reference-module.module-teal { background: linear-gradient(145deg,rgba(0,203,190,.20),#111a33 78%) !important; }
+.reference-module.module-pink { background: linear-gradient(145deg,rgba(231,75,171,.19),#111a33 78%) !important; }
+.reference-module.module-purple > span { background: rgba(118,87,255,.24) !important; color: #a99aff !important; }
+.reference-module.module-blue > span { background: rgba(31,117,255,.24) !important; color: #76b4ff !important; }
+.reference-module.module-teal > span { background: rgba(0,203,190,.22) !important; color: #48e7d9 !important; }
+.reference-module.module-pink > span { background: rgba(231,75,171,.22) !important; color: #ff91d0 !important; }
+.reference-projects, .reference-quick, .reference-side-card, .reference-community {
+  background: linear-gradient(145deg,#121c36 0%,#0b1227 100%) !important;
+  border-color: rgba(118,145,220,.24) !important;
+}
+.reference-project-art { background: rgba(118,87,255,.22) !important; color: #b3a8ff !important; }
+.reference-quick-grid button { background: rgba(13,22,44,.92) !important; border-color: rgba(0,212,245,.18) !important; }
+.reference-quick-grid button:hover { background: rgba(118,87,255,.18) !important; border-color: rgba(118,87,255,.5) !important; }
+.reference-quick-grid button svg { color: #00d4f5 !important; }
+.reference-ring { border-color: #00d4f5 !important; box-shadow: 0 0 20px rgba(0,212,245,.12) !important; }
+.reference-section-head button, .reference-resource, .reference-community button { color: #9e91ff !important; }
+.reference-community { background: linear-gradient(145deg,rgba(89,58,220,.22),#10182f 85%) !important; }
