@@ -32,6 +32,28 @@ Deno.serve(async (req: Request) => {
   const apiKey = Deno.env.get("OPENAI_API_KEY");
   if (!apiKey) return respond({ error: "Configuration incomplète : ajoutez OPENAI_API_KEY aux secrets Supabase pour activer les réponses IA." }, 503);
 
+  const requestId = crypto.randomUUID();
+  const { data: reservation, error: reservationError } = await authClient
+    .rpc("nexora_reserve_ai_usage", { p_request_id: requestId });
+  if (reservationError || !Array.isArray(reservation) || !reservation[0]) {
+    return respond({ error: "Impossible de vérifier votre quota IA. Réessayez plus tard." }, 503);
+  }
+  const quota = reservation[0] as { allowed: boolean; reason: string; quota: number; used: number; usage_id: number | null; plan_code: string | null };
+  if (!quota.allowed) {
+    const status = quota.reason === "quota_exceeded" ? 429 : 503;
+    return respond({
+      error: quota.reason === "quota_exceeded"
+        ? "Votre quota IA mensuel est atteint. Choisissez une offre supérieure ou revenez le mois prochain."
+        : "Aucun forfait IA actif n’est configuré pour ce compte.",
+      quota: quota.quota,
+      used: quota.used,
+      plan: quota.plan_code,
+    }, status);
+  }
+  if (typeof quota.usage_id !== "number") {
+    return respond({ error: "Réservation du quota invalide. Réessayez plus tard." }, 503);
+  }
+
   const history = Array.isArray(body.history) ? body.history.slice(-8).filter((item: any) =>
     item && (item.role === "user" || item.role === "assistant") && typeof item.content === "string"
   ).map((item: any) => ({ role: item.role, content: item.content.slice(0, 8000) })) : [];
@@ -50,11 +72,32 @@ Deno.serve(async (req: Request) => {
       }),
     });
     const result = await response.json();
-    if (!response.ok) return respond({ error: response.status === 429 ? "Limite de requêtes IA atteinte. Réessayez plus tard." : "Le fournisseur IA a refusé la demande. Vérifiez la configuration du service." }, response.status === 429 ? 429 : 502);
+    if (!response.ok) {
+      await authClient.rpc("nexora_finalize_ai_usage", {
+        p_usage_id: quota.usage_id, p_status: "failed",
+        p_input_tokens: null, p_output_tokens: null,
+      });
+      return respond({ error: response.status === 429 ? "Limite de requêtes IA atteinte. Réessayez plus tard." : "Le fournisseur IA a refusé la demande. Vérifiez la configuration du service." }, response.status === 429 ? 429 : 502);
+    }
     const text = result?.choices?.[0]?.message?.content;
-    if (typeof text !== "string" || !text.trim()) return respond({ error: "Aucune réponse IA disponible." }, 502);
-    return respond({ text });
+    if (typeof text !== "string" || !text.trim()) {
+      await authClient.rpc("nexora_finalize_ai_usage", {
+        p_usage_id: quota.usage_id, p_status: "failed",
+        p_input_tokens: null, p_output_tokens: null,
+      });
+      return respond({ error: "Aucune réponse IA disponible." }, 502);
+    }
+    await authClient.rpc("nexora_finalize_ai_usage", {
+      p_usage_id: quota.usage_id, p_status: "completed",
+      p_input_tokens: Number.isInteger(result?.usage?.prompt_tokens) ? result.usage.prompt_tokens : null,
+      p_output_tokens: Number.isInteger(result?.usage?.completion_tokens) ? result.usage.completion_tokens : null,
+    });
+    return respond({ text, usage: { quota: quota.quota, used: quota.used, remaining: Math.max(0, quota.quota - quota.used), plan: quota.plan_code } });
   } catch {
+    await authClient.rpc("nexora_finalize_ai_usage", {
+      p_usage_id: quota.usage_id, p_status: "failed",
+      p_input_tokens: null, p_output_tokens: null,
+    });
     return respond({ error: "Impossible de joindre le service IA pour le moment." }, 502);
   }
 });
