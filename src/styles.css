@@ -452,3 +452,27 @@ hr { border: 0; border-top: 1px solid var(--line); }
 @media (max-width: 760px) {
   .workspace-main[data-active-section="projects"] .project-layout { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* FIX BUILD: isolated workspace views — one sidebar destination at a time */
+.workspace-main[data-active-section] > * { display: none !important; }
+.workspace-main[data-active-section="dashboard"] > .reference-dashboard,
+.workspace-main[data-active-section="dashboard"] > .dashboard-stats,
+.workspace-main[data-active-section="dashboard"] > .pipeline-section,
+.workspace-main[data-active-section="dashboard"] > .recent-activity-panel,
+.workspace-main[data-active-section="dashboard"] > .quick-access { display: block !important; }
+.workspace-main[data-active-section="projects"] > .project-layout { display: grid !important; }
+.workspace-main[data-active-section="studio"] > #studio-ia,
+.workspace-main[data-active-section="media"] > #media-library,
+.workspace-main[data-active-section="discover"] > #discover,
+.workspace-main[data-active-section="library"] > #library,
+.workspace-main[data-active-section="academy"] > #academy,
+.workspace-main[data-active-section="resources"] > #resource-library,
+.workspace-main[data-active-section="roadmap"] > #roadmap,
+.workspace-main[data-active-section="timeline"] > #timeline,
+.workspace-main[data-active-section="insights"] > #insights,
+.workspace-main[data-active-section="organizations"] > #organizations,
+.workspace-main[data-active-section="billing"] > #billing,
+.workspace-main[data-active-section="administration"] > #administration,
+.workspace-main[data-active-section="design"] > #visual-design-studio { display: block !important; }
+.workspace-main[data-active-section="profile"] > .profile-panel { display: block !important; }
+.workspace-main[data-active-section="projects"] .project-layout { grid-template-columns: minmax(0, 1fr); }
