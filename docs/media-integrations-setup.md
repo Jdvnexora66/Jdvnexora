@@ -10,6 +10,7 @@ Dans Supabase Dashboard → Edge Functions → Secrets, ajoutez ces variables. N
 - `TIKTOK_CLIENT_KEY` et `TIKTOK_CLIENT_SECRET` : application TikTok avec Display API approuvée.
 - `META_APP_ID` et `META_APP_SECRET` : application Meta configurée pour Instagram professionnel/créateur.
 - `META_GRAPH_VERSION` est facultatif (défaut `v22.0`).
+- `APP_ORIGIN` : origine HTTPS exacte de l’application NEXORA (par exemple `https://hilarious-cheesecake-2520ca.netlify.app`, sans chemin final). Elle sert à limiter la destination du message OAuth de la fenêtre popup. Si le domaine de production change, mettez cette valeur à jour dans les secrets Supabase. N’utilisez pas `*`.
 
 Supabase fournit déjà les variables serveur `SUPABASE_URL`, `SUPABASE_ANON_KEY` et `SUPABASE_SERVICE_ROLE_KEY`. Ne partagez jamais la clé service-role.
 
