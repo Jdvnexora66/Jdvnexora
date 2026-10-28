@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Building2, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Building2, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette, BookOpen } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import Discover from './components/Discover';
 import MediaLibrary from './components/MediaLibrary';
@@ -603,7 +603,7 @@ export default function App() {
             <a className="workspace-nav-link" href="#profile-title" onClick={(event) => { event.preventDefault(); document.getElementById('profile-title')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}><UserRound size={17} /> <span>Profil & préférences</span></a>
             <a className="workspace-nav-link" href="#billing" onClick={(event) => { event.preventDefault(); document.getElementById('billing')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ShieldCheck size={17} /> <span>Facturation & sécurité</span></a>
             <a className="workspace-nav-link" href="#administration" onClick={(event) => { event.preventDefault(); document.getElementById('administration')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ShieldCheck size={17} /> <span>Administration</span></a>
-            {profile?.role === 'admin' && <a className="workspace-nav-link" href="#visual-design-studio" onClick={(event) => { event.preventDefault(); document.getElementById('visual-design-studio')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Palette size={17} /> <span>Studio de conception visuelle</span></a>}
+            {profile?.role === 'admin' && <a className={activeSection === 'design' ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#visual-design-studio" onClick={(event) => { event.preventDefault(); navigateWorkspace('design'); }}><Palette size={17} /> <span>Studio de conception visuelle</span></a>}
             <button className="workspace-nav-link" type="button" onClick={() => { if (!confirmDiscardUnsavedChapterChanges()) return; setSearchQuery(''); setStatusFilter('all'); setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); void loadProjects(); }}><RefreshCw size={17} /> <span>Actualiser</span></button>
           </nav>
           <div className="workspace-main">
@@ -612,9 +612,9 @@ export default function App() {
             displayName={profileName || (session.user.email ?? '').split('@')[0] || 'Créateur'}
             projectCount={projects.length}
             inProgressCount={projects.filter((project) => project.status === 'in_progress').length}
-            onNewProject={() => document.getElementById('create-project')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-            onOpenStudio={() => document.getElementById('studio-ia')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            onOpenProjects={() => document.getElementById('pipeline-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            onNewProject={() => navigateWorkspace('projects')}
+            onOpenStudio={() => navigateWorkspace('studio')}
+            onOpenProjects={() => navigateWorkspace('projects')}
           />}
 
           <section className="project-panel profile-panel" aria-labelledby="profile-title" aria-busy={loadingProfile || savingProfile}>

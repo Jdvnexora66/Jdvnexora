@@ -423,3 +423,32 @@ hr { border: 0; border-top: 1px solid var(--line); }
   .reference-hero-actions { align-items: stretch; flex-direction: column; }
   .reference-hero-actions button { width: 100%; }
 }
+
+
+/* Navigation en vues séparées : une destination latérale = un écran dédié */
+.workspace-main[data-active-section] > * { display: none !important; }
+.workspace-main[data-active-section="dashboard"] > .reference-dashboard,
+.workspace-main[data-active-section="dashboard"] > .dashboard-stats,
+.workspace-main[data-active-section="dashboard"] > .pipeline-section,
+.workspace-main[data-active-section="dashboard"] > .recent-activity-panel,
+.workspace-main[data-active-section="dashboard"] > .quick-access { display: block !important; }
+.workspace-main[data-active-section="projects"] > .project-layout { display: grid !important; }
+.workspace-main[data-active-section="studio"] > #studio-ia { display: block !important; }
+.workspace-main[data-active-section="media"] > #media-library { display: block !important; }
+.workspace-main[data-active-section="discover"] > #discover { display: block !important; }
+.workspace-main[data-active-section="library"] > #library { display: block !important; }
+.workspace-main[data-active-section="academy"] > #academy { display: block !important; }
+.workspace-main[data-active-section="resources"] > #resource-library { display: block !important; }
+.workspace-main[data-active-section="roadmap"] > #roadmap { display: block !important; }
+.workspace-main[data-active-section="timeline"] > #timeline { display: block !important; }
+.workspace-main[data-active-section="insights"] > #insights { display: block !important; }
+.workspace-main[data-active-section="organizations"] > #organizations { display: block !important; }
+.workspace-main[data-active-section="profile"] > .profile-panel { display: block !important; }
+.workspace-main[data-active-section="billing"] > #billing { display: block !important; }
+.workspace-main[data-active-section="administration"] > #administration { display: block !important; }
+.workspace-main[data-active-section="design"] > #visual-design-studio { display: block !important; }
+.workspace-main[data-active-section="projects"] .project-layout { grid-template-columns: minmax(0, 1fr); }
+.workspace-main[data-active-section="projects"] .project-layout > .project-panel { min-width: 0; }
+@media (max-width: 760px) {
+  .workspace-main[data-active-section="projects"] .project-layout { grid-template-columns: minmax(0, 1fr); }
+}
