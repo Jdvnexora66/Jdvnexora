@@ -219,7 +219,6 @@ export default function App() {
       const { data, error: assetError } = await supabase.from('studio_assets')
         .select('id, project_id, owner_id, title, content, kind, updated_at')
         .eq('project_id', project.id)
-        .eq('owner_id', project.owner_id)
         .order('created_at', { ascending: true });
       if (assetError) {
         setError('Ouverture impossible : ' + assetError.message);
@@ -250,7 +249,7 @@ export default function App() {
         language: 'fr',
       };
       const result = activeAsset
-        ? await supabase.from('studio_assets').update({ title: activeAsset.title || 'Chapitre', content: editorContent, updated_at: new Date().toISOString() }).eq('id', activeAsset.id).eq('owner_id', session.user.id).select('id, project_id, owner_id, title, content, kind, updated_at').single()
+        ? await supabase.from('studio_assets').update({ title: activeAsset.title || 'Chapitre', content: editorContent, updated_at: new Date().toISOString() }).eq('id', activeAsset.id).eq('project_id', activeProject.id).select('id, project_id, owner_id, title, content, kind, updated_at').single()
         : await supabase.from('studio_assets').insert(payload).select('id, project_id, owner_id, title, content, kind, updated_at').single();
       if (result.error) {
         setError('Enregistrement impossible : ' + result.error.message);
@@ -352,7 +351,7 @@ export default function App() {
     setSavingContent(true); setError(''); setMessage('');
     try {
       const { error: deleteError } = await supabase.from('studio_assets')
-        .delete().eq('id', asset.id).eq('project_id', activeProject.id).eq('owner_id', session.user.id);
+        .delete().eq('id', asset.id).eq('project_id', activeProject.id);
       if (deleteError) {
         setError('Suppression du chapitre impossible : ' + deleteError.message);
         return;
@@ -375,7 +374,7 @@ export default function App() {
   async function updateProjectStatus(status: StudioProject['status']) {
     if (!supabase || !session?.user.id || !activeProject) return;
     setError(''); setMessage('');
-    const { data, error: updateError } = await supabase.from('studio_projects').update({ status }).eq('id', activeProject.id).eq('owner_id', session.user.id).select('id, owner_id, title, description, project_type, status, created_at').single();
+    const { data, error: updateError } = await supabase.from('studio_projects').update({ status }).eq('id', activeProject.id).select('id, owner_id, title, description, project_type, status, created_at').single();
     if (updateError) { setError('Modification du statut impossible : ' + updateError.message); return; }
     const updated = data as StudioProject;
     setActiveProject(updated); setProjects((current) => current.map((project) => project.id === updated.id ? updated : project));
@@ -494,7 +493,7 @@ export default function App() {
     try {
       const { data, error: updateError } = await supabase.from('studio_projects')
         .update({ title: editProjectTitle.trim(), description: editProjectDescription.trim() || null, project_type: editProjectType })
-        .eq('id', project.id).eq('owner_id', session.user.id)
+        .eq('id', project.id)
         .select('id, owner_id, title, description, project_type, status, created_at').single();
       if (updateError) {
         setError('Modification du projet impossible : ' + updateError.message);
@@ -516,7 +515,7 @@ export default function App() {
     if (!supabase || !session?.user.id || !window.confirm(`Supprimer le projet « ${project.title} » ?`)) return;
     setError(''); setMessage('');
     try {
-      const { error: deleteError } = await supabase.from('studio_projects').delete().eq('id', project.id).eq('owner_id', session.user.id);
+      const { error: deleteError } = await supabase.from('studio_projects').delete().eq('id', project.id);
       if (deleteError) {
         setError('Suppression impossible : ' + deleteError.message);
         return;
