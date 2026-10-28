@@ -1,9 +1,7 @@
 import { FormEvent, useState } from 'react';
-import { ArrowDown, ArrowRight, BookOpen, BrainCircuit, CheckCircle2, ChevronDown, Compass, FileText, Lightbulb, Mail, MapPin, MessageCircle, Phone, Send, ShieldCheck, Sparkles, Users, Workflow } from 'lucide-react';
+import { ArrowDown, ArrowRight, BookOpen, BrainCircuit, CheckCircle2, Compass, FileText, Lightbulb, Mail, MapPin, MessageCircle, Phone, Send, ShieldCheck, Sparkles, Users, Workflow } from 'lucide-react';
 
 const CONTACT_EMAIL = 'centre.global.jdv@gmail.com';
-const PHONE_ONE = '0151565878';
-const PHONE_TWO = '0166038221';
 
 type PublicVitrineProps = { onLogin?: () => void };
 
