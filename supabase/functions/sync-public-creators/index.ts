@@ -89,7 +89,12 @@ Deno.serve(async (req) => {
       return json({ error: "L’adresse doit appartenir à youtube.com et utiliser HTTPS." }, 400);
     }
     // Normalize encoded @ characters before validating the path.
-    const channelPathname = decodeURIComponent(parsed.pathname).replace(/\/+$/, "");
+    let channelPathname: string;
+    try {
+      channelPathname = decodeURIComponent(parsed.pathname).replace(/\/+$/, "");
+    } catch {
+      return json({ error: "L’URL de la chaîne contient un encodage invalide." }, 400);
+    }
     // Accept canonical channel URLs and common channel tabs such as /videos or /shorts.
     const channelPath = channelPathname.match(/^\/channel\/(UC[a-zA-Z0-9_-]{22})(?:\/(?:videos|shorts|streams|featured|playlists|about|community|live))?$/i);
     let channelId = channelPath?.[1] ?? "";
@@ -119,7 +124,20 @@ Deno.serve(async (req) => {
         return json({ error: "Impossible de contacter YouTube pour résoudre ce nom @. Réessayez plus tard." }, 502);
       }
     }
-    const { data: existing } = await admin.from("nexora_creator_channels").select("*").eq("owner_id", ownerId).eq("channel_id", channelId).maybeSingle();
+    const { data: existing, error: existingError } = await admin
+      .from("nexora_creator_channels")
+      .select("*")
+      .eq("owner_id", ownerId)
+      .eq("channel_id", channelId)
+      .maybeSingle();
+
+    if (existingError) {
+      return json(
+        { error: "Impossible de vérifier si cette chaîne est déjà enregistrée." },
+        500,
+      );
+    }
+
     let channel = existing;
     if (!channel) {
       const { data, error } = await admin.from("nexora_creator_channels").insert({ owner_id: ownerId, channel_id: channelId, channel_url: "https://www.youtube.com/channel/" + channelId }).select("*").single();
