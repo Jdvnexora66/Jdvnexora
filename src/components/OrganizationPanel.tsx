@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 type Organization = { id: string; name: string; slug: string; status: string; created_at: string };
 type InvitationResult = { invitation?: { id?: string; email: string; role: string; expires_at: string }; token?: string; invitation_url?: string | null; delivery?: string; message?: string };
 
-export default function OrganizationPanel({ userId }: { userId: string }) {
+export default function OrganizationPanel({ userId, onActiveOrganizationChange }: { userId: string; onActiveOrganizationChange?: (organizationId: string) => void }) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [organizationName, setOrganizationName] = useState('');
   const [activeOrganizationId, setActiveOrganizationId] = useState('');
@@ -31,6 +31,10 @@ export default function OrganizationPanel({ userId }: { userId: string }) {
   }
 
   useEffect(() => { void loadOrganizations(); }, [userId]);
+
+  useEffect(() => {
+    onActiveOrganizationChange?.(activeOrganizationId);
+  }, [activeOrganizationId, onActiveOrganizationChange]);
 
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get('token');
