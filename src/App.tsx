@@ -30,6 +30,7 @@ type StudioProject = {
   project_type: string;
   status: 'draft' | 'in_progress' | 'completed' | 'archived';
   created_at: string;
+  organization_id?: string | null;
 };
 
 export default function App() {
@@ -47,6 +48,8 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false);
   const [isRecovery, setIsRecovery] = useState(false);
   const [projects, setProjects] = useState<StudioProject[]>([]);
+  const [activeOrganizationId, setActiveOrganizationId] = useState('');
+  const [tenantProjectsEnabled, setTenantProjectsEnabled] = useState<boolean | null>(null);
   const [activeProject, setActiveProject] = useState<StudioProject | null>(null);
   const [activeAsset, setActiveAsset] = useState<StudioAsset | null>(null);
   const [projectAssets, setProjectAssets] = useState<StudioAsset[]>([]);
@@ -176,9 +179,18 @@ export default function App() {
     setLoadingProjects(true);
     setError('');
     try {
+      const schemaProbe = await supabase.from('studio_projects').select('organization_id').limit(1);
+      const hasTenantColumn = !schemaProbe.error;
+      setTenantProjectsEnabled(hasTenantColumn);
+      if (schemaProbe.error && schemaProbe.error.code !== '42703') {
+        setError('Impossible de vérifier la configuration B2B du Studio : ' + schemaProbe.error.message);
+      }
+      const projectFields = hasTenantColumn
+        ? 'id, owner_id, title, description, project_type, status, created_at, organization_id'
+        : 'id, owner_id, title, description, project_type, status, created_at';
       const [ownedResult, membershipResult] = await Promise.all([
         supabase.from('studio_projects')
-          .select('id, owner_id, title, description, project_type, status, created_at')
+          .select(projectFields)
           .eq('owner_id', session.user.id)
           .order('created_at', { ascending: false }),
         supabase.from('studio_project_members').select('project_id').eq('user_id', session.user.id),
@@ -186,6 +198,17 @@ export default function App() {
       if (ownedResult.error) {
         setError('Impossible de charger les projets : ' + ownedResult.error.message);
         return;
+      }
+      let organizationProjects: StudioProject[] = [];
+      if (hasTenantColumn && activeOrganizationId) {
+        const organizationResult = await supabase.from('studio_projects')
+          .select(projectFields).eq('organization_id', activeOrganizationId)
+          .order('created_at', { ascending: false });
+        if (organizationResult.error) {
+          setError('Impossible de charger les projets de l’organisation active : ' + organizationResult.error.message);
+        } else {
+          organizationProjects = (organizationResult.data ?? []) as StudioProject[];
+        }
       }
       const owned = (ownedResult.data ?? []) as StudioProject[];
       if (membershipResult.error) {
@@ -204,7 +227,9 @@ export default function App() {
         if (sharedResult.error) setError('Impossible de charger les projets partagés : ' + sharedResult.error.message);
         else shared = (sharedResult.data ?? []) as StudioProject[];
       }
-      setProjects([...owned, ...shared].sort((a, b) => b.created_at.localeCompare(a.created_at)));
+      const uniqueProjects = new Map<string, StudioProject>();
+      [...owned, ...shared, ...organizationProjects].forEach(project => uniqueProjects.set(project.id, project));
+      setProjects([...uniqueProjects.values()].sort((a, b) => b.created_at.localeCompare(a.created_at)));
     } catch (cause) {
       setError('Impossible de charger les projets : ' + (cause instanceof Error ? cause.message : 'une erreur réseau inattendue est survenue.'));
     } finally {
@@ -447,12 +472,17 @@ export default function App() {
   async function createProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase || !session?.user.id) return;
+    if (activeOrganizationId && tenantProjectsEnabled !== true) {
+      setError('Le rattachement B2B des projets n’est pas encore activé dans la base. Aucun projet n’a été créé. Revenez à votre espace personnel ou attendez la validation de la migration de sécurité.');
+      return;
+    }
     setBusy(true); setError(''); setMessage('');
     try {
       const { data, error: insertError } = await supabase
         .from('studio_projects')
         .insert({
           owner_id: session.user.id,
+          ...(activeOrganizationId ? { organization_id: activeOrganizationId } : {}),
           title: title.trim(),
           description: description.trim() || null,
           project_type: projectType,
@@ -670,7 +700,7 @@ export default function App() {
             <article className="stat-card"><span className="stat-icon"><Sparkles size={18} /></span><div><p>Brouillons</p><strong>{loadingProjects ? '…' : projects.filter((project) => project.status === 'draft').length}</strong><small>Idées à développer</small></div></article>
           </div>}
 
-          {!activeProject && activeSection === 'organizations' && <OrganizationPanel userId={session.user.id} />}
+          {!activeProject && activeSection === 'organizations' && <OrganizationPanel userId={session.user.id} onActiveOrganizationChange={setActiveOrganizationId} />}
 
           {!activeProject && activeSection === 'dashboard' && <section className="pipeline-section" aria-labelledby="pipeline-title">
             <div className="pipeline-heading">
@@ -799,7 +829,8 @@ export default function App() {
             <section id="create-project" className="project-panel create-panel">
               <p className="eyebrow">NOUVELLE CRÉATION</p>
               <h2>Créer un projet</h2>
-              <p className="muted">Enregistrez une nouvelle idée dans votre espace.</p>
+              <p className="muted">{activeOrganizationId ? 'Espace entreprise sélectionné : le projet sera rattaché à cette organisation si la migration B2B est active.' : 'Enregistrez une nouvelle idée dans votre espace personnel.'}</p>
+              {activeOrganizationId && tenantProjectsEnabled !== true && <p className="feedback error" role="status">Le rattachement B2B n’est pas encore disponible sur la base actuelle. La création dans cette organisation est bloquée pour éviter un projet mal isolé.</p>}
               <form onSubmit={createProject} className="project-form">
                 <label htmlFor="project-title">Nom du projet</label>
                 <input id="project-title" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Ex. Mon premier e-book" maxLength={120} required />
