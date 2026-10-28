@@ -179,7 +179,7 @@ export default function App() {
     try {
       const [ownedResult, membershipResult] = await Promise.all([
         supabase.from('studio_projects')
-          .select('id, owner_id, organization_id, title, description, project_type, status, created_at')
+          .select('id, owner_id, title, description, project_type, status, created_at')
           .eq('owner_id', session.user.id)
           .order('created_at', { ascending: false }),
         supabase.from('studio_project_members').select('project_id').eq('user_id', session.user.id),
@@ -199,7 +199,7 @@ export default function App() {
       let shared: StudioProject[] = [];
       if (sharedIds.length) {
         const sharedResult = await supabase.from('studio_projects')
-          .select('id, owner_id, organization_id, title, description, project_type, status, created_at')
+          .select('id, owner_id, title, description, project_type, status, created_at')
           .in('id', sharedIds)
           .order('created_at', { ascending: false });
         if (sharedResult.error) setError('Impossible de charger les projets partagés : ' + sharedResult.error.message);
@@ -375,7 +375,7 @@ export default function App() {
   async function updateProjectStatus(status: StudioProject['status']) {
     if (!supabase || !session?.user.id || !activeProject) return;
     setError(''); setMessage('');
-    const { data, error: updateError } = await supabase.from('studio_projects').update({ status }).eq('id', activeProject.id).select('id, owner_id, organization_id, title, description, project_type, status, created_at').single();
+    const { data, error: updateError } = await supabase.from('studio_projects').update({ status }).eq('id', activeProject.id).select('id, owner_id, title, description, project_type, status, created_at').single();
     if (updateError) { setError('Modification du statut impossible : ' + updateError.message); return; }
     const updated = data as StudioProject;
     setActiveProject(updated); setProjects((current) => current.map((project) => project.id === updated.id ? updated : project));
@@ -459,7 +459,7 @@ export default function App() {
           project_type: projectType,
           status: 'draft',
         })
-        .select('id, owner_id, organization_id, title, description, project_type, status, created_at')
+        .select('id, owner_id, title, description, project_type, status, created_at')
         .single();
       if (insertError) {
         setError(insertError.code === '42501'
@@ -495,7 +495,7 @@ export default function App() {
       const { data, error: updateError } = await supabase.from('studio_projects')
         .update({ title: editProjectTitle.trim(), description: editProjectDescription.trim() || null, project_type: editProjectType })
         .eq('id', project.id)
-        .select('id, owner_id, organization_id, title, description, project_type, status, created_at').single();
+        .select('id, owner_id, title, description, project_type, status, created_at').single();
       if (updateError) {
         setError('Modification du projet impossible : ' + updateError.message);
         return;
