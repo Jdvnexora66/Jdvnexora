@@ -55,15 +55,28 @@ const name = displayName.trim().split(/\s+/)[0] || 'Créateur';
         <div className="reference-quick-grid">
           <button onClick={onNewProject}><Plus/><span>Nouveau projet</span></button>
           <button onClick={onOpenStudio}><Bot/><span>Studio IA</span></button>
-          <button onClick={()=>document.getElementById('media-library')?.scrollIntoView({behavior:'smooth'})}><Folder/><span>Mes fichiers</span></button>
+          <button onClick={onOpenMedia}><Folder/><span>Mes fichiers</span></button>
           <button onClick={onOpenAcademy}><GraduationCap/><span>Académie</span></button>
           <button onClick={onOpenTeam}><Users/><span>Équipe</span></button>
           <button onClick={onOpenProfile}><Settings/><span>Paramètres</span></button>
         </div>
       </section>
+      <div className="reference-bottom-grid">
+        <section className="reference-side-card reference-next-tasks">
+          <div className="reference-section-head"><h3>Vos prochaines tâches</h3><button onClick={onOpenProjects}>Voir les projets <ArrowRight size={14}/></button></div>
+          <button className="reference-task" onClick={onNewProject}><span className="reference-task-check"/><span><b>Créer votre prochain projet</b><small>Commencer une nouvelle réalisation</small></span><ArrowRight size={14}/></button>
+          <button className="reference-task" onClick={onOpenStudio}><span className="reference-task-check"/><span><b>Explorer le Studio IA</b><small>Transformer une idée en contenu</small></span><ArrowRight size={14}/></button>
+          <button className="reference-task" onClick={onOpenAcademy}><span className="reference-task-check"/><span><b>Découvrir une formation</b><small>Développer vos compétences</small></span><ArrowRight size={14}/></button>
+        </section>
+        <section className="reference-side-card reference-usage">
+          <h3>Utilisation de vos ressources</h3>
+          <div className="reference-usage-empty"><Activity/><b>Suivi des ressources</b><p>Les indicateurs apparaîtront ici lorsque les données de consommation seront connectées.</p></div>
+          <button className="reference-usage-link" onClick={onOpenProfile}>Gérer mes préférences <ArrowRight size={14}/></button>
+        </section>
+      </div>
     </div>
     <aside className="reference-right-column">
-      <section className="reference-side-card reference-progress"><h3>Votre progression</h3><div className="reference-progress-body"><div className="reference-ring"><strong>{Math.min(100,Math.round((projectCount?Math.min(projectCount,10):0)/10*100))}%</strong></div><div className="reference-progress-lines"><span><Folder size={14}/> Projets <b>{Math.min(projectCount,10)} / 10</b></span><span><GraduationCap size={14}/> Cours <b>0 / 8</b></span><span><Activity size={14}/> Objectifs <b>0 / 5</b></span></div></div></section>
+      <section className="reference-side-card reference-progress"><h3>Votre progression</h3><div className="reference-progress-body"><div className="reference-ring"><strong>{Math.min(100,Math.round((projectCount?Math.min(projectCount,10):0)/10*100))}%</strong></div><div className="reference-progress-lines"><span><Folder size={14}/> Projets <b>{Math.min(projectCount,10)} / 10</b></span><span><GraduationCap size={14}/> Cours <b>À découvrir</b></span><span><Activity size={14}/> Objectifs <b>À définir</b></span></div></div></section>
       <section className="reference-side-card"><div className="reference-section-head"><h3>Activité récente</h3><span>En direct</span></div><div className="reference-activity"><span className="activity-purple"><Sparkles/></span><div><b>Espace de travail prêt</b><small>Votre studio IA est disponible</small></div></div><div className="reference-activity"><span className="activity-blue"><Folder/></span><div><b>Vos projets</b><small>{projectCount} projet(s) dans votre espace</small></div></div><div className="reference-activity"><span className="activity-teal"><GraduationCap/></span><div><b>Parcours de formation</b><small>Explorez les ressources de l’académie</small></div></div></section>
       <section className="reference-side-card"><div className="reference-section-head"><h3>Ressources</h3><CircleHelp size={15}/></div><button className="reference-resource" onClick={onOpenResources}><BookOpen/><span><b>Documentation</b><small>Guides et bonnes pratiques</small></span><ArrowRight/></button><button className="reference-resource" onClick={()=>document.getElementById('academy')?.scrollIntoView({behavior:'smooth'})}><GraduationCap/><span><b>Tutoriels & formation</b><small>Apprendre pas à pas</small></span><ArrowRight/></button><button className="reference-resource" onClick={()=>document.getElementById('organizations')?.scrollIntoView({behavior:'smooth'})}><Users/><span><b>Communauté</b><small>Créer ensemble</small></span><ArrowRight/></button></section>
       <section className="reference-community"><Sparkles/><b>Ensemble, allons plus loin</b><p>Rejoignez votre espace de création et partagez vos projets.</p><button onClick={onOpenTeam}>Découvrir l’espace équipe <ArrowRight size={14}/></button></section>
