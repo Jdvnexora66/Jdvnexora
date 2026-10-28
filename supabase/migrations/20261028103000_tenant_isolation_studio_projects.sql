@@ -23,16 +23,18 @@ as $$
     where p.id = p_project_id
       and p_user_id = (select auth.uid())
       and (
-        (p.organization_id is null and (
-          p.owner_id = p_user_id
-          or private.is_admin()
-          or exists (
-            select 1 from public.studio_project_members pm
-            where pm.project_id = p.id and pm.user_id = p_user_id
+        private.is_admin()
+        or (
+          p.organization_id is null and (
+            p.owner_id = p_user_id
+            or exists (
+              select 1 from public.studio_project_members pm
+              where pm.project_id = p.id and pm.user_id = p_user_id
+            )
           )
-        ))
-        or
-        (p.organization_id is not null
+        )
+        or (
+          p.organization_id is not null
           and private.is_org_member(p.organization_id)
           and (
             p.owner_id = p_user_id
@@ -246,8 +248,7 @@ drop policy if exists project_members_update_owner on public.studio_project_memb
 create policy studio_project_members_select_authorized
 on public.studio_project_members for select to authenticated
 using (
-  user_id = (select auth.uid())
-  or private.can_access_studio_project(project_id, (select auth.uid()))
+  private.can_access_studio_project(project_id, (select auth.uid()))
   or private.is_admin()
 );
 
