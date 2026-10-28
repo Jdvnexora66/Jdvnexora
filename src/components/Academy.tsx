@@ -61,6 +61,8 @@ export default function Academy({ userId }: { userId:string }) {
       if(e)throw new Error(e.message);
       if(!data?.enrolled)throw new Error('L’inscription n’a pas été confirmée.');
       setEnrolledCourseIds(current=>current.includes(course.id)?current:[...current,course.id]);
+      const {data:availableLessons}=await supabase.from('nexora_course_lessons').select('id,course_id,title,description,content_type,content,media_url,position,is_preview,is_published').eq('course_id',course.id).order('position',{ascending:true});
+      if(availableLessons) setLessons(current=>[...current.filter(lesson=>lesson.course_id!==course.id),...(availableLessons as LessonRow[])]);
       setMessage('Inscription confirmée. Vous pouvez accéder aux leçons publiées de cette formation.');
     } catch(cause) {
       setError(cause instanceof Error?cause.message:'Impossible de vous inscrire à cette formation. Réessayez.');
