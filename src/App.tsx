@@ -813,7 +813,7 @@ export default function App() {
                 <button className="primary-button" type="submit" disabled={busy || !title.trim()}>{busy ? 'Enregistrement…' : 'Créer le projet'} <Plus size={17} /></button>
               </form>
             </section>
-          </div></>}
+          </div></> : null}
           {error && <p className="feedback error" role="alert">{error}</p>}
           {message && <p className="feedback success" role="status">{message}</p>}
           <p className="workspace-footnote">Studio IA est disponible pour les demandes authentifiées. Les réponses nécessitent la configuration du fournisseur côté serveur.</p>
