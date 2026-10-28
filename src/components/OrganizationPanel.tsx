@@ -5,10 +5,9 @@ import { supabase } from '../lib/supabase';
 type Organization = { id: string; name: string; slug: string; status: string; created_at: string };
 type InvitationResult = { invitation?: { id?: string; email: string; role: string; expires_at: string }; token?: string; invitation_url?: string | null; delivery?: string; message?: string };
 
-export default function OrganizationPanel({ userId, onActiveOrganizationChange }: { userId: string; onActiveOrganizationChange?: (organizationId: string) => void }) {
+export default function OrganizationPanel({ userId, activeOrganizationId, onActiveOrganizationChange }: { userId: string; activeOrganizationId: string; onActiveOrganizationChange: (organizationId: string) => void }) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [organizationName, setOrganizationName] = useState('');
-  const [activeOrganizationId, setActiveOrganizationId] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('member');
   const [invitationUrl, setInvitationUrl] = useState('');
@@ -26,15 +25,11 @@ export default function OrganizationPanel({ userId, onActiveOrganizationChange }
     if (queryError) { setError('Impossible de charger les organisations. Vérifiez que les migrations B2B sont appliquées.'); return; }
     const rows = (data ?? []) as Organization[];
     setOrganizations(rows);
-    if (!activeOrganizationId && rows[0]) setActiveOrganizationId(rows[0].id);
-    else if (activeOrganizationId && !rows.some(row => row.id === activeOrganizationId)) setActiveOrganizationId(rows[0]?.id ?? '');
+    if (!activeOrganizationId && rows[0]) onActiveOrganizationChange(rows[0].id);
+    else if (activeOrganizationId && !rows.some(row => row.id === activeOrganizationId)) onActiveOrganizationChange(rows[0]?.id ?? '');
   }
 
   useEffect(() => { void loadOrganizations(); }, [userId]);
-
-  useEffect(() => {
-    onActiveOrganizationChange?.(activeOrganizationId);
-  }, [activeOrganizationId, onActiveOrganizationChange]);
 
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get('token');
@@ -71,7 +66,7 @@ export default function OrganizationPanel({ userId, onActiveOrganizationChange }
     if (createError) { setError(createError.code === '42501' ? 'Création refusée par les règles de sécurité.' : 'Création impossible. Vérifiez que la migration B2B est appliquée et que le nom est valide.'); return; }
     const created = data as Organization;
     setOrganizations(current => [created, ...current]);
-    setActiveOrganizationId(created.id);
+    onActiveOrganizationChange(created.id);
     setOrganizationName('');
     setMessage('Organisation créée. Votre compte en est propriétaire.');
   }
@@ -110,7 +105,7 @@ export default function OrganizationPanel({ userId, onActiveOrganizationChange }
     </form>
     <div className="project-form">
       <label htmlFor="organization-select">Organisation active</label>
-      <select id="organization-select" value={activeOrganizationId} onChange={e => setActiveOrganizationId(e.target.value)} disabled={loading || organizations.length === 0}>
+      <select id="organization-select" value={activeOrganizationId} onChange={e => onActiveOrganizationChange(e.target.value)} disabled={loading || organizations.length === 0}>
         {organizations.length === 0 ? <option value="">Aucune organisation disponible</option> : organizations.map(org => <option key={org.id} value={org.id}>{org.name} · {org.status}</option>)}
       </select>
     </div>
