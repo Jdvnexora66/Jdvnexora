@@ -47,3 +47,18 @@ Prepare two confirmed users (A and B), two organizations (Org A and Org B), and 
 ## Rollback note
 
 The migration is additive but replaces RLS policies. A rollback must restore the exact previous policy definitions before dropping the new helper functions or the column. Do not drop `organization_id` if any organization-scoped projects have been created.
+
+
+## Client table-privilege hardening (separate rollout)
+
+Read-only production audit on 2026-10-28 found that `anon` and `authenticated` have `TRUNCATE`, `REFERENCES`, and `TRIGGER` table privileges on multiple public tables, including Studio tables. These privileges are not governed by row-level security in the same way as ordinary row CRUD, so they are unnecessary for browser clients and should be removed.
+
+Migration: `supabase/migrations/20261028161000_revoke_dangerous_client_table_privileges.sql`.
+
+- [ ] Apply this independent migration to a zero-cost staging/local database first.
+- [ ] Run `supabase/tests/client_table_privileges.test.sql` and confirm both assertions pass.
+- [ ] Confirm the app's normal authenticated CRUD flows still work under the existing RLS policies.
+- [ ] Verify that no client-facing feature intentionally depends on table-level TRUNCATE, TRIGGER, or REFERENCES privileges.
+- [ ] Apply to production only through the approved migration process after validation; this migration has **not** been applied to production.
+
+The migration intentionally leaves SELECT/INSERT/UPDATE/DELETE grants and their RLS policy behavior unchanged. It also updates default privileges for future tables created by the migration owner in `public`.
