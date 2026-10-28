@@ -579,3 +579,53 @@ hr { border: 0; border-top: 1px solid var(--line); }
   .workspace-main > #organizations, .workspace-main > #billing, .workspace-main > #administration,
   .workspace-main > #visual-design-studio, .workspace-main > .profile-panel { padding: 18px; border-radius: 15px; }
 }
+
+
+/* NEXORA final pass — alignement compact avec la maquette principale */
+.workspace-shell, .workspace-page, .app-shell { min-width: 0; }
+.workspace-layout { align-items: start; }
+.workspace-sidebar { border-radius: 18px; background: rgba(7,12,25,.96); border: 1px solid rgba(128,151,203,.18); }
+.workspace-main { align-content: start; gap: 14px; }
+.reference-dashboard { grid-template-columns: minmax(0,1.75fr) minmax(260px,.82fr); gap: 14px; }
+.reference-main-column, .reference-right-column { gap: 14px; }
+.reference-hero { min-height: 250px; padding: clamp(22px,2.4vw,34px); border-radius: 18px; }
+.reference-hero h1 { max-width: 760px; font-size: clamp(2rem,3vw,2.85rem); margin-bottom: 14px; }
+.reference-module-grid { gap: 10px; }
+.reference-module { min-height: 98px; padding: 14px; border-radius: 14px; }
+.reference-projects, .reference-quick, .reference-side-card, .reference-community { padding: 16px; border-radius: 15px; }
+.reference-project-summary { gap: 8px; }
+.reference-project-summary > article, .reference-new-project { padding: 12px; }
+.reference-section-head { margin-bottom: 10px; }
+.dashboard-stats { gap: 10px; }
+.stat-card { min-width: 0; padding: 14px; border-radius: 14px; }
+.pipeline-section, .recent-activity-panel, .profile-panel, .project-panel { border-radius: 16px; }
+.workspace-main[data-active-section="dashboard"] > .reference-dashboard { display: grid !important; }
+.workspace-main[data-active-section="dashboard"] > .dashboard-stats,
+.workspace-main[data-active-section="dashboard"] > .pipeline-section,
+.workspace-main[data-active-section="dashboard"] > .recent-activity-panel,
+.workspace-main[data-active-section="dashboard"] > .quick-access { display: block !important; }
+.workspace-main[data-active-section="organizations"] > #organizations { display: block !important; }
+.workspace-main[data-active-section="library"] > #library { display: block !important; }
+.workspace-main[data-active-section="design"] > #visual-design-studio { display: block !important; }
+.workspace-main[data-active-section="studio"] > #studio-ia { display: block !important; }
+.workspace-main[data-active-section="media"] > #media-library { display: block !important; }
+.workspace-main[data-active-section="discover"] > #discover { display: block !important; }
+.workspace-main[data-active-section="academy"] > #academy { display: block !important; }
+.workspace-main[data-active-section="resources"] > #resource-library { display: block !important; }
+.workspace-main[data-active-section="roadmap"] > #roadmap { display: block !important; }
+.workspace-main[data-active-section="timeline"] > #timeline { display: block !important; }
+.workspace-main[data-active-section="insights"] > #insights { display: block !important; }
+.workspace-main[data-active-section="billing"] > #billing { display: block !important; }
+.workspace-main[data-active-section="administration"] > #administration { display: block !important; }
+.workspace-main[data-active-section="profile"] > .profile-panel { display: block !important; }
+.workspace-main[data-active-section="projects"] > .project-layout { display: grid !important; }
+@media (max-width: 1000px) {
+ .reference-dashboard { grid-template-columns: minmax(0,1fr); }
+ .reference-right-column { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 620px) {
+ .reference-right-column, .reference-module-grid, .reference-project-summary { grid-template-columns: minmax(0,1fr); }
+ .reference-hero { min-height: 0; padding: 22px; }
+ .reference-hero h1 { font-size: clamp(1.8rem,8vw,2.5rem); }
+ .dashboard-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
