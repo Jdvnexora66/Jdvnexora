@@ -9,6 +9,15 @@ const themes: Record<string,{background:string;surface:string;text:string}> = {
   'nexora-light': {background:'#f2f5fb',surface:'#ffffff',text:'#172039'},
   ocean: {background:'#071b2b',surface:'#103449',text:'#ecfeff'},
 };
+function isAllowedImageUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && Boolean(url.hostname) && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
 function isAllowedVideoUrl(value: string): boolean {
   try {
     const url = new URL(value);
