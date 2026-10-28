@@ -585,6 +585,29 @@ export default function App() {
             <div className="workspace-mark"><FolderKanban size={30} /></div>
           </div>
 
+        <div className="workspace-layout">
+          <nav className="workspace-sidebar" aria-label="Navigation principale NEXORA">
+            <div className="nav-section-label">ESPACE DE TRAVAIL</div>
+            <a className={!activeProject ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#projects" onClick={(event) => { event.preventDefault(); if (!confirmDiscardUnsavedChapterChanges()) return; setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); setError(''); setMessage(''); }}><FolderKanban size={17} /> <span>Tableau de bord</span></a>
+            <div className="nav-section-label">CRÉATION</div>
+            <a className={activeProject ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#studio" onClick={(event) => { event.preventDefault(); if (activeProject) document.getElementById('studio-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); else document.getElementById('create-project')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}><Sparkles size={17} /> <span>Studio de création</span></a>
+            <a className="workspace-nav-link" href="#media-library" onClick={(event) => { event.preventDefault(); document.getElementById('media-library')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Film size={17} /> <span>Vidéothèque</span></a>
+            <a className="workspace-nav-link" href="#discover" onClick={(event) => { event.preventDefault(); document.getElementById('discover')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Compass size={17} /> <span>Découvrir</span></a>
+            <a className="workspace-nav-link" href="#library" onClick={(event) => { event.preventDefault(); document.getElementById('library')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Bookmark size={17} /> <span>Bibliothèque</span></a>
+            <div className="nav-section-label">PILOTAGE</div>
+            <a className="workspace-nav-link" href="#roadmap" onClick={(event) => { event.preventDefault(); document.getElementById('roadmap')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><CalendarClock size={17} /> <span>Roadmap</span></a>
+            <a className="workspace-nav-link" href="#timeline" onClick={(event) => { event.preventDefault(); document.getElementById('timeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><CalendarDays size={17} /> <span>Timeline</span></a>
+            <a className="workspace-nav-link" href="#insights" onClick={(event) => { event.preventDefault(); document.getElementById('insights')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Sparkles size={17} /> <span>Insights</span></a>
+            <div className="nav-section-label">COMPTE & OUTILS</div>
+            <a className="workspace-nav-link" href="#organizations" onClick={(event) => { event.preventDefault(); document.getElementById('organizations')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Building2 size={17} /> <span>Organisations & équipe</span></a>
+            <a className="workspace-nav-link" href="#profile-title" onClick={(event) => { event.preventDefault(); document.getElementById('profile-title')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}><UserRound size={17} /> <span>Profil & préférences</span></a>
+            <a className="workspace-nav-link" href="#billing" onClick={(event) => { event.preventDefault(); document.getElementById('billing')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ShieldCheck size={17} /> <span>Facturation & sécurité</span></a>
+            <a className="workspace-nav-link" href="#administration" onClick={(event) => { event.preventDefault(); document.getElementById('administration')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ShieldCheck size={17} /> <span>Administration</span></a>
+            {profile?.role === 'admin' && <a className="workspace-nav-link" href="#visual-design-studio" onClick={(event) => { event.preventDefault(); document.getElementById('visual-design-studio')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Palette size={17} /> <span>Studio de conception visuelle</span></a>}
+            <button className="workspace-nav-link" type="button" onClick={() => { if (!confirmDiscardUnsavedChapterChanges()) return; setSearchQuery(''); setStatusFilter('all'); setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); void loadProjects(); }}><RefreshCw size={17} /> <span>Actualiser</span></button>
+          </nav>
+          <div className="workspace-main">
+
           {!activeProject && <ReferenceDashboard
             displayName={profileName || (session.user.email ?? '').split('@')[0] || 'Créateur'}
             projectCount={projects.length}
@@ -612,28 +635,7 @@ export default function App() {
             </form>
           </section>
 
-          <nav className="workspace-nav" aria-label="Navigation principale NEXORA">
-            <div className="nav-section-label">ESPACE DE TRAVAIL</div>
-            <a className={!activeProject ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#projects" onClick={(event) => { event.preventDefault(); if (!confirmDiscardUnsavedChapterChanges()) return; setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); setError(''); setMessage(''); }}><FolderKanban size={17} /> <span>Tableau de bord</span></a>
-            <div className="nav-section-label">CRÉATION</div>
-            <a className={activeProject ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#studio" onClick={(event) => { event.preventDefault(); if (activeProject) document.getElementById('studio-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); else document.getElementById('create-project')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}><Sparkles size={17} /> <span>Studio de création</span></a>
-            <a className="workspace-nav-link" href="#media-library" onClick={(event) => { event.preventDefault(); document.getElementById('media-library')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Film size={17} /> <span>Vidéothèque</span></a>
-            <a className="workspace-nav-link" href="#discover" onClick={(event) => { event.preventDefault(); document.getElementById('discover')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Compass size={17} /> <span>Découvrir</span></a>
-            <a className="workspace-nav-link" href="#library" onClick={(event) => { event.preventDefault(); document.getElementById('library')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Bookmark size={17} /> <span>Bibliothèque</span></a>
-            <div className="nav-section-label">PILOTAGE</div>
-            <a className="workspace-nav-link" href="#roadmap" onClick={(event) => { event.preventDefault(); document.getElementById('roadmap')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><CalendarClock size={17} /> <span>Roadmap</span></a>
-            <a className="workspace-nav-link" href="#timeline" onClick={(event) => { event.preventDefault(); document.getElementById('timeline')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><CalendarDays size={17} /> <span>Timeline</span></a>
-            <a className="workspace-nav-link" href="#insights" onClick={(event) => { event.preventDefault(); document.getElementById('insights')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Sparkles size={17} /> <span>Insights</span></a>
-            <div className="nav-section-label">COMPTE & OUTILS</div>
-            <a className="workspace-nav-link" href="#organizations" onClick={(event) => { event.preventDefault(); document.getElementById('organizations')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Building2 size={17} /> <span>Organisations & équipe</span></a>
-            <a className="workspace-nav-link" href="#profile-title" onClick={(event) => { event.preventDefault(); document.getElementById('profile-title')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }}><UserRound size={17} /> <span>Profil & préférences</span></a>
-            <a className="workspace-nav-link" href="#billing" onClick={(event) => { event.preventDefault(); document.getElementById('billing')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ShieldCheck size={17} /> <span>Facturation & sécurité</span></a>
-            <a className="workspace-nav-link" href="#administration" onClick={(event) => { event.preventDefault(); document.getElementById('administration')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><ShieldCheck size={17} /> <span>Administration</span></a>
-            {profile?.role === 'admin' && <a className="workspace-nav-link" href="#visual-design-studio" onClick={(event) => { event.preventDefault(); document.getElementById('visual-design-studio')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><Palette size={17} /> <span>Studio de conception visuelle</span></a>}
-            <button className="workspace-nav-link" type="button" onClick={() => { if (!confirmDiscardUnsavedChapterChanges()) return; setSearchQuery(''); setStatusFilter('all'); setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); void loadProjects(); }}><RefreshCw size={17} /> <span>Actualiser</span></button>
-          </nav>
-
-          {!activeProject && <PublishedVisualLayout />}
+  
 
           <div className="dashboard-stats" aria-label="Résumé de vos projets" aria-busy={loadingProjects}>
             <article className="stat-card"><span className="stat-icon"><FolderKanban size={18} /></span><div><p>Total des projets</p><strong>{loadingProjects ? '…' : projects.length}</strong><small>Tous vos espaces</small></div></article>
@@ -788,6 +790,8 @@ export default function App() {
           {error && <p className="feedback error" role="alert">{error}</p>}
           {message && <p className="feedback success" role="status">{message}</p>}
           <p className="workspace-footnote">Studio IA est disponible pour les demandes authentifiées. Les réponses nécessitent la configuration du fournisseur côté serveur.</p>
+          </div>
+          </div>
         </section>
       ) : (
         <section className="hero-grid">
