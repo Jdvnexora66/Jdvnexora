@@ -22,8 +22,8 @@ const name = displayName.trim().split(/\s+/)[0] || 'Créateur';
     <div className="reference-main-column">
       <section className="reference-hero">
         <div className="reference-hero-copy">
-          <p className="reference-eyebrow">VOTRE ESPACE CRÉATIF</p>
-          <h1>Bonjour {name},<br/><span>Bienvenue dans votre studio IA</span></h1>
+          <p className="reference-greeting">Bonjour {name},</p>
+          <h1>Bienvenue dans votre studio IA</h1>
           <p>Créez, apprenez, collaborez et donnez vie à vos idées avec la puissance de l’IA.</p>
           <div className="reference-hero-actions">
             <button type="button" className="reference-primary" onClick={onOpenStudio}><Bot size={17}/> Lancer une conversation IA</button>
