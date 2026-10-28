@@ -714,7 +714,7 @@ export default function App() {
             <article className="stat-card"><span className="stat-icon"><Sparkles size={18} /></span><div><p>Brouillons</p><strong>{loadingProjects ? '…' : projects.filter((project) => project.status === 'draft').length}</strong><small>Idées à développer</small></div></article>
           </div>}
 
-          {!activeProject && activeSection === 'organizations' && <OrganizationPanel userId={session.user.id} onActiveOrganizationChange={setActiveOrganizationId} />}
+          {!activeProject && activeSection === 'organizations' && <OrganizationPanel userId={session.user.id} activeOrganizationId={activeOrganizationId} onActiveOrganizationChange={setActiveOrganizationId} />}
 
           {!activeProject && activeSection === 'dashboard' && <section className="pipeline-section" aria-labelledby="pipeline-title">
             <div className="pipeline-heading">
