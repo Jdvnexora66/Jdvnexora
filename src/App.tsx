@@ -201,7 +201,7 @@ export default function App() {
       let organizationProjects: StudioProject[] = [];
       if (hasTenantColumn && activeOrganizationId) {
         const organizationResult = await supabase.from('studio_projects')
-          .select(projectFields).eq('organization_id', activeOrganizationId)
+          .select('*').eq('organization_id', activeOrganizationId)
           .order('created_at', { ascending: false });
         if (organizationResult.error) {
           setError('Impossible de charger les projets de l’organisation active : ' + organizationResult.error.message);
