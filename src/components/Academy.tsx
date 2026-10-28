@@ -5,14 +5,16 @@ import { supabase } from '../lib/supabase';
 type PathRow = { id:string; title:string; audience:string; description:string; position:number };
 type ModuleRow = { id:string; path_id:string; title:string; summary:string; project_task:string; position:number };
 type ProgressRow = { module_id:string; status:'not_started'|'in_progress'|'completed'; notes:string|null };
-type CourseRow = { id:string; slug:string; title:string; short_description:string; description:string; instructor_name:string|null; cover_image_url:string|null; price_xof:number; is_free:boolean; duration_minutes:number|null; level:string };\ntype LessonRow = { id:string; course_id:string; title:string; description:string; content_type:'text'|'video'|'document'|'external'; content:string|null; media_url:string|null; position:number; is_preview:boolean; is_published:boolean };
+type CourseRow = { id:string; slug:string; title:string; short_description:string; description:string; instructor_name:string|null; cover_image_url:string|null; price_xof:number; is_free:boolean; duration_minutes:number|null; level:string };
+type LessonRow = { id:string; course_id:string; title:string; description:string; content_type:'text'|'video'|'document'|'external'; content:string|null; media_url:string|null; position:number; is_preview:boolean; is_published:boolean };
 const statusLabel = { not_started:'À commencer', in_progress:'En cours', completed:'Terminé' };
 const formatXof = (amount:number) => new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format(amount) + ' FCFA';
 
 export default function Academy({ userId }: { userId:string }) {
   const [paths,setPaths]=useState<PathRow[]>([]);
   const [modules,setModules]=useState<ModuleRow[]>([]);
-  const [courses,setCourses]=useState<CourseRow[]>([]);\n  const [lessons,setLessons]=useState<LessonRow[]>([]);
+  const [courses,setCourses]=useState<CourseRow[]>([]);
+  const [lessons,setLessons]=useState<LessonRow[]>([]);
   const [enrolledCourseIds,setEnrolledCourseIds]=useState<string[]>([]);
   const [enrollingCourseId,setEnrollingCourseId]=useState('');
   const [progress,setProgress]=useState<Record<string,ProgressRow>>({});
@@ -36,7 +38,8 @@ export default function Academy({ userId }: { userId:string }) {
       if(p.error||m.error||g.error){setError('Le programme Académie nécessite l’application de la migration Supabase.');return;}
       const pathRows=(p.data??[]) as PathRow[];
       setPaths(pathRows);setModules((m.data??[]) as ModuleRow[]);
-      setCourses((c.data??[]) as CourseRow[]);\n      setLessons(l.error?[]:(l.data??[]) as LessonRow[]);
+      setCourses((c.data??[]) as CourseRow[]);
+      setLessons(l.error?[]:(l.data??[]) as LessonRow[]);
       if(c.error) setMessage('Le catalogue des formations est temporairement indisponible.');
       setEnrolledCourseIds(e.error?[]:(e.data??[]).map(row=>row.course_id as string));
       setProgress(Object.fromEntries(((g.data??[]) as ProgressRow[]).map(row=>[row.module_id,row])));
