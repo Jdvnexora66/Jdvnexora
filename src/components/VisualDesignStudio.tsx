@@ -67,7 +67,7 @@ const safeConfig = (value: unknown): StudioConfig => {
   const allowed = new Set(['heading','text','stat','action','card','divider','image','video']);
   const components = input.components.filter((x): x is StudioBlock => Boolean(x && typeof x === 'object' && typeof x.id === 'string' && typeof x.title === 'string' && allowed.has((x as StudioBlock).type))).map(x => ({
     id: x.id.slice(0, 80), type: x.type, title: x.title.slice(0, 120), content: typeof x.content === 'string' ? x.content.slice(0, 1000) : '',
-    url: (x.type === 'image' && typeof x.url === 'string' && /^https:\\/\\//i.test(x.url) && !/^(javascript|data):/i.test(x.url)) || (x.type === 'video' && typeof x.url === 'string' && isAllowedVideoUrl(x.url)) ? x.url.slice(0, 2000) : undefined, objectFit: x.objectFit === 'contain' ? 'contain' : 'cover',
+    url: typeof x.url === 'string' && (x.type === 'image' ? isAllowedImageUrl(x.url) : x.type === 'video' ? isAllowedVideoUrl(x.url) : false) ? x.url.slice(0, 2000) : undefined, objectFit: x.objectFit === 'contain' ? 'contain' : 'cover',
     color: /^#[0-9a-f]{6}$/i.test(x.color ?? '') ? x.color : undefined,
     background: /^#[0-9a-f]{6}$/i.test(x.background ?? '') ? x.background : undefined,
     radius: Number.isFinite(x.radius) ? Math.max(0, Math.min(32, x.radius!)) : 12,
