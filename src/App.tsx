@@ -626,6 +626,7 @@ export default function App() {
 
           {!activeProject && <ReferenceDashboard
             displayName={profileName || (session.user.email ?? '').split('@')[0] || 'Créateur'}
+            projects={projects}
             projectCount={projects.length}
             inProgressCount={projects.filter((project) => project.status === 'in_progress').length}
             onNewProject={() => navigateWorkspace('projects')}
