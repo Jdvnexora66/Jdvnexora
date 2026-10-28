@@ -27,9 +27,21 @@ Prepare two confirmed users (A and B), two organizations (Org A and Org B), and 
 - [ ] Anonymous requests cannot access private projects, assets, or membership rows.
 - [ ] Existing project and asset row counts are unchanged after migration.
 
-## Important integration note
+## Current implementation status (2026-10-28)
 
-This migration establishes the database boundary. The UI and server functions must explicitly write/read `organization_id` and send the selected workspace context where appropriate. Until that integration is completed and tested, organization-scoped project creation is not considered production-ready.
+- The front-end workspace integration is merged in PR #69. The selected organization is held in the main app state, project loading is scoped to the selected organization when the column is available, and organization-scoped creation is blocked when the tenant column is missing.
+- The security-policy hardening is merged in PR #67.
+- **Production database verification confirms that studio_projects.organization_id is still absent and migration 20261028103000 is not recorded.** The application is therefore still running against the legacy project schema. Do not infer that tenant isolation is live from the merged code.
+- The GitHub build/CI checks verify compilation and static assertions only. They do not prove cross-tenant RLS behavior.
+- The production security advisor currently reports leaked-password protection disabled. Enable it in Supabase Auth settings when an authorized dashboard operator is available; this is a separate Auth setting, not part of the tenant migration.
+- The advisor also reports no direct RLS policies on organization_invitations and selected media OAuth tables. These appear intentionally server-only because client grants are revoked; verify their Edge Function/service-role paths remain the only access route before changing those policies.
+
+## Required next steps before B2B activation
+
+1. Apply the tenant migration to a staging database only and run the required real-user tests above. No staging Supabase branch should be created without explicit budget approval.
+2. If no staging environment is available at zero additional cost, keep B2B project creation blocked and do not apply the migration to production.
+3. Re-run Supabase security advisors after any approved schema change and review the leaked-password protection setting.
+4. Confirm the live Netlify production deployment is serving the merged main commit before announcing the feature as available.
 
 ## Rollback note
 
