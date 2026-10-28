@@ -20,8 +20,6 @@ export default function PublicVitrine({ onLogin }: PublicVitrineProps) {
     setFeedbackStatus('Votre application de messagerie va s’ouvrir avec votre message préparé. Vérifiez puis envoyez l’e-mail pour nous le transmettre.');
   }
 
-  const goToContact = () => document.getElementById('vitrine-contact')?.scrollIntoView({ behavior: 'smooth' });
-
   return (
     <main className="vitrine-page">
       <header className="vitrine-nav">
