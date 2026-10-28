@@ -21,6 +21,7 @@ as $$
     select 1
     from public.studio_projects p
     where p.id = p_project_id
+      and p_user_id = (select auth.uid())
       and (
         (p.organization_id is null and (
           p.owner_id = p_user_id
@@ -57,6 +58,7 @@ as $$
     select 1
     from public.studio_projects p
     where p.id = p_project_id
+      and p_user_id = (select auth.uid())
       and (
         private.is_admin()
         or (
@@ -99,6 +101,7 @@ as $$
     select 1
     from public.studio_projects p
     where p.id = p_project_id
+      and p_user_id = (select auth.uid())
       and (
         private.is_admin()
         or (
