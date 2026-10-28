@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BookOpen, CheckCircle2, Circle, LoaderCircle, RefreshCw, Sparkles } from 'lucide-react';
+import { BookOpen, CheckCircle2, Circle, LoaderCircle, RefreshCw, Sparkles, GraduationCap, Clock3 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 type PathRow = { id:string; title:string; audience:string; description:string; position:number };
 type ModuleRow = { id:string; path_id:string; title:string; summary:string; project_task:string; position:number };
 type ProgressRow = { module_id:string; status:'not_started'|'in_progress'|'completed'; notes:string|null };
+type CourseRow = { id:string; slug:string; title:string; short_description:string; description:string; instructor_name:string|null; cover_image_url:string|null; price_xof:number; is_free:boolean; duration_minutes:number|null; level:string };
 const statusLabel = { not_started:'À commencer', in_progress:'En cours', completed:'Terminé' };
+const formatXof = (amount:number) => new Intl.NumberFormat('fr-FR',{maximumFractionDigits:0}).format(amount) + ' FCFA';
 
 export default function Academy({ userId }: { userId:string }) {
   const [paths,setPaths]=useState<PathRow[]>([]);
   const [modules,setModules]=useState<ModuleRow[]>([]);
+  const [courses,setCourses]=useState<CourseRow[]>([]);
   const [progress,setProgress]=useState<Record<string,ProgressRow>>({});
   const [selected,setSelected]=useState('discover');
   const [loading,setLoading]=useState(true);
@@ -21,14 +24,17 @@ export default function Academy({ userId }: { userId:string }) {
     if(!supabase){setLoading(false);setError('Supabase n’est pas configuré.');return;}
     setLoading(true);setError('');
     try {
-      const [p,m,g]=await Promise.all([
+      const [p,m,g,c]=await Promise.all([
         supabase.from('nexora_learning_paths').select('id,title,audience,description,position').order('position'),
         supabase.from('nexora_learning_modules').select('id,path_id,title,summary,project_task,position').order('position'),
-        supabase.from('nexora_learning_progress').select('module_id,status,notes').eq('user_id',userId)
+        supabase.from('nexora_learning_progress').select('module_id,status,notes').eq('user_id',userId),
+        supabase.from('nexora_courses').select('id,slug,title,short_description,description,instructor_name,cover_image_url,price_xof,is_free,duration_minutes,level').eq('status','published').order('created_at',{ascending:false})
       ]);
       if(p.error||m.error||g.error){setError('Le programme Académie nécessite l’application de la migration Supabase.');return;}
       const pathRows=(p.data??[]) as PathRow[];
       setPaths(pathRows);setModules((m.data??[]) as ModuleRow[]);
+      setCourses((c.data??[]) as CourseRow[]);
+      if(c.error) setMessage('Le catalogue des formations est temporairement indisponible.');
       setProgress(Object.fromEntries(((g.data??[]) as ProgressRow[]).map(row=>[row.module_id,row])));
       setSelected(current => pathRows.length && !pathRows.some(row=>row.id===current) ? pathRows[0].id : current);
     } catch (cause) {
@@ -56,8 +62,27 @@ export default function Academy({ userId }: { userId:string }) {
   const activeModules=modules.filter(m=>m.path_id===selected);
   const completed=activeModules.filter(m=>progress[m.id]?.status==='completed').length;
   return <section id="academy" className="project-panel">
-    <div className="section-heading"><div><p className="eyebrow">JDV NEXORA · ACADÉMIE</p><h2><BookOpen size={21}/> Apprendre en construisant</h2><p className="muted">Trois parcours, des exercices concrets et une progression sauvegardée dans votre compte.</p></div><button className="icon-button" onClick={()=>void load()} disabled={loading} aria-label="Actualiser l’Académie"><RefreshCw size={16}/></button></div>
+    <div className="section-heading"><div><p className="eyebrow">JDV NEXORA · ACADÉMIE</p><h2><BookOpen size={21}/> Apprendre en construisant</h2><p className="muted">Parcours pratiques et formations indépendantes, avec un tarif propre à chaque cours.</p></div><button className="icon-button" onClick={()=>void load()} disabled={loading} aria-label="Actualiser l’Académie"><RefreshCw size={16}/></button></div>
     {loading?<p className="empty-state">Chargement du programme…</p>:<>
+      <section aria-labelledby="paid-courses-heading" style={{marginBottom:28}}>
+        <div className="section-heading"><div><h3 id="paid-courses-heading"><GraduationCap size={19}/> Formations et cours</h3><p className="muted">Chaque formation possède son propre prix. Les montants sont définis formation par formation.</p></div></div>
+        {courses.length===0?<p className="empty-state">Aucune formation publiée pour le moment. Les formations ajoutées et publiées par l’équipe apparaîtront ici avec leur tarif.</p>:
+          <div className="feature-list" style={{gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))',marginBottom:12}}>
+            {courses.map(course=><article key={course.id} className="project-item" style={{display:'flex',flexDirection:'column',alignItems:'stretch',gap:12}}>
+              {course.cover_image_url&&<img src={course.cover_image_url} alt="" loading="lazy" style={{width:'100%',maxHeight:170,objectFit:'cover',borderRadius:10}}/>}
+              <div className="project-info"><p className="eyebrow">{course.level}</p><h3>{course.title}</h3><p>{course.short_description||course.description}</p>
+                {course.instructor_name&&<small>Formateur : {course.instructor_name}</small>}
+                {course.duration_minutes!==null&&<p className="muted"><Clock3 size={14} style={{display:'inline',verticalAlign:'-2px'}}/> {course.duration_minutes} minutes</p>}
+              </div>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,marginTop:'auto'}}>
+                <strong>{course.is_free||Number(course.price_xof)===0?'Gratuit':formatXof(Number(course.price_xof))}</strong>
+                <span className="muted" style={{fontSize:12}}>{course.is_free||Number(course.price_xof)===0?'Accès gratuit':'Inscription bientôt disponible'}</span>
+              </div>
+            </article>)}
+          </div>}
+        <p className="muted" style={{fontSize:12}}>Le paiement et l’activation automatique des formations payantes ne sont pas encore ouverts : aucun paiement n’est demandé depuis cet écran.</p>
+      </section>
+      <div className="section-heading"><div><h3>Parcours d’apprentissage</h3><p className="muted">Trois parcours, des exercices concrets et une progression sauvegardée dans votre compte.</p></div></div>
       <div className="feature-list" style={{gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',marginBottom:24}}>
         {paths.map(path=><button key={path.id} type="button" onClick={()=>setSelected(path.id)} className="project-item" style={{textAlign:'left',cursor:'pointer',borderColor:selected===path.id?'#7e8cff':undefined,background:selected===path.id?'rgba(126,140,255,.12)':undefined}}><div className="project-type-icon"><Sparkles size={18}/></div><div className="project-info"><h3>{path.title}</h3><p>{path.audience}</p><small>{path.description}</small></div></button>)}
       </div>
