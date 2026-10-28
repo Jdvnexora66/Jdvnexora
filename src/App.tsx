@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Building2, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette, BookOpen } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
@@ -48,6 +48,7 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false);
   const [isRecovery, setIsRecovery] = useState(false);
   const [projects, setProjects] = useState<StudioProject[]>([]);
+  const projectLoadRequest = useRef(0);
   const [activeOrganizationId, setActiveOrganizationId] = useState('');
   const [tenantProjectsEnabled, setTenantProjectsEnabled] = useState<boolean | null>(null);
   const [activeProject, setActiveProject] = useState<StudioProject | null>(null);
@@ -130,7 +131,7 @@ export default function App() {
   }, [session?.user.id]);
 
   useEffect(() => {
-    if (session?.user.id && activeOrganizationId) void loadProjects();
+    if (session?.user.id) void loadProjects();
   }, [activeOrganizationId]);
 
   async function loadProfile() {
@@ -180,6 +181,7 @@ export default function App() {
 
   async function loadProjects() {
     if (!supabase || !session?.user.id) return;
+    const requestId = ++projectLoadRequest.current;
     setLoadingProjects(true);
     setError('');
     try {
@@ -188,6 +190,7 @@ export default function App() {
         schemaProbe.error.code === '42703'
         || (schemaProbe.error.code === 'PGRST204' && /organization_id/i.test(schemaProbe.error.message))
       ));
+      if (requestId !== projectLoadRequest.current) return;
       if (schemaProbe.error && !missingTenantColumn) throw schemaProbe.error;
       const hasTenantColumn = !missingTenantColumn;
       setTenantProjectsEnabled(hasTenantColumn);
@@ -198,6 +201,7 @@ export default function App() {
           .order('created_at', { ascending: false }),
         supabase.from('studio_project_members').select('project_id').eq('user_id', session.user.id),
       ]);
+      if (requestId !== projectLoadRequest.current) return;
       if (ownedResult.error) {
         setError('Impossible de charger les projets : ' + ownedResult.error.message);
         return;
@@ -207,6 +211,7 @@ export default function App() {
         const organizationResult = await supabase.from('studio_projects')
           .select('*').eq('organization_id', activeOrganizationId)
           .order('created_at', { ascending: false });
+        if (requestId !== projectLoadRequest.current) return;
         if (organizationResult.error) {
           setError('Impossible de charger les projets de l’organisation active : ' + organizationResult.error.message);
         } else {
@@ -214,6 +219,7 @@ export default function App() {
         }
       }
       const owned = (ownedResult.data ?? []) as StudioProject[];
+      if (requestId !== projectLoadRequest.current) return;
       if (membershipResult.error) {
         setError('Impossible de charger les projets partagés : ' + membershipResult.error.message);
         setProjects(owned);
@@ -227,6 +233,7 @@ export default function App() {
           .select('id, owner_id, title, description, project_type, status, created_at')
           .in('id', sharedIds)
           .order('created_at', { ascending: false });
+        if (requestId !== projectLoadRequest.current) return;
         if (sharedResult.error) setError('Impossible de charger les projets partagés : ' + sharedResult.error.message);
         else shared = (sharedResult.data ?? []) as StudioProject[];
       }
@@ -234,9 +241,11 @@ export default function App() {
       [...owned, ...shared, ...organizationProjects].forEach(project => uniqueProjects.set(project.id, project));
       setProjects([...uniqueProjects.values()].sort((a, b) => b.created_at.localeCompare(a.created_at)));
     } catch (cause) {
-      setError('Impossible de charger les projets : ' + (cause instanceof Error ? cause.message : 'une erreur réseau inattendue est survenue.'));
+      if (requestId === projectLoadRequest.current) {
+        setError('Impossible de charger les projets : ' + (cause instanceof Error ? cause.message : 'une erreur réseau inattendue est survenue.'));
+      }
     } finally {
-      setLoadingProjects(false);
+      if (requestId === projectLoadRequest.current) setLoadingProjects(false);
     }
   }
 
