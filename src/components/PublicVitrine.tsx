@@ -40,7 +40,7 @@ export default function PublicVitrine({ onLogin }: PublicVitrineProps) {
           <h1>De l’idée au projet.<br /><span>Du projet à l’action.</span></h1>
           <p className="vitrine-lead">JDV NEXORA AI STUDIO ambitionne de réunir les outils et les parcours de création numérique dans un espace de travail organisé, pour vous aider à transformer vos idées en projets concrets.</p>
           <div className="vitrine-hero-actions">
-            <a className="vitrine-button primary" href="/app" onClick={onLogin}>Découvrir mon espace <ArrowRight size={17} /></a>
+            <a className="vitrine-button primary" href="/app?mode=signup" onClick={onLogin}>Créer mon compte <ArrowRight size={17} /></a>
             <a className="vitrine-button secondary" href="#vision">Découvrir NEXORA <ArrowDown size={16} /></a>
           </div>
           <div className="vitrine-trust-line"><ShieldCheck size={16} /><span>Un projet numérique en évolution, construit autour des besoins de ses utilisateurs.</span></div>
@@ -77,6 +77,30 @@ export default function PublicVitrine({ onLogin }: PublicVitrineProps) {
         <div className="vitrine-process"><div className="vitrine-process-heading"><p className="vitrine-eyebrow">UN PARCOURS SIMPLE</p><h3>Faites avancer votre idée, une étape à la fois.</h3></div><div className="vitrine-steps"><div><span>01</span><b>Clarifiez</b><small>Définissez votre idée et votre objectif.</small></div><div><span>02</span><b>Organisez</b><small>Créez un projet et posez ses bases.</small></div><div><span>03</span><b>Construisez</b><small>Développez votre contenu progressivement.</small></div><div><span>04</span><b>Faites évoluer</b><small>Apprenez, ajustez et poursuivez votre travail.</small></div></div></div>
       </section>
 
+
+      <section className="vitrine-showcase" aria-labelledby="vitrine-showcase-title">
+        <div className="vitrine-section-heading centered">
+          <p className="vitrine-eyebrow">DÉCOUVREZ NEXORA EN IMAGES</p>
+          <h2 id="vitrine-showcase-title">Un aperçu concret de votre<br /><span>espace de travail numérique.</span></h2>
+          <p>Explorez les principaux usages de la plateforme : piloter vos projets, concevoir vos contenus et suivre vos prochaines étapes.</p>
+        </div>
+        <div className="vitrine-showcase-grid">
+          <article className="vitrine-showcase-card showcase-wide">
+            <img src="/nexora-dashboard.svg" alt="Aperçu illustré du tableau de bord JDV NEXORA avec projets, progression et raccourcis" loading="lazy" />
+            <div><span className="vitrine-feature-tag">01 · PILOTER</span><h3>Un tableau de bord pour garder le cap</h3><p>Retrouvez vos projets et visualisez leur progression depuis un espace centralisé.</p></div>
+          </article>
+          <article className="vitrine-showcase-card">
+            <img src="/nexora-creation.svg" alt="Illustration du Studio de création NEXORA avec document et outils créatifs" loading="lazy" />
+            <div><span className="vitrine-feature-tag">02 · CRÉER</span><h3>Donner forme à vos idées</h3><p>Structurez vos e-books, documents et contenus de projet.</p></div>
+          </article>
+          <article className="vitrine-showcase-card">
+            <img src="/nexora-roadmap.svg" alt="Illustration d’un parcours de projet NEXORA avec étapes et tâches" loading="lazy" />
+            <div><span className="vitrine-feature-tag">03 · AVANCER</span><h3>Construire étape par étape</h3><p>Organisez votre démarche et identifiez la prochaine action utile.</p></div>
+          </article>
+        </div>
+        <p className="vitrine-showcase-disclaimer">Visuels illustratifs de l’expérience NEXORA ; les fonctions accessibles dépendent de la version et de la configuration de votre compte.</p>
+      </section>
+
       <section className="vitrine-mission-band"><div className="vitrine-mission-symbol"><Sparkles size={28} /></div><div><p className="vitrine-eyebrow">NOTRE ENGAGEMENT</p><h2>Un outil utile se construit en restant à l’écoute.</h2><p>Nous souhaitons comprendre vos objectifs, vos difficultés et les fonctionnalités qui vous seraient réellement utiles.</p></div><a className="vitrine-button secondary" href="#avis">Donner mon avis <ArrowRight size={16} /></a></section>
 
       <section id="avis" className="vitrine-section vitrine-feedback-section">
@@ -104,7 +128,7 @@ export default function PublicVitrine({ onLogin }: PublicVitrineProps) {
 
       <section className="vitrine-final-cta"><div><p className="vitrine-eyebrow">PRÊT À COMMENCER ?</p><h2>Votre prochaine idée peut commencer ici.</h2><p>Accédez à votre espace NEXORA pour poursuivre votre parcours de création.</p></div><a className="vitrine-button primary" href="/app" onClick={onLogin}>Entrer dans NEXORA <ArrowRight size={17} /></a></section>
 
-      <footer className="vitrine-footer"><a className="vitrine-brand" href="#accueil"><span className="vitrine-brand-mark"><Sparkles size={20} /></span><span><strong>JDV NEXORA</strong><small>AI STUDIO</small></span></a><p>De l’idée au projet. Du projet à l’action.</p><div><a href="#vision">Notre vision</a><a href="#avis">Avis & besoins</a><a href="#vitrine-contact">Contact</a><a href="/app">Connexion</a></div><small>© {new Date().getFullYear()} JDV GLOBAL CENTER · Cotonou, Bénin</small></footer>
+      <footer className="vitrine-footer"><a className="vitrine-brand" href="#accueil"><span className="vitrine-brand-mark"><Sparkles size={20} /></span><span><strong>JDV NEXORA</strong><small>AI STUDIO</small></span></a><p>De l’idée au projet. Du projet à l’action.</p><div><a href="#vision">Notre vision</a><a href="#avis">Avis & besoins</a><a href="#vitrine-contact">Contact</a><a href="/app">Connexion</a><a href="/app?mode=signup">Créer un compte</a></div><small>© {new Date().getFullYear()} JDV GLOBAL CENTER · Cotonou, Bénin</small></footer>
     </main>
   );
 }
