@@ -590,7 +590,7 @@ export default function App() {
             projectCount={projects.length}
             inProgressCount={projects.filter((project) => project.status === 'in_progress').length}
             onNewProject={() => document.getElementById('create-project')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-            onOpenStudio={() => document.getElementById('studio-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            onOpenStudio={() => document.getElementById('studio-ia')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             onOpenProjects={() => document.getElementById('pipeline-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           />}
 
