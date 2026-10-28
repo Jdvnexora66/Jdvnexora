@@ -184,8 +184,12 @@ export default function App() {
     setError('');
     try {
       const schemaProbe = await supabase.from('studio_projects').select('organization_id').limit(1);
-      if (schemaProbe.error && schemaProbe.error.code !== '42703') throw schemaProbe.error;
-      const hasTenantColumn = !schemaProbe.error;
+      const missingTenantColumn = Boolean(schemaProbe.error && (
+        schemaProbe.error.code === '42703'
+        || (schemaProbe.error.code === 'PGRST204' && /organization_id/i.test(schemaProbe.error.message))
+      ));
+      if (schemaProbe.error && !missingTenantColumn) throw schemaProbe.error;
+      const hasTenantColumn = !missingTenantColumn;
       setTenantProjectsEnabled(hasTenantColumn);
       const [ownedResult, membershipResult] = await Promise.all([
         supabase.from('studio_projects')
