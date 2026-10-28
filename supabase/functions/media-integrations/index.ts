@@ -22,7 +22,6 @@ function html(message: string, ok: boolean, platform?: string) {
   const safeMessage = message.replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c] ?? c));
   return new Response(`<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>NEXORA Media</title><body style="font:16px system-ui;background:#0b1020;color:#eef2ff;display:grid;place-items:center;min-height:90vh"><main style="max-width:440px;padding:28px;border:1px solid #303a58;border-radius:18px"><h1>${ok ? "Compte connecté" : "Connexion impossible"}</h1><p>${safeMessage}</p><p>Vous pouvez fermer cette fenêtre et revenir à NEXORA.</p></main><script>try{if(window.opener){window.opener.postMessage({type:"nexora-media-oauth",ok:${ok ? "true" : "false"},platform:"${platform ?? ""}"}, "*");setTimeout(()=>window.close(),1200)}}catch(e){}</script></body></html>`, { status: ok ? 200 : 400, headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" } });
 }
-}
 function envFor(platform: Platform) {
   if (platform === "youtube") return { clientId: Deno.env.get("GOOGLE_CLIENT_ID") ?? "", clientSecret: Deno.env.get("GOOGLE_CLIENT_SECRET") ?? "" };
   if (platform === "tiktok") return { clientId: Deno.env.get("TIKTOK_CLIENT_KEY") ?? "", clientSecret: Deno.env.get("TIKTOK_CLIENT_SECRET") ?? "" };
@@ -113,8 +112,7 @@ Deno.serve(async (req: Request) => {
       }, { onConflict: "owner_id,platform" });
       if (saveError) throw saveError;
       await admin.from("media_oauth_states").delete().eq("state", state);
-      return html("Votre compte " + platform + " est connecté à NEXORA. Revenez dans l’application pour synchroniser ses contenus.", true);
-      return html("Votre compte " + platform + " est connecté à NEXORA. La synchronisation va démarrer dans l’application.", true, platform);
+      return html("Votre compte " + platform + " est connecté à NEXORA. Revenez dans l’application pour synchroniser ses contenus.", true, platform);
     } catch (error) {
       await admin.from("media_oauth_states").delete().eq("state", state);
       return html(error instanceof Error ? error.message : "Échec de la connexion.", false);
