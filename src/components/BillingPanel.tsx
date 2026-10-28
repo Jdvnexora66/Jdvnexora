@@ -71,10 +71,23 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
     setPlans(current => current.map(item => item.id === plan.id ? { ...item, active: !plan.active } : item));
   }
 
-  function formatPrice(plan: Pick<Plan, 'price_minor'|'currency'|'billing_interval'>) {
+  function formatPrice(plan: Pick<Plan, 'code'|'price_minor'|'currency'|'billing_interval'|'features'>) {
+    if (plan.features?.billing_mode === 'quote') return 'Sur devis';
+    if (plan.features?.billing_mode === 'free') return 'Gratuit';
     const amount = plan.currency === 'XOF' ? plan.price_minor : plan.price_minor / 100;
     const formatted = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: plan.currency, maximumFractionDigits: plan.currency === 'XOF' ? 0 : 2 }).format(amount);
     return formatted + (plan.billing_interval === 'month' ? ' / mois' : plan.billing_interval === 'year' ? ' / an' : ' · paiement unique');
+  }
+
+  function planDetails(plan: Plan) {
+    const quota = plan.features?.monthly_ai_units;
+    const members = plan.features?.included_members;
+    const details: string[] = [];
+    if (typeof quota === 'number' || (typeof quota === 'string' && quota.trim())) details.push(`${quota} unités IA/mois proposées`);
+    if (typeof members === 'number' || (typeof members === 'string' && members.trim())) details.push(`${members} membres inclus`);
+    if (plan.features?.billing_mode === 'quote') details.push('Capacité et accompagnement à définir au contrat');
+    if (plan.features?.discount_months === 2) details.push('2 mois offerts par rapport au paiement mensuel');
+    return details;
   }
 
   const statusLabel: Record<Subscription['status'], string> = { pending: 'En attente', active: 'Actif', trialing: 'Essai en cours', past_due: 'Paiement à régulariser', canceled: 'Résilié', expired: 'Expiré' };
@@ -89,10 +102,10 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
     <div className="billing-plans">
       <h3>Forfaits disponibles</h3>
       {loading ? <p className="empty-state">Chargement des offres…</p> : plans.filter(plan => plan.active || isAdmin).length === 0 ? <p className="empty-state">Aucun forfait n’est encore publié. Un administrateur peut configurer les premières offres.</p> : <div className="project-list">{plans.filter(plan => plan.active || isAdmin).map(plan => <article className="project-item" key={plan.id}>
-        <div className="project-type-icon"><ShieldCheck size={18}/></div><div className="project-info"><h3>{plan.name}</h3><p>{plan.description || 'Forfait JDV NEXORA'}</p><div className="project-meta"><span className="project-type-label">{formatPrice(plan)}</span><span className={plan.active ? 'status-badge status-completed' : 'status-badge status-archived'}>{plan.active ? 'Publié' : 'Masqué'}</span>{plan.trial_days > 0 && <span>{plan.trial_days} jour(s) d’essai</span>}</div><small>{Object.keys(plan.features ?? {}).join(' · ')}</small></div>
+        <div className="project-type-icon"><ShieldCheck size={18}/></div><div className="project-info"><h3>{plan.name}</h3><p>{plan.description || 'Forfait JDV NEXORA'}</p><div className="project-meta"><span className="project-type-label">{formatPrice(plan)}</span><span className={plan.active ? 'status-badge status-completed' : 'status-badge status-archived'}>{plan.active ? 'Publié' : 'Masqué'}</span>{plan.trial_days > 0 && <span>{plan.trial_days} jour(s) d’essai</span>}</div><small>{planDetails(plan).length ? planDetails(plan).join(' · ') : Object.keys(plan.features ?? {}).join(' · ')}</small></div>
         {isAdmin && <button type="button" className="logout-button" onClick={() => void togglePlan(plan)}>{plan.active ? 'Désactiver' : 'Publier'}</button>}
       </article>)}</div>}
-      {!isAdmin && <p className="muted">L’activation et les paiements en ligne seront disponibles après connexion d’un prestataire de paiement.</p>}
+      {!isAdmin && <p className="muted">Les tarifs sont publiés à titre de lancement. Le paiement en ligne et l’activation automatique ne sont pas encore disponibles : aucun abonnement payant ne sera activé sans vérification du paiement côté serveur.</p>}
     </div>
     {isAdmin && <div className="billing-admin">
       <h3><ShieldCheck size={17}/> Administration des forfaits</h3>
