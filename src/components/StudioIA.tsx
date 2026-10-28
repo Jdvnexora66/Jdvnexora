@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 type StoredMessage = Message & { id: string; conversation_id: string; created_at: string };
+type UsageSummary = { quota: number; used: number; remaining: number; plan: string };
 
 export default function StudioIA() {
   const [prompt, setPrompt] = useState('');
@@ -12,6 +13,7 @@ export default function StudioIA() {
   const [userId, setUserId] = useState<string | null>(null);
   const [historyReady, setHistoryReady] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [usage, setUsage] = useState<UsageSummary | null>(null);
   const [error, setError] = useState('');
   const transcriptRef = useRef<HTMLDivElement>(null);
 
@@ -96,6 +98,9 @@ export default function StudioIA() {
         throw new Error(data?.error || 'Le service IA n’a pas renvoyé de réponse.');
       }
       const answer = data.text;
+      if (data.usage && Number.isFinite(data.usage.quota) && Number.isFinite(data.usage.used) && Number.isFinite(data.usage.remaining)) {
+        setUsage({ quota: data.usage.quota, used: data.usage.used, remaining: data.usage.remaining, plan: String(data.usage.plan ?? 'decouverte') });
+      }
       const { error: saveAssistantError } = await supabase.from('studio_ai_messages').insert({
         conversation_id: conversationId, user_id: userId, role: 'assistant', content: answer,
       });
@@ -168,6 +173,7 @@ export default function StudioIA() {
         <button type="button" className="icon-button" onClick={() => void clearConversation()} disabled={busy} aria-label="Effacer la conversation" title="Effacer la conversation"><Trash2 size={16} /></button>
       </div>}
     </div>
+    {usage && <div className="project-meta" role="status" aria-label="Consommation du quota IA" style={{ marginTop: 12 }}><span className="project-type-label">Forfait : {usage.plan}</span><span>{usage.used} / {usage.quota} unités IA utilisées ce mois</span><span>{usage.remaining} restantes</span></div>}
     <div ref={transcriptRef} style={{ display: 'grid', gap: 12, margin: '18px 0', maxHeight: 420, overflowY: 'auto' }} aria-live="polite" aria-busy={busy}>
       {!historyReady && <p className="muted" role="status"><LoaderCircle size={15} className="spin" /> Chargement de votre historique…</p>}
       {historyReady && messages.length === 0 && <p className="empty-state">Décrivez votre idée, demandez un plan de chapitre ou faites améliorer un texte. Vérifiez toujours les informations importantes avant publication.</p>}
