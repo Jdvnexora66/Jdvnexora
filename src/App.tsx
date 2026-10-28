@@ -184,11 +184,9 @@ export default function App() {
     setError('');
     try {
       const schemaProbe = await supabase.from('studio_projects').select('organization_id').limit(1);
+      if (schemaProbe.error && schemaProbe.error.code !== '42703') throw schemaProbe.error;
       const hasTenantColumn = !schemaProbe.error;
       setTenantProjectsEnabled(hasTenantColumn);
-      if (schemaProbe.error && schemaProbe.error.code !== '42703') {
-        setError('Impossible de vérifier la configuration B2B du Studio : ' + schemaProbe.error.message);
-      }
       const projectFields = hasTenantColumn
         ? 'id, owner_id, title, description, project_type, status, created_at, organization_id'
         : 'id, owner_id, title, description, project_type, status, created_at';
