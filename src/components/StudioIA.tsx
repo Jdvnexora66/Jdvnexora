@@ -165,30 +165,90 @@ export default function StudioIA() {
     setPrompt('');
   }
 
-  return <section className="project-panel" id="studio-ia">
-    <div className="section-heading">
-      <div><p className="eyebrow">ASSISTANT DE CRÉATION</p><h2><Sparkles size={21} style={{ verticalAlign: 'middle', marginRight: 8 }} />Studio IA</h2><p className="muted">Préparez, structurez et améliorez vos idées avec l’assistant.</p></div>
-      {messages.length > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <button type="button" className="text-button" onClick={exportConversation} disabled={busy} aria-label="Exporter la conversation en Markdown"><Download size={15} /> Exporter</button>
-        <button type="button" className="icon-button" onClick={() => void clearConversation()} disabled={busy} aria-label="Effacer la conversation" title="Effacer la conversation"><Trash2 size={16} /></button>
-      </div>}
-    </div>
-    {usage && <div className="project-meta" role="status" aria-label="Consommation du quota IA" style={{ marginTop: 12 }}><span className="project-type-label">Forfait : {usage.plan}</span><span>{usage.used} / {usage.quota} unités IA utilisées ce mois</span><span>{usage.remaining} restantes</span></div>}
-    <div ref={transcriptRef} style={{ display: 'grid', gap: 12, margin: '18px 0', maxHeight: 420, overflowY: 'auto' }} aria-live="polite" aria-busy={busy}>
-      {!historyReady && <p className="muted" role="status"><LoaderCircle size={15} className="spin" /> Chargement de votre historique…</p>}
-      {historyReady && messages.length === 0 && <p className="empty-state">Décrivez votre idée, demandez un plan de chapitre ou faites améliorer un texte. Vérifiez toujours les informations importantes avant publication.</p>}
-      {messages.map((item, index) => <article key={index} style={{ padding: 14, borderRadius: 12, background: item.role === 'user' ? 'var(--panel, #f3f6fa)' : 'var(--surface, #fff)', border: '1px solid var(--border, #e4e8ef)' }}><strong>{item.role === 'user' ? 'Vous' : 'Studio IA'}</strong><p style={{ whiteSpace: 'pre-wrap', marginBottom: 0 }}>{item.content}</p></article>)}
-      {busy && <p className="muted" role="status"><LoaderCircle size={15} className="spin" /> L’assistant prépare une réponse…</p>}
-    </div>
-    <form className="project-form" onSubmit={submit}>
-      <label htmlFor="studio-ai-prompt">Votre demande</label>
-      <textarea id="studio-ai-prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={4} maxLength={8000} placeholder="Ex. Propose un plan détaillé pour mon e-book…" required />
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-        <small className="muted">{prompt.length.toLocaleString('fr-FR')} / 8 000 caractères</small>
-        <button className="primary-button" type="submit" disabled={busy || !historyReady || !prompt.trim()}>{busy ? 'Génération…' : 'Envoyer à Studio IA'} <Send size={16} /></button>
+  return <section className="studio-workspace" id="studio-ia" aria-label="Studio IA">
+    <div className="studio-workspace-heading">
+      <div>
+        <p className="eyebrow">ESPACE DE CRÉATION INTELLIGENTE</p>
+        <h2><Sparkles size={23} aria-hidden="true" /> Studio IA</h2>
+        <p className="muted">Passez de l’idée au livrable : rédigez, structurez, analysez et améliorez vos créations.</p>
       </div>
-    </form>
-    {error && <p className="feedback error" role="alert">{error}</p>}
-    <p className="workspace-footnote">L’historique est sauvegardé dans votre espace privé. Ne saisissez pas de mots de passe, de données sensibles ou de secrets dans vos demandes.</p>
+      <div className="studio-heading-actions">
+        {messages.length > 0 && <button type="button" className="studio-quiet-button" onClick={exportConversation} disabled={busy}><Download size={15} /> Exporter</button>}
+        {messages.length > 0 && <button type="button" className="studio-quiet-button" onClick={() => void clearConversation()} disabled={busy}><Trash2 size={15} /> Nouvelle conversation</button>}
+      </div>
+    </div>
+
+    <div className="studio-feature-banner">
+      <div className="studio-feature-orb"><Sparkles size={28} /></div>
+      <div className="studio-feature-copy">
+        <span className="studio-feature-label">VOTRE COPILOTE CRÉATIF</span>
+        <h3>Qu’allez-vous créer aujourd’hui ?</h3>
+        <p>Expliquez votre objectif. Studio IA vous aide à organiser les étapes et à transformer votre idée en résultat exploitable.</p>
+      </div>
+      <div className="studio-feature-status"><span className="studio-status-dot" /> Espace privé</div>
+    </div>
+
+    <div className="studio-workspace-grid">
+      <div className="studio-chat-column">
+        <section className="studio-chat-card" aria-label="Conversation avec Studio IA">
+          <div className="studio-chat-topbar">
+            <div className="studio-assistant-avatar"><Sparkles size={18} /></div>
+            <div><strong>Assistant NEXORA</strong><small>Création · Analyse · Organisation</small></div>
+            <span className="studio-online-label"><span className="studio-status-dot" /> Prêt à vous aider</span>
+          </div>
+          <div ref={transcriptRef} className="studio-transcript" aria-live="polite" aria-busy={busy}>
+            {!historyReady && <p className="studio-system-message" role="status"><LoaderCircle size={15} className="spin" /> Chargement de votre historique…</p>}
+            {historyReady && messages.length === 0 && <div className="studio-empty-conversation">
+              <div className="studio-empty-icon"><Sparkles size={25} /></div>
+              <h3>Votre prochaine idée commence ici</h3>
+              <p>Choisissez un point de départ ou écrivez directement votre demande ci-dessous.</p>
+              <div className="studio-prompt-suggestions">
+                <button type="button" onClick={() => setPrompt('Aide-moi à structurer un e-book avec un sommaire détaillé, des chapitres et des exercices.')}> <span>✦</span><b>Créer un e-book</b><small>Plan, chapitres et exercices</small></button>
+                <button type="button" onClick={() => setPrompt('Transforme mon idée en plan de projet SaaS avec fonctionnalités, étapes, risques et critères de réussite.')}> <span>⌘</span><b>Concevoir un projet SaaS</b><small>Fonctionnalités et feuille de route</small></button>
+                <button type="button" onClick={() => setPrompt('Analyse ce projet, identifie ses points faibles et propose un plan d’amélioration priorisé.')}> <span>↗</span><b>Analyser une idée</b><small>Diagnostic et actions prioritaires</small></button>
+                <button type="button" onClick={() => setPrompt('Améliore le texte que je vais te fournir en conservant le sens, avec un style clair et professionnel.')}> <span>✎</span><b>Améliorer un contenu</b><small>Clarté et qualité éditoriale</small></button>
+              </div>
+            </div>}
+            {messages.map((item, index) => <article key={index} className={item.role === 'user' ? 'studio-message studio-message-user' : 'studio-message studio-message-assistant'}>
+              <div className="studio-message-avatar">{item.role === 'user' ? 'Vous' : <Sparkles size={15} />}</div>
+              <div className="studio-message-body"><strong>{item.role === 'user' ? 'Votre demande' : 'Studio IA'}</strong><p>{item.content}</p></div>
+            </article>)}
+            {busy && <p className="studio-system-message" role="status"><LoaderCircle size={15} className="spin" /> Studio IA prépare votre réponse…</p>}
+          </div>
+          <form className="studio-composer" onSubmit={submit}>
+            <label htmlFor="studio-ai-prompt">Décrivez ce que vous souhaitez accomplir</label>
+            <textarea id="studio-ai-prompt" value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={4} maxLength={8000} placeholder="Ex. Aide-moi à construire une feuille de route claire pour mon projet…" required />
+            <div className="studio-composer-footer">
+              <small>{prompt.length.toLocaleString('fr-FR')} / 8 000 caractères · Ne partagez aucun mot de passe ni secret.</small>
+              <button className="primary-button studio-send-button" type="submit" disabled={busy || !historyReady || !prompt.trim()}>{busy ? <><LoaderCircle size={16} className="spin" /> Génération…</> : <><Send size={16} /> Envoyer</>}</button>
+            </div>
+          </form>
+          {error && <p className="feedback error studio-error" role="alert">{error}</p>}
+        </section>
+        <p className="studio-privacy-note"><span>✓</span> Votre historique est conservé dans votre espace privé. Vérifiez les informations importantes avant de les publier.</p>
+      </div>
+
+      <aside className="studio-context-column" aria-label="Outils et utilisation">
+        <section className="studio-context-card">
+          <div className="studio-context-heading"><span className="studio-context-icon"><Sparkles size={16} /></span><div><h3>Capacités du Studio</h3><p>Vos outils de création</p></div></div>
+          <div className="studio-capability"><span className="studio-capability-symbol">Aa</span><div><b>Rédaction & édition</b><small>Plans, contenus, synthèses</small></div></div>
+          <div className="studio-capability"><span className="studio-capability-symbol">⌘</span><div><b>Projets numériques</b><small>Spécifications et étapes</small></div></div>
+          <div className="studio-capability"><span className="studio-capability-symbol">↗</span><div><b>Analyse & stratégie</b><small>Diagnostic et priorités</small></div></div>
+          <div className="studio-capability"><span className="studio-capability-symbol">文</span><div><b>Amélioration de texte</b><small>Reformulation et traduction sur demande</small></div></div>
+        </section>
+        <section className="studio-context-card studio-usage-card">
+          <div className="studio-context-heading"><span className="studio-context-icon"><Download size={16} /></span><div><h3>Votre consommation</h3><p>Quota mensuel du Studio IA</p></div></div>
+          {usage ? <>
+            <div className="studio-usage-plan"><span>Forfait actuel</span><strong>{usage.plan}</strong></div>
+            <div className="studio-usage-numbers"><strong>{usage.remaining}</strong><span>unités restantes sur {usage.quota}</span></div>
+            <div className="studio-usage-track" role="progressbar" aria-label="Consommation du quota mensuel" aria-valuemin={0} aria-valuemax={usage.quota || 1} aria-valuenow={Math.min(usage.used, usage.quota)}><span style={{width: (usage.quota > 0 ? Math.min(100, usage.used / usage.quota * 100) : 0) + '%'}} /></div>
+            <small>{usage.used} unités utilisées ce mois-ci</small>
+          </> : <div className="studio-usage-placeholder"><strong>Suivi du quota</strong><p>Le résumé de consommation apparaîtra après votre première réponse IA.</p></div>}
+        </section>
+        <section className="studio-context-card studio-safety-card">
+          <div className="studio-safety-mark">✓</div><div><h3>Vous gardez le contrôle</h3><p>L’IA propose. Vous relisez, corrigez et décidez quoi conserver ou publier.</p></div>
+        </section>
+      </aside>
+    </div>
   </section>;
 }
