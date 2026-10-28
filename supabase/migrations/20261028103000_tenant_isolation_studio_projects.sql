@@ -224,7 +224,6 @@ on public.studio_assets for update to authenticated
 using (private.can_edit_studio_project(project_id, (select auth.uid())) or private.is_admin())
 with check (
   private.can_edit_studio_project(project_id, (select auth.uid()))
-  and owner_id = (select auth.uid())
   or private.is_admin()
 );
 
