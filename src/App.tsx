@@ -709,61 +709,11 @@ export default function App() {
 
   
 
-          {activeSection === 'dashboard' && <div className="dashboard-stats" aria-label="Résumé de vos projets" aria-busy={loadingProjects}>
-            <article className="stat-card"><span className="stat-icon"><FolderKanban size={18} /></span><div><p>Total des projets</p><strong>{loadingProjects ? '…' : projects.length}</strong><small>Tous vos espaces</small></div></article>
-            <article className="stat-card"><span className="stat-icon"><Clock3 size={18} /></span><div><p>En cours</p><strong>{loadingProjects ? '…' : projects.filter((project) => project.status === 'in_progress').length}</strong><small>À faire avancer</small></div></article>
-            <article className="stat-card"><span className="stat-icon"><ShieldCheck size={18} /></span><div><p>Terminés</p><strong>{loadingProjects ? '…' : projects.filter((project) => project.status === 'completed').length}</strong><small>Projets finalisés</small></div></article>
-            <article className="stat-card"><span className="stat-icon"><Sparkles size={18} /></span><div><p>Brouillons</p><strong>{loadingProjects ? '…' : projects.filter((project) => project.status === 'draft').length}</strong><small>Idées à développer</small></div></article>
-          </div>}
+
 
           {!activeProject && activeSection === 'organizations' && <OrganizationPanel userId={session.user.id} activeOrganizationId={activeOrganizationId} onActiveOrganizationChange={setActiveOrganizationId} />}
 
-          {!activeProject && activeSection === 'dashboard' && <section className="pipeline-section" aria-labelledby="pipeline-title">
-            <div className="pipeline-heading">
-              <div><p className="eyebrow">FLUX DE PRODUCTION</p><h2 id="pipeline-title">Pipeline des projets</h2><p className="muted">Visualisez l’avancement de vos créations et ouvrez un projet en un clic.</p></div>
-              <span className="pipeline-total">{projects.length} projet{projects.length > 1 ? 's' : ''}</span>
-            </div>
-            <div className="pipeline-board" aria-busy={loadingProjects}>
-              {([
-                { key: 'draft', title: 'À cadrer', note: 'Idées et brouillons' },
-                { key: 'in_progress', title: 'En production', note: 'Travail en cours' },
-                { key: 'completed', title: 'Finalisés', note: 'Prêts à livrer' },
-                { key: 'archived', title: 'Archives', note: 'Mis de côté' },
-              ] as const).map((lane) => {
-                const laneProjects = projects.filter((project) => project.status === lane.key);
-                return <section className={'pipeline-lane pipeline-lane-' + lane.key} key={lane.key} aria-label={lane.title}>
-                  <div className="pipeline-lane-heading"><div><h3>{lane.title}</h3><p>{lane.note}</p></div><span>{laneProjects.length}</span></div>
-                  <div className="pipeline-lane-cards">
-                    {laneProjects.length === 0 ? <p className="pipeline-empty">{loadingProjects ? 'Chargement…' : 'Aucun projet ici'}</p> : laneProjects.map((project) => <button type="button" className="pipeline-card" key={project.id} onClick={() => void openProject(project)} disabled={busy}>
-                      <span className="pipeline-card-type">{projectLabel[project.project_type] || project.project_type}</span>
-                      <strong>{project.title}</strong>
-                      <span className="pipeline-card-description">{project.description || 'Ajoutez une description pour clarifier la prochaine étape.'}</span>
-                      <span className="pipeline-card-footer"><span>{new Date(project.created_at).toLocaleDateString('fr-FR')}</span><span>Ouvrir <ArrowRight size={13} /></span></span>
-                    </button>)}
-                  </div>
-                </section>;
-              })}
-            </div>
-          </section>}
 
-          {!activeProject && activeSection === 'dashboard' && <section className="project-panel recent-activity-panel" aria-labelledby="recent-activity-title" aria-busy={loadingProjects}>
-            <div className="section-heading">
-              <div><p className="eyebrow">VUE D’ENSEMBLE</p><h2 id="recent-activity-title">Activité récente</h2><p className="muted">Retrouvez rapidement les derniers projets enregistrés dans votre espace.</p></div>
-              <button className="icon-button" type="button" onClick={() => void loadProjects()} disabled={loadingProjects} aria-label="Actualiser l’activité récente"><RefreshCw size={16} /></button>
-            </div>
-            {loadingProjects ? <p className="empty-state" role="status">Synchronisation des projets depuis Supabase…</p> : projects.length === 0 ? (
-              <div className="empty-state"><div className="empty-icon"><FolderKanban size={24} /></div><h3>Votre espace est prêt</h3><p>Votre activité apparaîtra ici dès que vous aurez créé un premier projet.</p><button type="button" className="primary-button" onClick={() => document.getElementById('create-project')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>Créer mon premier projet <ArrowRight size={16} /></button></div>
-            ) : (
-              <div className="project-list">
-                {projects.slice(0, 4).map((project) => <article className="project-item" key={project.id}>
-                  <div className="project-type-icon"><FolderKanban size={19} /></div>
-                  <div className="project-info"><h3>{project.title}</h3><p>{project.description || 'Aucune description renseignée'}</p><div className="project-meta"><span className="project-type-label">{projectLabel[project.project_type] || project.project_type}</span><span className={`status-badge status-${project.status}`}><Clock3 size={12} /> {statusLabel[project.status] || project.status}</span></div></div>
-                  <span className="muted">{new Date(project.created_at).toLocaleDateString('fr-FR')}</span>
-                  <button className="open-project-button" type="button" onClick={() => void openProject(project)} disabled={busy}>Ouvrir <ArrowRight size={14} /></button>
-                </article>)}
-              </div>
-            )}
-          </section>}
 
           {!activeProject && activeSection === 'studio' && <StudioIA />}
           {!activeProject && activeSection === 'academy' && <Academy userId={session.user.id} />}
@@ -785,15 +735,7 @@ export default function App() {
 
           {!activeProject && activeSection === 'design' && profile?.role === 'admin' && <VisualDesignStudio userId={session.user.id} role={profile.role} />}
 
-          {!activeProject && activeSection === 'dashboard' && <section className="quick-access" aria-label="Accès rapides">
-            <div className="quick-access-heading"><div><p className="eyebrow">CENTRE DE COMMANDE</p><h2>Accès rapides</h2><p className="muted">Reprenez votre travail ou démarrez une nouvelle création.</p></div></div>
-            <div className="quick-access-grid">
-              <button type="button" className="quick-access-card" onClick={() => document.getElementById('create-project')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}><span className="quick-access-icon"><Plus size={20} /></span><span><strong>Nouveau projet</strong><small>Créer un e-book, une formation ou un document</small></span><ArrowRight size={16} /></button>
-              <button type="button" className="quick-access-card" onClick={() => document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}><span className="quick-access-icon"><FolderKanban size={20} /></span><span><strong>Bibliothèque de projets</strong><small>Retrouver et organiser vos créations</small></span><ArrowRight size={16} /></button>
-              <button type="button" className="quick-access-card" onClick={() => { setSearchQuery(''); setStatusFilter('in_progress'); document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><span className="quick-access-icon"><Clock3 size={20} /></span><span><strong>Reprendre un projet</strong><small>Afficher les projets en cours</small></span><ArrowRight size={16} /></button>
-              <button type="button" className="quick-access-card" onClick={() => void loadProjects()}><span className="quick-access-icon"><RefreshCw size={20} /></span><span><strong>Synchroniser</strong><small>Recharger les données depuis Supabase</small></span><ArrowRight size={16} /></button>
-            </div>
-          </section>}
+
 
           {activeProject ? (
             activeProject.owner_id !== session.user.id ? (
