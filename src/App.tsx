@@ -628,7 +628,7 @@ export default function App() {
           </nav>
           <div className="workspace-main" data-active-section={activeSection}>
 
-          {!activeProject && <ReferenceDashboard
+          {!activeProject && activeSection === 'dashboard' && <ReferenceDashboard
             displayName={profileName || (session.user.email ?? '').split('@')[0] || 'Créateur'}
             projects={projects}
             projectCount={projects.length}
@@ -644,7 +644,7 @@ export default function App() {
             onOpenResources={() => navigateWorkspace('resources')}
           />}
 
-          <section className="project-panel profile-panel" aria-labelledby="profile-title" aria-busy={loadingProfile || savingProfile}>
+          {!activeProject && activeSection === 'profile' && <section className="project-panel profile-panel" aria-labelledby="profile-title" aria-busy={loadingProfile || savingProfile}>
             <div className="section-heading">
               <div><p className="eyebrow">VOTRE COMPTE</p><h2 id="profile-title"><UserRound size={20} /> Profil et préférences</h2><p className="muted">Personnalisez les informations affichées dans votre espace de travail.</p></div>
               <button className="icon-button" type="button" onClick={() => void loadProfile()} disabled={loadingProfile || savingProfile} aria-label="Actualiser le profil"><RefreshCw size={16} /></button>
@@ -660,20 +660,20 @@ export default function App() {
               <select id="profile-timezone" value={profileTimezone} onChange={(event) => setProfileTimezone(event.target.value)}><option value="Africa/Porto-Novo">Bénin — Porto-Novo / Cotonou (UTC+1)</option><option value="Africa/Lagos">Nigeria — Lagos (UTC+1)</option><option value="UTC">UTC</option><option value="Europe/Paris">France — Paris</option><option value="America/New_York">États-Unis — New York</option></select>
               <div className="profile-footer"><p className="muted">Rôle du compte : <strong>{profile?.role ?? 'Utilisateur'}</strong>. Le rôle est en lecture seule ici.</p><button className="primary-button" type="submit" disabled={savingProfile || loadingProfile}>{savingProfile ? 'Enregistrement…' : 'Enregistrer le profil'} <Save size={16} /></button></div>
             </form>
-          </section>
+          </section>}
 
   
 
-          <div className="dashboard-stats" aria-label="Résumé de vos projets" aria-busy={loadingProjects}>
+          {activeSection === 'dashboard' && <div className="dashboard-stats" aria-label="Résumé de vos projets" aria-busy={loadingProjects}>
             <article className="stat-card"><span className="stat-icon"><FolderKanban size={18} /></span><div><p>Total des projets</p><strong>{loadingProjects ? '…' : projects.length}</strong><small>Tous vos espaces</small></div></article>
             <article className="stat-card"><span className="stat-icon"><Clock3 size={18} /></span><div><p>En cours</p><strong>{loadingProjects ? '…' : projects.filter((project) => project.status === 'in_progress').length}</strong><small>À faire avancer</small></div></article>
             <article className="stat-card"><span className="stat-icon"><ShieldCheck size={18} /></span><div><p>Terminés</p><strong>{loadingProjects ? '…' : projects.filter((project) => project.status === 'completed').length}</strong><small>Projets finalisés</small></div></article>
             <article className="stat-card"><span className="stat-icon"><Sparkles size={18} /></span><div><p>Brouillons</p><strong>{loadingProjects ? '…' : projects.filter((project) => project.status === 'draft').length}</strong><small>Idées à développer</small></div></article>
-          </div>
+          </div>}
 
-          {!activeProject && <OrganizationPanel userId={session.user.id} />}
+          {!activeProject && activeSection === 'organizations' && <OrganizationPanel userId={session.user.id} />}
 
-          {!activeProject && <section className="pipeline-section" aria-labelledby="pipeline-title">
+          {!activeProject && activeSection === 'dashboard' && <section className="pipeline-section" aria-labelledby="pipeline-title">
             <div className="pipeline-heading">
               <div><p className="eyebrow">FLUX DE PRODUCTION</p><h2 id="pipeline-title">Pipeline des projets</h2><p className="muted">Visualisez l’avancement de vos créations et ouvrez un projet en un clic.</p></div>
               <span className="pipeline-total">{projects.length} projet{projects.length > 1 ? 's' : ''}</span>
@@ -701,7 +701,7 @@ export default function App() {
             </div>
           </section>}
 
-          {!activeProject && <section className="project-panel recent-activity-panel" aria-labelledby="recent-activity-title" aria-busy={loadingProjects}>
+          {!activeProject && activeSection === 'dashboard' && <section className="project-panel recent-activity-panel" aria-labelledby="recent-activity-title" aria-busy={loadingProjects}>
             <div className="section-heading">
               <div><p className="eyebrow">VUE D’ENSEMBLE</p><h2 id="recent-activity-title">Activité récente</h2><p className="muted">Retrouvez rapidement les derniers projets enregistrés dans votre espace.</p></div>
               <button className="icon-button" type="button" onClick={() => void loadProjects()} disabled={loadingProjects} aria-label="Actualiser l’activité récente"><RefreshCw size={16} /></button>
@@ -720,27 +720,27 @@ export default function App() {
             )}
           </section>}
 
-          {!activeProject && <StudioIA />}
-          {!activeProject && <Academy userId={session.user.id} />}
-          {!activeProject && <ResourceLibrary userId={session.user.id} />}
-          {!activeProject && <Discover userId={session.user.id} />}
-          {!activeProject && <MediaLibrary userId={session.user.id} />}
+          {!activeProject && activeSection === 'studio' && <StudioIA />}
+          {!activeProject && activeSection === 'academy' && <Academy userId={session.user.id} />}
+          {!activeProject && activeSection === 'resources' && <ResourceLibrary userId={session.user.id} />}
+          {!activeProject && activeSection === 'discover' && <Discover userId={session.user.id} />}
+          {!activeProject && activeSection === 'media' && <MediaLibrary userId={session.user.id} />}
 
-          {!activeProject && <Timeline />}
+          {!activeProject && activeSection === 'timeline' && <Timeline />}
 
-          {!activeProject && <Insights />}
+          {!activeProject && activeSection === 'insights' && <Insights />}
 
-          {!activeProject && <LearningLibrary userId={session.user.id} />}
+          {!activeProject && activeSection === 'library' && <LearningLibrary userId={session.user.id} />}
 
-          {!activeProject && <Roadmap userId={session.user.id} />}
+          {!activeProject && activeSection === 'roadmap' && <Roadmap userId={session.user.id} />}
 
-          {!activeProject && <BillingPanel userId={session.user.id} role={profile?.role ?? 'user'} />}
+          {!activeProject && activeSection === 'billing' && <BillingPanel userId={session.user.id} role={profile?.role ?? 'user'} />}
 
-          {!activeProject && <AdminPanel userId={session.user.id} role={profile?.role ?? 'user'} />}
+          {!activeProject && activeSection === 'administration' && <AdminPanel userId={session.user.id} role={profile?.role ?? 'user'} />}
 
-          {!activeProject && profile?.role === 'admin' && <VisualDesignStudio userId={session.user.id} role={profile.role} />}
+          {!activeProject && activeSection === 'design' && profile?.role === 'admin' && <VisualDesignStudio userId={session.user.id} role={profile.role} />}
 
-          {!activeProject && <section className="quick-access" aria-label="Accès rapides">
+          {!activeProject && activeSection === 'dashboard' && <section className="quick-access" aria-label="Accès rapides">
             <div className="quick-access-heading"><div><p className="eyebrow">CENTRE DE COMMANDE</p><h2>Accès rapides</h2><p className="muted">Reprenez votre travail ou démarrez une nouvelle création.</p></div></div>
             <div className="quick-access-grid">
               <button type="button" className="quick-access-card" onClick={() => document.getElementById('create-project')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}><span className="quick-access-icon"><Plus size={20} /></span><span><strong>Nouveau projet</strong><small>Créer un e-book, une formation ou un document</small></span><ArrowRight size={16} /></button>
@@ -763,7 +763,7 @@ export default function App() {
             </section>
             <CollaborationPanel projectId={activeProject.id} ownerId={activeProject.owner_id} userId={session.user.id} />
             </>
-          ) : <>
+          ) : activeSection === 'projects' ? <>
           <div className="project-layout">
             <section className="project-panel">
               <div className="section-heading">
@@ -813,7 +813,7 @@ export default function App() {
                 <button className="primary-button" type="submit" disabled={busy || !title.trim()}>{busy ? 'Enregistrement…' : 'Créer le projet'} <Plus size={17} /></button>
               </form>
             </section>
-          </div></>}
+          </div></> : null}
           {error && <p className="feedback error" role="alert">{error}</p>}
           {message && <p className="feedback success" role="status">{message}</p>}
           <p className="workspace-footnote">Studio IA est disponible pour les demandes authentifiées. Les réponses nécessitent la configuration du fournisseur côté serveur.</p>
