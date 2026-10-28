@@ -9,7 +9,13 @@ const themes: Record<string,{background:string;surface:string;text:string}> = {
   'nexora-light': {background:'#f2f5fb',surface:'#ffffff',text:'#172039'},
   ocean: {background:'#071b2b',surface:'#103449',text:'#ecfeff'},
 };
-function isAllowedVideoUrl(value: string): boolean {\n  try {\n    const url = new URL(value);\n    return url.protocol === 'https:' && (((url.hostname === 'youtube-nocookie.com' || url.hostname === 'www.youtube-nocookie.com') && url.pathname.startsWith('/embed/')) || (url.hostname === 'player.vimeo.com' && url.pathname.startsWith('/video/')));\n  } catch { return false; }\n}\nfunction validate(value: unknown): Config | null {
+function isAllowedVideoUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && (((url.hostname === 'youtube-nocookie.com' || url.hostname === 'www.youtube-nocookie.com') && url.pathname.startsWith('/embed/')) || (url.hostname === 'player.vimeo.com' && url.pathname.startsWith('/video/')));
+  } catch { return false; }
+}
+function validate(value: unknown): Config | null {
   if (!value || typeof value !== 'object') return null;
   const config = value as Partial<Config>;
   if (config.schemaVersion !== 1 || !Array.isArray(config.components) || config.components.length > 80) return null;
