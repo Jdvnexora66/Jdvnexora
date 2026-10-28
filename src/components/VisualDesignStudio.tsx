@@ -40,6 +40,15 @@ const themes: Record<StudioConfig['theme'], { background: string; surface: strin
   'nexora-light': { background: '#f2f5fb', surface: '#ffffff', accent: '#4f5ed7', text: '#172039' },
   ocean: { background: '#071b2b', surface: '#103449', accent: '#48d7c0', text: '#ecfeff' },
 };
+function isAllowedImageUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && Boolean(url.hostname) && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
 function isAllowedVideoUrl(value: string): boolean {
   try {
     const url = new URL(value);
