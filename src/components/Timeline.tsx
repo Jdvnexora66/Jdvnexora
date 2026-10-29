@@ -18,15 +18,21 @@ export default function Timeline() {
   const load = useCallback(async () => {
     if (!supabase) { setLoading(false); setError('Supabase n’est pas configuré.'); return; }
     setLoading(true); setError('');
-    const { data, error: queryError } = await supabase.from('timeline_events')
-      .select('id,event_date,title,description,category,confidence,entrepreneur_id,entrepreneur:entrepreneurs!inner(name,slug,visibility),source:content_sources(title,source_url,publisher)')
-      .order('event_date', { ascending: false, nullsFirst: false }).limit(150);
-    if (queryError) setError(queryError.message.includes('timeline_events') ? 'La chronologie sera disponible après application de la migration Supabase.' : queryError.message);
-    else {
+    try {
+      const { data, error: queryError } = await supabase.from('timeline_events')
+        .select('id,event_date,title,description,category,confidence,entrepreneur_id,entrepreneur:entrepreneurs!inner(name,slug,visibility),source:content_sources(title,source_url,publisher)')
+        .order('event_date', { ascending: false, nullsFirst: false }).limit(150);
+      if (queryError) {
+        setError(queryError.message.includes('timeline_events') ? 'La chronologie sera disponible après application de la migration Supabase.' : 'Impossible de charger la chronologie. Réessayez.');
+        return;
+      }
       const rows = (data ?? []) as unknown as (EventRow & { entrepreneur: EventRow['entrepreneur'] & { visibility?: string } })[];
       setEvents(rows.filter(row => row.entrepreneur?.visibility === 'public'));
+    } catch {
+      setError('Erreur réseau pendant le chargement de la chronologie. Vérifiez la connexion puis réessayez.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => { void load(); }, [load]);
