@@ -45,7 +45,6 @@ export default function Timeline() {
     <div className="section-heading"><div><p className="eyebrow">TIMELINE · PARCOURS DOCUMENTÉS</p><h2><CalendarDays size={21}/> Chronologie</h2><p className="muted">Les étapes clés des parcours entrepreneuriaux, avec leur niveau de documentation.</p></div><button className="icon-button" type="button" onClick={() => void load()} disabled={loading} aria-label="Actualiser la chronologie"><RefreshCw size={16}/></button></div>
     <ModuleDataOverview sources={["timeline_events"]} metrics={[{ label: "Événements chargés", value: events.length }, { label: "Résultats visibles", value: filtered.length }, { label: "Recherche", value: search.trim() ? "Active" : "Toutes les dates" }]} loading={loading} error={Boolean(error)} />
 
-    <ModuleDataOverview sources={["timeline_events"]} metrics={[{ label: "Événements chargés", value: events.length }, { label: "Résultats visibles", value: filtered.length }, { label: "Recherche", value: search.trim() ? "Active" : "Toutes les dates" }]} loading={loading} error={Boolean(error)} />
 
     <input className="timeline-search" aria-label="Rechercher dans la chronologie" value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un événement ou un entrepreneur…"/>
     {error && <p className="feedback error" role="alert">{error}</p>}
