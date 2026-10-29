@@ -3022,3 +3022,48 @@ button.logout-button) {
   .mobile-bottom-nav button { font-size: .61rem; }
   .workspace-main .dashboard-stats { grid-template-columns: minmax(0,1fr) !important; }
 }
+
+
+/* MOBILE-FIRST FINISH — override final pour les écrans étroits (320–760 px).
+   Conserve les fonctionnalités et réorganise la hiérarchie pour le tactile. */
+@media (max-width: 760px) {
+  html, body, #root { width: 100%; max-width: 100%; }
+  body { overflow-x: hidden; }
+  .page-shell, .page-shell.brand-theme { padding-left: 12px; padding-right: 12px; }
+  .page-shell.brand-theme .workspace-heading { display: flex; flex-direction: row; align-items: flex-start; }
+  .page-shell.brand-theme .workspace-heading > div:first-child { min-width: 0; flex: 1 1 auto; }
+  .page-shell.brand-theme .workspace-heading h1 { font-size: clamp(1.45rem, 6.5vw, 2rem); line-height: 1.18; }
+  .page-shell.brand-theme .workspace-main { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+  .page-shell.brand-theme .workspace-main > * { width: 100%; max-width: 100%; min-width: 0; }
+  .page-shell.brand-theme .workspace-main :is(.project-panel,.studio-panel,.billing-panel,.admin-panel,.organization-panel,.quick-access,.pipeline-section,.media-library,.discover-panel,.timeline-panel,.insights-panel,.roadmap-panel,.academy-panel,.resource-library,.learning-library,.collaboration-panel,.visual-design-studio,.reference-dashboard) { padding: 14px; border-radius: 15px; }
+  .page-shell.brand-theme .workspace-main :is(.section-heading,.pipeline-heading,.quick-access-heading,.module-heading,.page-heading,.panel-heading,.editor-heading) { display: flex; flex-direction: column; align-items: stretch; gap: 9px; }
+  .page-shell.brand-theme .workspace-main :is(.section-heading,.pipeline-heading,.quick-access-heading,.module-heading,.page-heading,.panel-heading) > :is(div,section) { width: 100%; max-width: 100%; }
+  .page-shell.brand-theme .workspace-main :is(.section-heading h1,.section-heading h2,.section-heading h3,.pipeline-heading h2,.quick-access-heading h2,.module-heading h1,.module-heading h2,.page-heading h1,.page-heading h2,.panel-heading h1,.panel-heading h2) { font-size: clamp(1.12rem, 5.3vw, 1.42rem); line-height: 1.28; }
+  .page-shell.brand-theme .workspace-main :is(.studio-grid,.academy-grid,.resource-grid,.discover-grid,.roadmap-grid,.billing-grid,.admin-grid,.visual-grid,.organization-grid,.quick-access-grid,.pipeline-board,.discover-layout,.billing-checkout-layout,.editor-layout,.project-filters) { grid-template-columns: minmax(0,1fr) !important; }
+  .page-shell.brand-theme .workspace-main .dashboard-stats { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+  .page-shell.brand-theme .workspace-main .insights-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+  .page-shell.brand-theme .workspace-main .media-grid { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+  .page-shell.brand-theme .workspace-main :is(.stat-card,.studio-card,.academy-card,.resource-card,.media-card,.media-provider-card,.discover-card,.insight-item,.timeline-event-card,.roadmap-task,.organization-card,.billing-card,.admin-card,.visual-card,.learning-card,.project-item) { min-width: 0; max-width: 100%; padding: 12px; }
+  .page-shell.brand-theme .workspace-main .project-item { grid-template-columns: 32px minmax(0,1fr) auto; align-items: start; gap: 8px; }
+  .page-shell.brand-theme .workspace-main .project-info { min-width: 0; }
+  .page-shell.brand-theme .workspace-main :is(button,.primary-button,.secondary-button,.open-project-button,.billing-select-button,.billing-pay-button) { min-height: 44px; white-space: normal; line-height: 1.35; overflow-wrap: anywhere; }
+  .page-shell.brand-theme .workspace-main :is(.button-row,.action-row,.form-actions,.editor-actions,.editor-button-group,.toolbar,.filter-row) { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+  .page-shell.brand-theme .workspace-main :is(.button-row,.action-row,.form-actions) > button { flex: 1 1 100%; }
+  .page-shell.brand-theme .workspace-main :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,textarea) { width: 100%; max-width: 100%; min-width: 0; font-size: 16px; }
+  .page-shell.brand-theme .workspace-main table { min-width: 560px; }
+  .page-shell.brand-theme .workspace-main :is(.table-wrapper,.table-container,.table-scroll,.data-table-wrapper,[role=region][aria-label*=table i]) { width: 100%; max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch; }
+  .page-shell.brand-theme .workspace-main :is(pre,code) { max-width: 100%; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .page-shell.brand-theme .workspace-main :is(img,video,iframe) { max-width: 100%; }
+  .page-shell.brand-theme .workspace-main :is(.visual-design-studio,.editor-panel,.chapter-editor,.design-preview,.preview-frame,.studio-preview) { min-width: 0; max-width: 100%; }
+  .mobile-bottom-nav { padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+  .mobile-bottom-nav button { min-height: 50px; }
+}
+@media (max-width: 420px) {
+  .page-shell, .page-shell.brand-theme { padding-left: 9px; padding-right: 9px; }
+  .page-shell.brand-theme .workspace-main :is(.project-panel,.studio-panel,.billing-panel,.admin-panel,.organization-panel,.quick-access,.pipeline-section,.media-library,.discover-panel,.timeline-panel,.insights-panel,.roadmap-panel,.academy-panel,.resource-library,.learning-library,.collaboration-panel,.visual-design-studio,.reference-dashboard) { padding: 11px; }
+  .page-shell.brand-theme .workspace-main .dashboard-stats,
+  .page-shell.brand-theme .workspace-main .insights-grid,
+  .page-shell.brand-theme .workspace-main .media-grid { grid-template-columns: minmax(0,1fr) !important; }
+  .mobile-bottom-nav button { font-size: .6rem; }
+  .mobile-bottom-nav button svg { width: 18px; height: 18px; }
+}
