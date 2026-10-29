@@ -168,7 +168,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .media-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
 .media-card img, .media-thumbnail { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; background: #10192b; }
 .media-provider-card { display: flex; align-items: center; gap: 12px; }
-.media-provider-card > div { min-width: 0; flex: 1; }
+.media-provider-card > div { min-width: 0; flex: 0 0 auto; }
 .discover-layout { display: grid; grid-template-columns: minmax(0,1fr) minmax(260px,.7fr); gap: 16px; }
 .discover-basket { display: grid; align-content: start; gap: 12px; }
 .insights-grid { grid-template-columns: repeat(4,minmax(0,1fr)); }
