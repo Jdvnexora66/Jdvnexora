@@ -26,15 +26,20 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
   const load = useCallback(async () => {
     if (!supabase) { setError('Supabase n’est pas configuré.'); setLoading(false); return; }
     setLoading(true); setError('');
-    const [planResult, subscriptionResult] = await Promise.all([
-      supabase.from('plans').select('id,code,name,description,active,features,price_minor,currency,billing_interval,trial_days,created_at').order('created_at', { ascending: false }),
-      supabase.from('subscriptions').select('id,status,starts_at,ends_at,provider,plan:plans(name,code,price_minor,currency,billing_interval)').eq('user_id', userId).order('created_at', { ascending: false }).limit(1),
-    ]);
-    if (planResult.error) setError('Chargement des forfaits impossible : ' + planResult.error.message);
-    else setPlans((planResult.data ?? []) as Plan[]);
-    if (subscriptionResult.error) setError('Chargement de votre abonnement impossible : ' + subscriptionResult.error.message);
-    else setSubscription(((subscriptionResult.data ?? [])[0] ?? null) as unknown as Subscription | null);
-    setLoading(false);
+    try {
+      const [planResult, subscriptionResult] = await Promise.all([
+        supabase.from('plans').select('id,code,name,description,active,features,price_minor,currency,billing_interval,trial_days,created_at').order('created_at', { ascending: false }),
+        supabase.from('subscriptions').select('id,status,starts_at,ends_at,provider,plan:plans(name,code,price_minor,currency,billing_interval)').eq('user_id', userId).order('created_at', { ascending: false }).limit(1),
+      ]);
+      if (planResult.error) setError('Chargement des forfaits impossible : ' + planResult.error.message);
+      else setPlans((planResult.data ?? []) as Plan[]);
+      if (subscriptionResult.error) setError('Chargement de votre abonnement impossible : ' + subscriptionResult.error.message);
+      else setSubscription(((subscriptionResult.data ?? [])[0] ?? null) as unknown as Subscription | null);
+    } catch {
+      setError('Erreur réseau pendant le chargement de la facturation. Vérifiez la connexion puis réessayez.');
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
 
   useEffect(() => { void load(); }, [load]);
