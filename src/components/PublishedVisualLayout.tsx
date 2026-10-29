@@ -37,18 +37,18 @@ function validate(value: unknown): Config | null {
   const components = config.components.filter((item): item is Block => Boolean(item && typeof item === 'object' && typeof item.id === 'string' && typeof item.title === 'string' && allowed.has((item as Block).type))).map(item => ({...item, url: typeof item.url === 'string' && (item.type === 'image' ? isAllowedImageUrl(item.url) : item.type === 'video' ? isAllowedVideoUrl(item.url) : false) ? item.url.slice(0, 2000) : undefined, objectFit: item.objectFit === 'contain' ? 'contain' as const : 'cover' as const}));
   return {schemaVersion:1,theme:typeof config.theme === 'string' && themes[config.theme] ? config.theme : 'nexora-dark',components};
 }
-export default function PublishedVisualLayout() {
+export default function PublishedVisualLayout({ scope }: { scope: string }) {
   const [published,setPublished] = useState<Published|null>(null);
   useEffect(() => {
     let active = true;
     if (!supabase) return;
-    supabase.from('visual_studio_publications').select('name,config,published_at').eq('is_default',true).limit(1).maybeSingle().then(({data,error}) => {
+    supabase.from('visual_studio_publications').select('name,config,published_at').eq('is_default',true).eq('scope', scope).limit(1).maybeSingle().then(({data,error}) => {
       if (!active || error || !data) return;
       const config = validate(data.config);
       if (config) setPublished({name:data.name,config,published_at:data.published_at});
     });
     return () => { active = false; };
-  },[]);
+  },[scope]);
   if (!published) return null;
   const palette = themes[published.config.theme] ?? themes['nexora-dark'];
   const blocks = published.config.components.filter(block=>!block.hidden);
