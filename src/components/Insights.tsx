@@ -49,6 +49,8 @@ export default function Insights() {
     <div className="section-heading"><div><p className="eyebrow">INSIGHTS · COMPRENDRE ET APPRENDRE</p><h2><BrainCircuit size={21}/> Analyses et enseignements</h2><p className="muted">Retrouvez les contenus et analyses déjà enregistrés. Aucun résultat d’analyse n’est inventé ici.</p></div><button className="icon-button" type="button" onClick={() => void load()} disabled={loading} aria-label="Actualiser Insights"><RefreshCw size={16}/></button></div>
     <ModuleDataOverview sources={["content_items"]} loading={loading} error={Boolean(error)} caption="Les analyses affichées sont calculées à partir des contenus répertoriés; aucune métrique fictive n'est ajoutée." />
 
+    <ModuleDataOverview sources={["content_items"]} loading={loading} error={Boolean(error)} caption="Les analyses affichées sont calculées à partir des contenus répertoriés; aucune métrique fictive n'est ajoutée." />
+
     <div className="insights-metrics"><div><span>Contenus répertoriés</span><strong>{items.length}</strong></div><div><span>Analyses terminées</span><strong>{analysisCount}</strong></div></div>
     <input className="insights-search" aria-label="Rechercher un contenu" value={query} onChange={e => setQuery(e.target.value)} placeholder="Rechercher un contenu, un entrepreneur…"/>
     {error && <p className="feedback error" role="alert">{error}</p>}
