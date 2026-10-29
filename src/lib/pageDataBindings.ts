@@ -113,6 +113,7 @@ export async function loadPageDataBindings(keys: readonly string[]): Promise<Rec
 export const PAGE_ACTION_TARGETS = [
   { value: 'dashboard', label: 'Tableau de bord' },
   { value: 'studio', label: 'Studio IA' },
+  { value: 'design', label: 'Studio de conception visuelle' },
   { value: 'projects', label: 'Mes projets' },
   { value: 'organizations', label: 'Entreprise et équipe' },
   { value: 'profile', label: 'Profil et préférences' },
