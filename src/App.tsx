@@ -677,6 +677,7 @@ export default function App() {
 
         <div className="workspace-layout">
           <nav className="workspace-sidebar" aria-label="Navigation principale NEXORA">
+            <a className="workspace-brand" href="#dashboard" aria-label="JDV NEXORA AI STUDIO — tableau de bord" onClick={(event) => { event.preventDefault(); navigateWorkspace('dashboard'); }}><img src="/nexora-brand.svg" alt="" aria-hidden="true" /><span><strong>JDV NEXORA</strong><small>AI STUDIO</small></span></a>
             <div className="nav-section-label">ESPACE DE TRAVAIL</div>
             <a className={activeSection === 'dashboard' ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#dashboard" onClick={(event) => { event.preventDefault(); navigateWorkspace('dashboard'); }}><FolderKanban size={17} /> <span>Tableau de bord</span></a>
             <div className="nav-section-label">CRÉATION</div>
