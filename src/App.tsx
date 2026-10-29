@@ -851,6 +851,7 @@ export default function App() {
               <div><span className="feature-dot">✓</span><span>Vos projets réunis au même endroit</span></div>
               <div><span className="feature-dot">✓</span><span>Une base prête pour les prochaines fonctionnalités</span></div>
             </div>
+            <button type="button" className="vitrine-auth-link" onClick={() => setShowVitrine(true)}>Découvrir la vitrine publique <ArrowRight size={16}/></button>
           </div>
           <section className="auth-card" aria-labelledby="auth-title">
             <p className="eyebrow">BIENVENUE CHEZ JDV NEXORA</p>
