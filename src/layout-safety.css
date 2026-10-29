@@ -472,3 +472,144 @@ hr {
   .workspace-brand span { display: none; }
   .workspace-brand img { width: 38px; height: 38px; flex-basis: 38px; }
 }
+
+
+/* Mobile-first finishing pass: dedicated phone layout for every authenticated module.
+   Keep the reference dashboard's content and data intact; change only its presentation. */
+@media (max-width: 760px) {
+  html, body, #root { width: 100%; max-width: 100%; }
+  body { overflow-x: clip; }
+  .page-shell { width: 100%; max-width: 100%; padding-inline: 12px; }
+  .workspace { width: 100%; max-width: 100%; min-width: 0; }
+  .workspace-heading { min-width: 0; }
+  .workspace-layout { width: 100%; min-width: 0; }
+  .workspace-main {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 12px 0 calc(92px + env(safe-area-inset-bottom)) !important;
+    gap: 14px;
+  }
+  .workspace-main > *,
+  .workspace-main :is(section, article, aside, form, fieldset, .card, [class*="-card"], [class*="-panel"]) {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .workspace-main :is(h1, h2, h3, h4, p, label, small, strong, span, a) {
+    overflow-wrap: anywhere;
+  }
+  .workspace-main :is(.project-panel, .studio-panel, .billing-panel, .admin-panel,
+    .organization-panel, .quick-access, .pipeline-section, .media-library,
+    .discover-panel, .timeline-panel, .insights-panel, .roadmap-panel,
+    .academy-panel, .resource-library, .learning-library, .collaboration-panel,
+    .visual-design-studio, .reference-dashboard) {
+    width: 100%;
+    padding: 14px;
+    border-radius: 16px;
+  }
+  .workspace-main :is(.section-heading, .pipeline-heading, .quick-access-heading,
+    .editor-heading, .studio-workspace-heading, .media-library-heading) {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .workspace-main :is(.section-heading > div, .pipeline-heading > div,
+    .quick-access-heading > div, .editor-heading > div) { min-width: 0; width: 100%; }
+  .workspace-main :is(.section-heading h1, .section-heading h2, .section-heading h3,
+    .pipeline-heading h2, .quick-access-heading h2) {
+    font-size: clamp(1.12rem, 5vw, 1.42rem);
+    line-height: 1.28;
+  }
+  .workspace-main :is(.dashboard-stats, .reference-project-summary, .reference-right-column,
+    .reference-module-grid, .reference-quick-grid, .studio-workspace-grid,
+    .studio-context-column, .studio-chat-column, .project-filters,
+    .discover-grid, .discover-layout, .academy-course-grid, .academy-path-grid,
+    .resource-library-summary, .roadmap-summary, .insights-metrics,
+    .billing-plans, .billing-plan-grid, .billing-checkout-layout,
+    .organization-grid, .media-grid, .media-provider-grid, .visual-studio-workbench) {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .workspace-main .reference-dashboard {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px;
+  }
+  .workspace-main .reference-module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .workspace-main .reference-project-summary,
+  .workspace-main .reference-right-column { grid-template-columns: minmax(0, 1fr); }
+  .workspace-main .reference-quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .workspace-main .dashboard-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .workspace-main :is(.project-form, .organization-form, .learning-form, .roadmap-form,
+    .profile-form, .admin-form, .visual-studio-form) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .workspace-main :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+    select, textarea) {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    font-size: 16px;
+  }
+  .workspace-main :is(button, .primary-button, .logout-button, .open-project-button,
+    .save-button, .text-button) { min-height: 42px; }
+  .workspace-main :is(.form-actions, .editor-actions, .editor-button-group,
+    .button-row, .action-row, .profile-footer, .project-meta, .resource-library-actions,
+    .academy-course-footer, .discover-form-actions) {
+    min-width: 0;
+    max-width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .workspace-main :is(.editor-actions, .profile-footer) { align-items: stretch; }
+  .workspace-main .editor-button-group { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .workspace-main .editor-button-group > *,
+  .workspace-main .profile-footer > button { width: 100%; }
+  .workspace-main .project-filters { grid-template-columns: minmax(0, 1fr); }
+  .workspace-main .project-item {
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 9px;
+    align-items: start;
+  }
+  .workspace-main .project-item > .project-info { min-width: 0; }
+  .workspace-main .project-item > .open-project-button {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .workspace-main .project-item > .icon-button,
+  .workspace-main .project-item > .delete-button { justify-self: start; }
+  .workspace-main :is(.table-wrapper, .table-container, [role="region"][aria-label*="table" i]) {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .workspace-main table { min-width: 560px; }
+  .visual-studio-real-preview { width: 100%; max-width: 100% !important; height: 62vh; min-height: 420px; }
+  .visual-studio-real-iframe { width: 100%; height: 100%; }
+  .workspace-footnote { padding-inline: 4px; font-size: .75rem; }
+}
+@media (max-width: 480px) {
+  .page-shell { padding-inline: 9px; }
+  .workspace-main { gap: 11px; }
+  .workspace-main :is(.project-panel, .studio-panel, .billing-panel, .admin-panel,
+    .organization-panel, .quick-access, .pipeline-section, .media-library,
+    .discover-panel, .timeline-panel, .insights-panel, .roadmap-panel,
+    .academy-panel, .resource-library, .learning-library, .collaboration-panel,
+    .visual-design-studio, .reference-dashboard) { padding: 12px; border-radius: 14px; }
+  .workspace-main .dashboard-stats,
+  .workspace-main .reference-module-grid,
+  .workspace-main .reference-quick-grid { grid-template-columns: minmax(0, 1fr); }
+  .workspace-main .project-item { grid-template-columns: 32px minmax(0, 1fr); padding: 10px; }
+  .workspace-main .project-item > .open-project-button { width: 100%; justify-content: center; }
+  .workspace-main :is(.primary-button, .logout-button, .open-project-button, .text-button) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .workspace-main .visual-studio-preview-modes { gap: 6px; }
+  .workspace-main .visual-studio-preview-modes button { min-height: 40px; }
+  .mobile-bottom-nav { padding-right: 5px; padding-left: 5px; }
+}
