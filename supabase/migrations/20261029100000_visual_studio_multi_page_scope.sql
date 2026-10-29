@@ -4,7 +4,7 @@ alter table public.visual_studio_layouts
 
 alter table public.visual_studio_layouts
   add constraint visual_studio_layouts_scope_check
-  check (scope in ('dashboard','studio','projects','organizations','academy','resources','discover','media','timeline','insights','library','roadmap','billing','administration','custom') or scope like 'custom:%');
+  check (scope in ('dashboard','studio','projects','organizations','academy','resources','discover','media','timeline','insights','library','roadmap','billing','administration','profile','custom') or scope like 'custom:%');
 
 alter table public.visual_studio_publications
   add column if not exists scope text not null default 'dashboard';
@@ -19,7 +19,7 @@ alter table public.visual_studio_publications
 
 alter table public.visual_studio_publications
   add constraint visual_studio_publications_scope_check
-  check (scope in ('dashboard','studio','projects','organizations','academy','resources','discover','media','timeline','insights','library','roadmap','billing','administration','custom') or scope like 'custom:%');
+  check (scope in ('dashboard','studio','projects','organizations','academy','resources','discover','media','timeline','insights','library','roadmap','billing','administration','profile','custom') or scope like 'custom:%');
 
 -- Normalize any legacy duplicate defaults before enforcing one default per page.
 with ranked as (
