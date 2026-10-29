@@ -23,12 +23,20 @@ export default function Insights() {
   const load = useCallback(async () => {
     if (!supabase) { setLoading(false); setError('Supabase n’est pas configuré.'); return; }
     setLoading(true); setError('');
-    const { data, error: queryError } = await supabase.from('content_items')
-      .select('id,title,canonical_url,description,platform,content_type,published_at,entrepreneur:entrepreneurs(name),analyses:content_analyses(id,analysis_type,status,summary,key_insights,strategies,action_steps,model_label,created_at)')
-      .order('published_at', { ascending: false, nullsFirst: false }).limit(100);
-    if (queryError) setError(queryError.message.includes('content_items') ? 'Insights sera disponible après application de la migration Supabase.' : queryError.message);
-    else setItems((data ?? []) as unknown as InsightRow[]);
-    setLoading(false);
+    try {
+      const { data, error: queryError } = await supabase.from('content_items')
+        .select('id,title,canonical_url,description,platform,content_type,published_at,entrepreneur:entrepreneurs(name),analyses:content_analyses(id,analysis_type,status,summary,key_insights,strategies,action_steps,model_label,created_at)')
+        .order('published_at', { ascending: false, nullsFirst: false }).limit(100);
+      if (queryError) {
+        setError(queryError.message.includes('content_items') ? 'Insights sera disponible après application de la migration Supabase.' : 'Impossible de charger les analyses. Réessayez.');
+        return;
+      }
+      setItems((data ?? []) as unknown as InsightRow[]);
+    } catch {
+      setError('Erreur réseau pendant le chargement des analyses. Vérifiez la connexion puis réessayez.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { void load(); }, [load]);
