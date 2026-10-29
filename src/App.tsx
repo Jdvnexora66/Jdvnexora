@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Building2, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette, BookOpen } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Building2, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette, BookOpen, Menu } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { isPageRouteId } from './lib/pageDataBindings';
 import Discover from './components/Discover';
@@ -48,6 +48,7 @@ export default function App() {
     return requested && isPageRouteId(requested) ? requested : 'dashboard';
   });
   const [customDesignPages, setCustomDesignPages] = useState<CustomDesignPage[]>([]);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [session, setSession] = useState<Session | null>(null);
@@ -356,6 +357,7 @@ export default function App() {
 
   function navigateWorkspace(section: string) {
     if (!confirmDiscardUnsavedChapterChanges()) return;
+    setMobileMenuOpen(false);
     setActiveSection(section);
     setActiveProject(null);
     setActiveAsset(null);
@@ -676,7 +678,7 @@ export default function App() {
           </div>
 
         <div className="workspace-layout">
-          <nav className="workspace-sidebar" aria-label="Navigation principale NEXORA">
+          <nav id="mobile-workspace-menu" className={`workspace-sidebar${mobileMenuOpen ? " mobile-menu-open" : ""}`} aria-label="Navigation principale NEXORA">
             <a className="workspace-brand" href="#dashboard" aria-label="JDV NEXORA AI STUDIO — tableau de bord" onClick={(event) => { event.preventDefault(); navigateWorkspace('dashboard'); }}><img src="/nexora-brand.svg" alt="" aria-hidden="true" /><span><strong>JDV NEXORA</strong><small>AI STUDIO</small></span></a>
             <div className="nav-section-label">ESPACE DE TRAVAIL</div>
             <a className={activeSection === 'dashboard' ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#dashboard" onClick={(event) => { event.preventDefault(); navigateWorkspace('dashboard'); }}><FolderKanban size={17} /> <span>Tableau de bord</span></a>
@@ -851,6 +853,13 @@ export default function App() {
           <p className="workspace-footnote">Studio IA est disponible pour les demandes authentifiées. Les réponses nécessitent la configuration du fournisseur côté serveur.</p>
           </div>
           </div>
+          <nav className="mobile-bottom-nav" aria-label="Navigation rapide">
+            <button type="button" className={activeSection === 'dashboard' ? 'active' : ''} onClick={() => navigateWorkspace('dashboard')} aria-current={activeSection === 'dashboard' ? 'page' : undefined}><FolderKanban size={20} /><span>Accueil</span></button>
+            <button type="button" className={activeSection === 'studio' ? 'active' : ''} onClick={() => navigateWorkspace('studio')} aria-current={activeSection === 'studio' ? 'page' : undefined}><Sparkles size={20} /><span>Studio IA</span></button>
+            <button type="button" className={activeSection === 'projects' ? 'active' : ''} onClick={() => navigateWorkspace('projects')} aria-current={activeSection === 'projects' ? 'page' : undefined}><FolderKanban size={20} /><span>Projets</span></button>
+            <button type="button" className={activeSection === 'discover' ? 'active' : ''} onClick={() => navigateWorkspace('discover')} aria-current={activeSection === 'discover' ? 'page' : undefined}><Compass size={20} /><span>Découvrir</span></button>
+            <button type="button" className={mobileMenuOpen ? 'active' : ''} onClick={() => setMobileMenuOpen((open) => !open)} aria-expanded={mobileMenuOpen} aria-controls="mobile-workspace-menu"><Menu size={20} /><span>Plus</span></button>
+          </nav>
         </section>
       ) : (
         <section className="hero-grid">
