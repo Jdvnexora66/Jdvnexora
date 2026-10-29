@@ -21,6 +21,7 @@ import ReferenceDashboard from './components/ReferenceDashboard';
 
 type AuthMode = 'signin' | 'signup';
 type UserProfile = { id: string; display_name: string | null; preferred_language: string; timezone: string; role: string; };
+type CustomDesignPage = { scope: string; name: string };
 type StudioAsset = { id: string; project_id: string; owner_id: string; title: string; content: string | null; kind: string; updated_at: string; };
 type StudioProject = {
   id: string;
@@ -36,6 +37,7 @@ type StudioProject = {
 export default function App() {
   const [mode, setMode] = useState<AuthMode>(() => new URLSearchParams(window.location.search).get('mode') === 'signup' ? 'signup' : 'signin');
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [customDesignPages, setCustomDesignPages] = useState<CustomDesignPage[]>([]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [session, setSession] = useState<Session | null>(null);
@@ -118,6 +120,20 @@ export default function App() {
     window.addEventListener('beforeunload', warnBeforeLeaving);
     return () => window.removeEventListener('beforeunload', warnBeforeLeaving);
   }, [activeProject, activeAsset, projectAssets, editorContent]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadCustomDesignPages() {
+      if (!supabase || !session?.user.id) { setCustomDesignPages([]); return; }
+      const { data, error: pagesError } = await supabase.from('visual_studio_publications').select('scope,name').like('scope','custom:%').eq('is_default',true).order('published_at',{ascending:false});
+      if (!active || pagesError) return;
+      const unique = new Map<string, CustomDesignPage>();
+      (data ?? []).forEach((row: {scope:string;name:string}) => { if (row.scope.startsWith('custom:') && !unique.has(row.scope)) unique.set(row.scope,{scope:row.scope,name:row.name}); });
+      setCustomDesignPages([...unique.values()]);
+    }
+    void loadCustomDesignPages();
+    return () => { active = false; };
+  }, [session?.user.id, activeSection]);
 
   useEffect(() => {
     if (session?.user.id) {
@@ -667,6 +683,7 @@ export default function App() {
             <a className={activeSection === 'billing' ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#billing" onClick={(event) => { event.preventDefault(); navigateWorkspace('billing'); }}><ShieldCheck size={17} /> <span>Facturation & sécurité</span></a>
             <a className={activeSection === 'administration' ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#administration" onClick={(event) => { event.preventDefault(); navigateWorkspace('administration'); }}><ShieldCheck size={17} /> <span>Administration</span></a>
             {profile?.role === 'admin' && <a className={activeSection === 'design' ? 'workspace-nav-link active' : 'workspace-nav-link'} href="#visual-design-studio" onClick={(event) => { event.preventDefault(); navigateWorkspace('design'); }}><Palette size={17} /> <span>Studio de conception visuelle</span></a>}
+            {customDesignPages.map(page => <a key={page.scope} className={activeSection === page.scope ? 'workspace-nav-link active' : 'workspace-nav-link'} href={`#${page.scope}`} onClick={(event) => { event.preventDefault(); navigateWorkspace(page.scope); }}><Palette size={17} /> <span>{page.name}</span></a>)}
             <button className="workspace-nav-link" type="button" onClick={() => { if (!confirmDiscardUnsavedChapterChanges()) return; setSearchQuery(''); setStatusFilter('all'); setActiveProject(null); setActiveAsset(null); setProjectAssets([]); setEditorContent(''); void loadProjects(); }}> <RefreshCw size={17} /> <span>Actualiser</span></button>
             <div className="sidebar-upgrade"><span className="sidebar-crown">♛</span><b>Passez à la vitesse supérieure</b><p>Accédez à plus de modèles IA et d’outils avancés.</p><button type="button" onClick={() => navigateWorkspace('billing')}>Voir les offres <ArrowRight size={14}/></button></div>
             <div className="sidebar-footer"><b>JDV NEXORA AI STUDIO</b><span>Créer · Apprendre · Partager · Innover</span></div>
@@ -715,6 +732,7 @@ export default function App() {
 
 
 
+          {!activeProject && activeSection !== 'design' && <PublishedVisualLayout scope={activeSection} />}
           {!activeProject && activeSection === 'studio' && <StudioIA />}
           {!activeProject && activeSection === 'academy' && <Academy userId={session.user.id} />}
           {!activeProject && activeSection === 'resources' && <ResourceLibrary userId={session.user.id} />}

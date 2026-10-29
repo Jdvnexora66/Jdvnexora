@@ -17,7 +17,8 @@ type StudioBlock = {
   hidden?: boolean;
 };
 type StudioConfig = { schemaVersion: 1; theme: 'nexora-dark' | 'nexora-light' | 'ocean'; components: StudioBlock[] };
-type LayoutRow = { id: string; name: string; draft_config: StudioConfig; published_config: StudioConfig | null; version: number; is_default: boolean; updated_at: string; published_at: string | null };
+type PageScope = string;
+type LayoutRow = { id: string; name: string; scope: PageScope; draft_config: StudioConfig; published_config: StudioConfig | null; version: number; is_default: boolean; updated_at: string; published_at: string | null };
 type VersionRow = { id: string; layout_id: string; version: number; snapshot: StudioConfig; action: string; created_at: string };
 
 const presets: Array<{ type: StudioBlock['type']; title: string; content?: string; url?: string }> = [
@@ -83,6 +84,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
   const [selectedId, setSelectedId] = useState('');
   const [selectedBlockId, setSelectedBlockId] = useState('');
   const [name, setName] = useState('Mon tableau de bord');
+  const [scope, setScope] = useState<PageScope>('dashboard');
   const [config, setConfig] = useState<StudioConfig>(starter);
   const [savedConfig, setSavedConfig] = useState<StudioConfig>(starter);
   const [preview, setPreview] = useState<'desktop'|'tablet'|'mobile'>('desktop');
@@ -99,13 +101,13 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
   const loadLayouts = useCallback(async () => {
     if (!supabase || !isAdmin) return;
     setBusy(true); setError('');
-    const { data, error: loadError } = await supabase.from('visual_studio_layouts').select('id,name,draft_config,published_config,version,is_default,updated_at,published_at').order('updated_at', { ascending: false });
+    const { data, error: loadError } = await supabase.from('visual_studio_layouts').select('id,name,scope,draft_config,published_config,version,is_default,updated_at,published_at').order('updated_at', { ascending: false });
     if (loadError) setError('Chargement des dispositions impossible : ' + loadError.message);
     else {
       const rows = (data ?? []) as LayoutRow[];
       setLayouts(rows);
       if (rows.length && !selectedId) {
-        const row = rows[0]; setSelectedId(row.id); setName(row.name);
+        const row = rows[0]; setSelectedId(row.id); setName(row.name); setScope((row.scope || 'dashboard') as PageScope);
         const safe = safeConfig(row.draft_config); setConfig(safe); setSavedConfig(safe);
       }
     }
@@ -125,7 +127,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
   function selectLayout(row: LayoutRow) {
     if (dirty && !window.confirm('Abandonner les modifications non enregistrées ?')) return;
     const next = safeConfig(row.draft_config);
-    setSelectedId(row.id); setName(row.name); setConfig(next); setSavedConfig(next); setSelectedBlockId(''); setHistory([]); setFuture([]);
+    setSelectedId(row.id); setName(row.name); setScope((row.scope || 'dashboard') as PageScope); setConfig(next); setSavedConfig(next); setSelectedBlockId(''); setHistory([]); setFuture([]);
   }
   function changeConfig(next: StudioConfig) { setHistory(items => [...items.slice(-29), config]); setFuture([]); setConfig(safeConfig(next)); }
   function changeBlock(patch: Partial<StudioBlock>) {
@@ -148,16 +150,17 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
   async function createLayout() {
     if (!supabase || !isAdmin) return;
     setBusy(true); setError(''); setNotice('');
-    const payload = { name: name.trim() || 'Nouvelle disposition', scope: 'dashboard', draft_config: config, created_by: userId, updated_by: userId };
-    const { data, error: insertError } = await supabase.from('visual_studio_layouts').insert(payload).select('id,name,draft_config,published_config,version,is_default,updated_at,published_at').single();
+    const targetScope = scope === 'custom' ? `custom:${crypto.randomUUID()}` : scope;
+    const payload = { name: name.trim() || 'Nouvelle disposition', scope: targetScope, draft_config: config, created_by: userId, updated_by: userId };
+    const { data, error: insertError } = await supabase.from('visual_studio_layouts').insert(payload).select('id,name,scope,draft_config,published_config,version,is_default,updated_at,published_at').single();
     if (insertError) { setError('Création impossible : ' + insertError.message); setBusy(false); return; }
-    const row = data as LayoutRow; setLayouts(items => [row, ...items]); setSelectedId(row.id); setName(row.name); setSavedConfig(safeConfig(row.draft_config)); setConfig(safeConfig(row.draft_config)); setSelectedBlockId(''); setNotice('Disposition créée. Enregistrez le brouillon pour conserver vos prochaines modifications.'); setBusy(false);
+    const row = data as LayoutRow; setLayouts(items => [row, ...items]); setSelectedId(row.id); setName(row.name); setScope((row.scope || 'dashboard') as PageScope); setSavedConfig(safeConfig(row.draft_config)); setConfig(safeConfig(row.draft_config)); setSelectedBlockId(''); setNotice('Disposition créée. Enregistrez le brouillon pour conserver vos prochaines modifications.'); setBusy(false);
   }
   async function saveDraft() {
     if (!supabase || !isAdmin || !selectedId) { setError('Créez ou sélectionnez une disposition avant de sauvegarder.'); return; }
     const nextVersion = (layouts.find(row => row.id === selectedId)?.version ?? 0) + 1;
     setBusy(true); setError(''); setNotice('');
-    const { data, error: saveError } = await supabase.from('visual_studio_layouts').update({ name: name.trim() || 'Disposition sans nom', draft_config: config, version: nextVersion, updated_by: userId, updated_at: new Date().toISOString() }).eq('id', selectedId).select('id,name,draft_config,published_config,version,is_default,updated_at,published_at').single();
+    const { data, error: saveError } = await supabase.from('visual_studio_layouts').update({ name: name.trim() || 'Disposition sans nom', draft_config: config, version: nextVersion, updated_by: userId, updated_at: new Date().toISOString() }).eq('id', selectedId).select('id,name,scope,draft_config,published_config,version,is_default,updated_at,published_at').single();
     if (saveError) { setError('Sauvegarde refusée : ' + saveError.message); setBusy(false); return; }
     const row = data as LayoutRow;
     const { error: historyError } = await supabase.from('visual_studio_versions').insert({ layout_id: selectedId, version: nextVersion, snapshot: config, action: 'draft_saved', actor_id: userId });
@@ -171,9 +174,9 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
     const current = layouts.find(row => row.id === selectedId); if (!current) return;
     const nextVersion = current.version + 1;
     setBusy(true); setError(''); setNotice('');
-    const { data, error: publishError } = await supabase.from('visual_studio_layouts').update({ published_config: config, version: nextVersion, updated_by: userId, updated_at: new Date().toISOString(), published_at: new Date().toISOString() }).eq('id', selectedId).select('id,name,draft_config,published_config,version,is_default,updated_at,published_at').single();
+    const { data, error: publishError } = await supabase.from('visual_studio_layouts').update({ published_config: config, version: nextVersion, updated_by: userId, updated_at: new Date().toISOString(), published_at: new Date().toISOString() }).eq('id', selectedId).select('id,name,scope,draft_config,published_config,version,is_default,updated_at,published_at').single();
     if (publishError) { setError('Publication impossible : ' + publishError.message); setBusy(false); return; }
-    const { error: publicError } = await supabase.from('visual_studio_publications').upsert({ layout_id: selectedId, name: current.name, config, is_default: current.is_default, published_by: userId, published_at: new Date().toISOString() });
+    const { error: publicError } = await supabase.from('visual_studio_publications').upsert({ layout_id: selectedId, name: current.name, scope: current.scope || scope, config, is_default: current.is_default, published_by: userId, published_at: new Date().toISOString() });
     const { error: historyError } = await supabase.from('visual_studio_versions').insert({ layout_id: selectedId, version: nextVersion, snapshot: config, action: 'published', actor_id: userId });
     if (publicError) setError('La version est enregistrée dans l’historique administrateur, mais sa publication publique a échoué : ' + publicError.message);
     else if (historyError) setError('Version publiée, mais son journal est incomplet : ' + historyError.message);
@@ -183,7 +186,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
     if (!supabase || !isAdmin || !selectedId || !window.confirm(`Restaurer la version ${version.version} dans le brouillon ?`)) return;
     const restored = safeConfig(version.snapshot); const nextVersion = (layouts.find(row => row.id === selectedId)?.version ?? 0) + 1;
     setBusy(true); setError(''); setNotice('');
-    const { data, error: restoreError } = await supabase.from('visual_studio_layouts').update({ draft_config: restored, version: nextVersion, updated_by: userId, updated_at: new Date().toISOString() }).eq('id', selectedId).select('id,name,draft_config,published_config,version,is_default,updated_at,published_at').single();
+    const { data, error: restoreError } = await supabase.from('visual_studio_layouts').update({ draft_config: restored, version: nextVersion, updated_by: userId, updated_at: new Date().toISOString() }).eq('id', selectedId).select('id,name,scope,draft_config,published_config,version,is_default,updated_at,published_at').single();
     if (restoreError) { setError('Restauration impossible : ' + restoreError.message); setBusy(false); return; }
     const { error: historyError } = await supabase.from('visual_studio_versions').insert({ layout_id: selectedId, version: nextVersion, snapshot: restored, action: 'restored', actor_id: userId });
     setConfig(restored); setSavedConfig(restored); setLayouts(items => items.map(item => item.id === selectedId ? data as LayoutRow : item)); await loadVersions(selectedId); setNotice(historyError ? 'Version restaurée, mais l’historique n’a pas été écrit.' : 'Version restaurée dans le brouillon. La publication reste manuelle.'); setBusy(false);
@@ -193,11 +196,11 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
     setBusy(true); setError(''); setNotice('');
     const target = layouts.find(row => row.id === selectedId);
     if (!target?.published_config) { setError('Publiez d’abord cette disposition avant de la définir par défaut.'); setBusy(false); return; }
-    const { error: clearPublishedError } = await supabase.from('visual_studio_publications').update({ is_default: false }).neq('layout_id', selectedId);
+    const { error: clearPublishedError } = await supabase.from('visual_studio_publications').update({ is_default: false }).eq('scope', target.scope || scope).neq('layout_id', selectedId);
     if (clearPublishedError) { setError('Impossible de retirer la disposition par défaut précédente : ' + clearPublishedError.message); setBusy(false); return; }
     const { error: publicDefaultError } = await supabase.from('visual_studio_publications').update({ is_default: true }).eq('layout_id', selectedId);
     if (publicDefaultError) { setError('Impossible d’activer la disposition par défaut : ' + publicDefaultError.message); setBusy(false); return; }
-    const { error: clearError } = await supabase.from('visual_studio_layouts').update({ is_default: false, updated_by: userId }).neq('id', selectedId);
+    const { error: clearError } = await supabase.from('visual_studio_layouts').update({ is_default: false, updated_by: userId }).eq('scope', target.scope || scope).neq('id', selectedId);
     if (clearError) { setError('Disposition publique définie, mais synchronisation administrateur incomplète : ' + clearError.message); setBusy(false); return; }
     const { error: updateError } = await supabase.from('visual_studio_layouts').update({ is_default: true, updated_by: userId }).eq('id', selectedId);
     if (updateError) setError('Disposition publique définie, mais synchronisation administrateur incomplète : ' + updateError.message);
@@ -205,7 +208,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
     setBusy(false);
   }
   function duplicate() {
-    setSelectedId(''); setName(`${name} — copie`); setNotice('Copie prête : cliquez sur « Créer la disposition » pour la sauvegarder.'); setError('');
+    setSelectedId(''); setName(`${name} — copie`); setNotice('Copie prête : choisissez sa page cible puis cliquez sur « Créer » pour la sauvegarder.'); setError('');
   }
 
   if (!isAdmin) return <></>;
@@ -214,7 +217,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
     <div className="section-heading"><div><p className="eyebrow">OUTIL ADMINISTRATEUR</p><h2 id="visual-studio-title"><Palette size={21}/> Studio de conception visuelle</h2><p className="muted">Composez une disposition autorisée, ajustez les styles et publiez explicitement après validation.</p></div><span className="visual-studio-badge"><ShieldCheck size={14}/> Administrateur</span></div>
     <div className="visual-studio-toolbar">
       <label>Disposition<select value={selectedId} onChange={event => { const row = layouts.find(item => item.id === event.target.value); if (row) selectLayout(row); else setSelectedId(''); }}><option value="">Choisir une disposition…</option>{layouts.map(row => <option key={row.id} value={row.id}>{row.name}{row.is_default ? ' · Par défaut' : ''}</option>)}</select></label>
-      <label>Nom<input value={name} maxLength={100} onChange={event => setName(event.target.value)} /></label>
+      <label>Page à personnaliser<select value={scope} onChange={event => setScope(event.target.value as PageScope)} disabled={busy || Boolean(selectedId)}><option value="dashboard">Tableau de bord</option><option value="studio">Studio IA</option><option value="projects">Projets</option><option value="organizations">Espace entreprise</option><option value="academy">Académie</option><option value="resources">Bibliothèque de ressources</option><option value="discover">Découverte</option><option value="media">Médiathèque</option><option value="timeline">Planning</option><option value="insights">Analyses</option><option value="library">Bibliothèque de formation</option><option value="roadmap">Feuille de route</option><option value="billing">Abonnement et facturation</option><option value="administration">Administration</option><option value="custom">Nouvelle page personnalisée</option>{layouts.filter(row => row.scope.startsWith('custom:')).map(row => <option key={row.id} value={row.scope}>{row.name}</option>)}</select></label><label>Nom de la page<input value={name} maxLength={100} onChange={event => setName(event.target.value)} /></label>
       <button type="button" className="logout-button" onClick={() => void createLayout()} disabled={busy}><Plus size={15}/> Créer</button>
       <button type="button" className="logout-button" onClick={duplicate} disabled={busy || !selectedId}><Copy size={15}/> Dupliquer</button>
       <span className={dirty ? 'visual-studio-dirty' : 'visual-studio-clean'}>{dirty ? 'Modifications non enregistrées' : 'Brouillon synchronisé'}</span>
