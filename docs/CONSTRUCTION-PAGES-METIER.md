@@ -1,66 +1,60 @@
-# Construction des pages métier — suivi en parallèle
+# Construction des 17 écrans — JDV NEXORA AI STUDIO
 
-Le tableau de bord référentiel reste la référence visuelle approuvée : il ne doit pas être reconstruit. La production avance désormais en **chantiers parallèles**, avec un registre unique pour éviter les pages oubliées.
+## Règle d'architecture
 
-## Chantiers parallèles
+Le **tableau de bord référentiel reste la référence approuvée**. Il ne doit pas être reconstruit ni recevoir les indicateurs ajoutés aux pages métier. Les pages doivent réutiliser les composants, tables, fonctions Edge et règles RLS déjà présents dans le dépôt et la base Supabase. On ne crée pas une deuxième table lorsque la source existante répond déjà au besoin.
 
-### A — Création et édition
-- Studio IA : envoi, réponse, historique privé, quota, erreurs et états réseau.
-- Mes projets : création, recherche, filtres, édition, statut, suppression, ressources et isolation B2B.
-- Studio Design : aperçu réel de la page choisie, brouillon indépendant, édition, historique et publication explicite.
+Les composants de synthèse métier affichent des valeurs calculées à partir des données que chaque module a réellement chargées et nomment leurs sources. Ils n'interrogent pas eux-mêmes la base et ne remplacent pas les tests fonctionnels.
 
-### B — Espaces et identité
-- Espace entreprise : organisations, membres, invitations, rôles et autorisations côté serveur.
-- Profil et compte : préférences, session, récupération de compte et messages d'erreur.
-- Administration : garde-fous de rôle, gestion des contenus et retours d'action.
+## Registre des 17 écrans
 
-### C — Contenus et apprentissage
-- Académie : catalogue, cours, leçons, progression et transparence sur les paiements.
-- Bibliothèque de formation : notes, progression, favoris et persistance.
-- Ressources numériques : recherche, filtres, sources, actions et états vides.
-- Découverte / créateurs : recherche, pays, fiches, paniers et sources.
-- Vidéothèque : intégrations, connexions, synchronisation et actions.
+| Nº | Écran | Composant / parcours actuel | Sources principales | État du travail |
+|---:|---|---|---|---|
+| 1 | Tableau de bord référentiel | `ReferenceDashboard` dans `App.tsx` | `profiles`, `studio_projects`, `studio_assets` | Référence à conserver; régression visuelle uniquement |
+| 2 | Studio de création IA | `StudioIA` | `studio_ai_messages`; Edge Function `studio-ai` | Écran et historique présents; génération, quota, RLS et erreurs à vérifier |
+| 3 | Mes projets et éditeur | `App.tsx` | `studio_projects`, `studio_assets`, `studio_project_members` | Création, recherche, filtres et édition présents; audit du CRUD et de l'isolation restant |
+| 4 | Studio de conception visuelle | `VisualDesignStudio`, `PublishedVisualLayout` | `visual_studio_layouts`, `visual_studio_versions`, `visual_studio_publications` | Aperçu natif, brouillon et blocs personnalisés présents; liaison des blocs, versions, publication et édition de chaque composant natif à valider séparément |
+| 5 | Espace entreprise et équipe | `OrganizationPanel`, `CollaborationPanel` | `organizations`, `organization_members`, `organization_invitations`, `studio_project_members`, `studio_project_comments` | Organisation et invitations implémentées; rôles, parcours et politiques serveur à tester |
+| 6 | Profil et préférences | Formulaire de profil dans `App.tsx` | `profiles`, session Supabase Auth | Informations, langue et fuseau horaire modifiables; test de sauvegarde et récupération à terminer |
+| 7 | Administration | `AdminPanel`, `CourseLessonManager` | `profiles`, `audit_logs`, `nexora_courses`, `nexora_course_lessons` | Interface de gestion présente; contrôle de tous les rôles et actions serveur requis |
+| 8 | Académie | `Academy` | `nexora_learning_paths`, `nexora_learning_modules`, `nexora_learning_progress`, `nexora_courses`, `nexora_course_enrollments`, `nexora_course_lessons` | Catalogue, parcours et inscription gratuite présents; progression et accès aux leçons à tester |
+| 9 | Bibliothèque de formation | `LearningLibrary` | `user_learning_items`, `entrepreneurs`, `content_items` | Notes, favoris et progression présents; persistance et isolation à tester |
+| 10 | Ressources numériques | `ResourceLibrary` | `nexora_resources`, `nexora_resource_progress` | Catalogue filtrable et progression présents; disponibilité des ressources et actions à vérifier |
+| 11 | Découvrir | `Discover` | `entrepreneurs`, `content_sources`, `followed_entrepreneurs` | Recherche, pays, sources, paniers et suivi présents; contrôle de qualité des résultats à terminer |
+| 12 | Vidéothèque et catalogue des créateurs | `MediaLibrary`, `CreatorCatalog` | `media_library_items`, Storage `nexora-media`; Edge Functions `media-integrations`, `sync-public-creators` | Interface, liens et intégrations présents; synchronisation, connexion et droits à vérifier |
+| 13 | Roadmap | `Roadmap` | `roadmap_tasks` | Objectifs, priorités, échéances et statuts présents; toutes les mutations à tester |
+| 14 | Timeline / chronologie | `Timeline` | `timeline_events`, `entrepreneurs`, `content_sources` | Frise et recherche présentes; sources des dates et états vides à tester |
+| 15 | Analyses / Insights | `Insights` | `content_items`, relation `content_analyses` | Contenus et analyses existants; aucune métrique ne doit être inventée |
+| 16 | Abonnement et facturation | `BillingPanel` | `plans`, `subscriptions` | Consultation des forfaits et du statut présente; ne pas annoncer de paiement réussi tant que le parcours serveur n'est pas intégré et vérifié |
+| 17 | Vitrine publique et authentification | `PublicVitrine`, formulaire d'authentification de `App.tsx` | Contenu public dans le dépôt; Supabase Auth pour connexion/inscription | Interface présente et raccord de navigation en cours de validation; liens, formulaire de contact et mobile à tester |
 
-### D — Pilotage et modèle commercial
-- Planning / chronologie : dates sourcées, recherche, création et états vides.
-- Analyses / Insights : données sourcées, chargement/erreur, aucune métrique inventée.
-- Feuille de route : tâches, statuts, priorités, échéances et sauvegarde.
-- Abonnement / facturation : offres et statut réel; aucun paiement simulé comme réussi.
+## Raccordement des blocs du Studio Design
 
-### E — Parcours global
-- Navigation, vitrine publique, responsive ordinateur/tablette/mobile, accessibilité clavier, authentification et parcours de retour après connexion.
-- Intégration croisée entre pages : chaque bouton doit mener à une action ou une destination réelle, pas à un simple décor.
+`src/lib/pageDataBindings.ts` fournit une **liste blanche** de sources de données en lecture seule. Les blocs personnalisés de type texte, carte et statistique peuvent être reliés à une clé autorisée, par exemple `projects.total`, `media.total`, `resources.published`, `courses.published`, `roadmap.open` ou `academy.enrollments`.
 
-## Registre de départ
+- Les valeurs privées sont filtrées sur l'identifiant de l'utilisateur connecté, et les politiques RLS continuent de s'appliquer.
+- Le concepteur n'accepte ni nom de table libre, ni SQL, ni expression exécutable.
+- Une source absente ou en erreur doit être montrée comme indisponible, pas remplacée par une fausse statistique.
+- Les configurations publiées et les brouillons sont distincts; la publication est une action explicite.
+- Le mode « Page réelle » affiche l'écran métier sélectionné. Le canevas éditable compose les blocs de disposition et leurs styles/données. **L'édition arbitraire de tout élément natif de chaque écran n'est pas considérée comme terminée simplement parce que l'aperçu existe** : elle reste un critère séparé avant de déclarer le Studio Design achevé.
 
-| Zone | État connu | Prochaine vérification |
-|---|---|---|
-| Tableau de bord référentiel | Référence conservée | Régression visuelle uniquement |
-| Studio IA | États d'attente/erreur et historique présents dans le code | Tester fonction Edge, quotas, RLS et reprise après erreur |
-| Mes projets | CRUD et filtres présents dans le code | Vérifier les politiques RLS, appartenance organisationnelle et toutes les transitions |
-| Studio Design | Aperçu réel et brouillon séparé fusionnés | Édition des composants natifs, brouillon persistant, aperçu sans mutation de production |
-| Espaces/Profil/Admin | Interfaces présentes | Vérifier chaque permission sur le serveur et les cas non autorisés |
-| Académie/Bibliothèques/Ressources | Interfaces présentes; certains services externes peuvent manquer | Tester persistance, source des données et états d'intégration absente |
-| Découverte/Vidéothèque | Interfaces présentes | Tester les intégrations facultatives, validation des URLs et droits |
-| Planning/Insights/Roadmap | Interfaces présentes | Vérifier persistance, sources et états sans données |
-| Facturation | L'interface indique que les paiements automatisés ne sont pas ouverts | Garder ce garde-fou tant que le paiement serveur n'est pas validé |
-| Navigation/vitrine publique | À vérifier transversalement | Vérifier chaque lien, route, session et affichage mobile |
+## Couche commune des pages métier
 
-## Critères de clôture communs
+Les pages métier utilisent `ModuleDataOverview` pour afficher les compteurs déjà calculés par les modules, l'état de chargement/erreur et les sources raccordées. Ce composant ne fait pas de requête et ne prétend pas vérifier que les données sont correctes. La page référentielle est explicitement exclue de cette couche.
 
-Une page n'est déclarée terminée qu'après :
-1. test réel de chaque bouton/formulaire et des états chargement, vide, succès et erreur;
-2. contrôle responsive ordinateur, tablette et mobile;
-3. vérification de la source de données, de la persistance et de la gestion des erreurs;
-4. vérification des autorisations côté serveur/RLS pour toute donnée privée ou action sensible;
-5. contrôle de navigation et d'accessibilité clavier;
-6. CI/build réussis, puis vérification du déploiement effectif;
-7. mise à jour de ce registre avec résultat et blocages restants.
+## Critères obligatoires avant de déclarer une page terminée
 
-## Passe déjà effectuée
+1. Tester chaque bouton, formulaire et transition ainsi que les états de chargement, vide, succès et erreur.
+2. Contrôler le rendu sur ordinateur, tablette et mobile, et la navigation clavier.
+3. Vérifier chaque table, Storage et Edge Function contre la base réellement utilisée.
+4. Tester les permissions serveur/RLS, y compris l'accès interdit entre deux comptes et entre deux organisations.
+5. Distinguer une source configurée d'une intégration réellement opérationnelle.
+6. Exécuter CI et build, puis vérifier le déploiement qui correspond au dernier commit.
+7. Mettre à jour ce registre avec des résultats observés. Une page présente dans le code n'est pas automatiquement validée.
 
-- Une passe responsive commune a été fusionnée dans `main`; elle ne vaut pas validation fonctionnelle.
-- Une passe visuelle métier dédiée ajoute des accents de couleur par module, des surfaces en dégradé, une hiérarchie de titres renforcée, des cartes interactives et des états de focus visibles. Cette passe doit encore être contrôlée sur le site déployé et ne constitue pas, à elle seule, une validation fonctionnelle.
-- L'aperçu de page réelle du Studio Design a été fusionné; l'édition directe des composants métier natifs reste ouverte.
-- Correction en cours : la page Profil doit aussi être accessible dans l'aperçu du Studio Design.
-- Sécurité : ne pas affaiblir RLS, ne pas exposer de clés serveur, ne pas présenter les paiements ou intégrations comme opérationnels sans vérification.
+## Passe commune déjà intégrée
+
+- Une passe de différenciation visuelle est ajoutée aux modules métier sans cibler le tableau de bord référentiel.
+- Les blocs de synthèse et les sources sont visibles dans les pages métier existantes.
+- Le Studio Design possède un aperçu de page native et les blocs personnalisés peuvent utiliser des sources de données de la liste blanche.
+- Le Studio IA, les projets, les médias, la progression d'apprentissage, les rôles et la facturation requièrent encore des tests fonctionnels ciblés avant une clôture globale.
