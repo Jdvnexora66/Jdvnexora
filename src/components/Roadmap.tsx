@@ -18,10 +18,15 @@ export default function Roadmap({ userId }: { userId:string }) {
   const load=useCallback(async()=>{
     if(!supabase){setLoading(false);setError('Supabase n’est pas configuré.');return;}
     setLoading(true);setError('');
-    const {data,error:queryError}=await supabase.from('roadmap_tasks').select('id,user_id,title,description,status,priority,due_date,position,completed_at,created_at').eq('user_id',userId).order('position').order('created_at',{ascending:false}).limit(300);
-    if(queryError)setError(queryError.message.includes('roadmap_tasks')?'La Roadmap sera disponible après application des migrations Supabase.':queryError.message);
-    else setTasks((data??[]) as Task[]);
-    setLoading(false);
+    try {
+      const {data,error:queryError}=await supabase.from('roadmap_tasks').select('id,user_id,title,description,status,priority,due_date,position,completed_at,created_at').eq('user_id',userId).order('position').order('created_at',{ascending:false}).limit(300);
+      if(queryError)setError(queryError.message.includes('roadmap_tasks')?'La Roadmap sera disponible après application des migrations Supabase.':'Impossible de charger la Roadmap. Réessayez.');
+      else setTasks((data??[]) as Task[]);
+    } catch {
+      setError('Erreur réseau pendant le chargement de la Roadmap. Vérifiez la connexion puis réessayez.');
+    } finally {
+      setLoading(false);
+    }
   },[userId]);
   useEffect(()=>{void load();},[load]);
 

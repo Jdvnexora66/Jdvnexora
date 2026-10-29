@@ -29,15 +29,20 @@ export default function ResourceLibrary({ userId }: { userId: string }) {
   const load=useCallback(async()=>{
     if(!supabase){setError('Supabase n’est pas configuré.');setLoading(false);return;}
     setLoading(true);setError('');
-    const [r,p]=await Promise.all([
-      supabase.from('nexora_resources').select('id,title,description,creator_name,resource_type,topic,language,url,thumbnail_url,duration_seconds,published_at,editorial_note_fr').eq('is_published',true).order('published_at',{ascending:false,nullsFirst:false}).order('title'),
-      supabase.from('nexora_resource_progress').select('resource_id,status').eq('user_id',userId)
-    ]);
-    if(r.error){setError('Chargement des ressources impossible : '+r.error.message);setLoading(false);return;}
-    if(p.error){setError('Chargement de votre progression impossible : '+p.error.message);setLoading(false);return;}
-    setResources((r.data??[]) as Resource[]);
-    setProgress(Object.fromEntries(((p.data??[]) as Progress[]).map(item=>[item.resource_id,item.status])));
-    setLoading(false);
+    try {
+      const [r,p]=await Promise.all([
+        supabase.from('nexora_resources').select('id,title,description,creator_name,resource_type,topic,language,url,thumbnail_url,duration_seconds,published_at,editorial_note_fr').eq('is_published',true).order('published_at',{ascending:false,nullsFirst:false}).order('title'),
+        supabase.from('nexora_resource_progress').select('resource_id,status').eq('user_id',userId)
+      ]);
+      if(r.error){setError('Chargement des ressources impossible : '+r.error.message);return;}
+      if(p.error){setError('Chargement de votre progression impossible : '+p.error.message);return;}
+      setResources((r.data??[]) as Resource[]);
+      setProgress(Object.fromEntries(((p.data??[]) as Progress[]).map(item=>[item.resource_id,item.status])));
+    } catch {
+      setError('Erreur réseau pendant le chargement des ressources. Vérifiez la connexion puis réessayez.');
+    } finally {
+      setLoading(false);
+    }
   },[userId]);
   useEffect(()=>{void load();},[load]);
 
