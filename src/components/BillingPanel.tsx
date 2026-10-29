@@ -110,11 +110,13 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
     if (typeof members === 'number' || (typeof members === 'string' && members.trim())) details.push(`${members} membre(s) inclus`);
     if (features.billing_mode === 'quote') details.push('Accompagnement et capacité adaptés à votre organisation');
     if (features.discount_months === 2) details.push('Économie de 2 mois sur la formule annuelle');
-    const hiddenKeys = new Set(['billing_mode','monthly_ai_units','included_members','discount_months']);
+    const hiddenKeys = new Set(['billing_mode','monthly_ai_units','included_members','discount_months','audience','projects']);
+    const friendlyFeatures: Record<string, string> = { core_tools: 'Outils essentiels', advanced_tools: 'Outils avancés', multiple_projects: 'Projets multiples', export_when_available: 'Export disponible selon les fonctionnalités activées', professional_features: 'Fonctionnalités professionnelles', roles_and_access: 'Gestion des rôles et des accès', shared_workspace: 'Espace de travail partagé', collective_usage_tracking: 'Suivi des usages de l’équipe', custom_capacity: 'Capacité personnalisée', advanced_administration_subject_to_availability: 'Administration avancée selon disponibilité' };
     for (const [key, value] of Object.entries(features)) {
       if (hiddenKeys.has(key) || value === false || value == null || value === '') continue;
       if (typeof value === 'string' && value !== 'true') details.push(value);
-      else if (value === true) details.push(key.replace(/[_-]+/g, ' ').replace(/^./, letter => letter.toUpperCase()));
+      else if (value === true) details.push(friendlyFeatures[key] ?? key.replace(/[_-]+/g, ' ').replace(/^./, letter => letter.toUpperCase()));
+      else if (typeof value === 'number' && key === 'projects') details.push(`${value} projet(s) inclus`);
       else if (typeof value === 'number' && key !== 'monthly_ai_units' && key !== 'included_members') details.push(`${key.replace(/[_-]+/g, ' ')} : ${value}`);
     }
     return [...new Set(details)].slice(0, 5);
@@ -132,7 +134,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
   async function launchKkiapayPayment() {
     if (!selectedPlan || !supabase || paymentPending) return;
     if (selectedPlan.features?.billing_mode === 'quote') {
-      setError('Cette offre est sur devis. Contactez l’équipe pour recevoir une proposition personnalisée.');
+      setError('Cette offre est sur devis. Contactez l’équipe d’administration pour recevoir une proposition personnalisée.');
       return;
     }
     if (selectedPlan.features?.billing_mode === 'free' || selectedPlan.price_minor === 0) {
@@ -222,7 +224,8 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
   const subscribedPlan = subscription ? (Array.isArray(subscription.plan) ? subscription.plan[0] ?? null : subscription.plan) : null;
 
   if (selectedPlan) {
-    const freePlan = selectedPlan.features?.billing_mode === 'free' || selectedPlan.price_minor === 0;
+    const quotePlan = selectedPlan.features?.billing_mode === 'quote';
+    const freePlan = !quotePlan && (selectedPlan.features?.billing_mode === 'free' || selectedPlan.price_minor === 0);
     return <section id="billing-checkout" className="project-panel billing-panel billing-checkout-page">
       <div className="section-heading billing-checkout-heading">
         <div><p className="eyebrow">ABONNEMENT SÉCURISÉ</p><h2><LockKeyhole size={21}/> Finaliser votre abonnement</h2><p className="muted">Vérifiez votre formule et choisissez votre moyen de paiement.</p></div>
@@ -243,7 +246,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
         <div className="billing-payment-card">
           <h3>Moyen de paiement</h3>
           <p className="muted">Les paiements sont traités par la fenêtre sécurisée KKIAPAY.</p>
-          {freePlan ? <div className="billing-free-notice"><Check size={18}/><span>Cette formule est gratuite. Aucune carte ni aucun portefeuille mobile ne sera débité.</span></div> : <>
+          {quotePlan ? <div className="billing-free-notice"><ShieldCheck size={18}/><span>Cette formule est personnalisée. L’équipe doit confirmer les besoins et le montant avant tout engagement.</span></div> : freePlan ? <div className="billing-free-notice"><Check size={18}/><span>Cette formule est gratuite. Aucune carte ni aucun portefeuille mobile ne sera débité.</span></div> : <>
             <div className="billing-payment-methods" role="radiogroup" aria-label="Choisir un moyen de paiement">
               <button type="button" role="radio" aria-checked={paymentMethod === 'mobile_money'} className={paymentMethod === 'mobile_money' ? 'billing-method-card selected' : 'billing-method-card'} onClick={() => setPaymentMethod('mobile_money')}>
                 <Smartphone size={22}/><span><strong>Mobile Money</strong><small>MTN · Moov · Celtiis*</small></span><span className="billing-method-radio">{paymentMethod === 'mobile_money' ? '●' : '○'}</span>
@@ -254,12 +257,12 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
             </div>
             <p className="billing-payment-footnote">*Les moyens effectivement proposés dépendent des options activées sur votre compte marchand KKIAPAY.</p>
           </>}
-          <button type="button" className="primary-button billing-pay-button" onClick={() => void launchKkiapayPayment()} disabled={paymentPending || loading}>
+          {!quotePlan && <button type="button" className="primary-button billing-pay-button" onClick={() => void launchKkiapayPayment()} disabled={paymentPending || loading}>
             <LockKeyhole size={17}/>{paymentPending ? 'Vérification en cours…' : freePlan ? 'Activer le forfait gratuit' : `Payer ${formatPrice(selectedPlan)}`}
-          </button>
+          </button>}
           {error && <p className="feedback error" role="alert">{error}</p>}
           {paymentNotice && <p className="feedback success" role="status">{paymentNotice}</p>}
-          {!freePlan && !kkiapayPublicKey && <p className="billing-config-notice">Configuration marchande requise avant l’ouverture du paiement réel.</p>}
+          {!quotePlan && !freePlan && !kkiapayPublicKey && <p className="billing-config-notice">Configuration marchande requise avant l’ouverture du paiement réel.</p>}
         </div>
       </div>
     </section>;
