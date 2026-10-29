@@ -97,8 +97,8 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
   const [versions, setVersions] = useState<VersionRow[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [selectedBlockId, setSelectedBlockId] = useState('');
-  const [name, setName] = useState('Mon tableau de bord');
-  const [scope, setScope] = useState<PageScope>('dashboard');
+  const [name, setName] = useState('Studio IA');
+  const [scope, setScope] = useState<PageScope>('studio');
   const [config, setConfig] = useState<StudioConfig>(starter);
   const [savedConfig, setSavedConfig] = useState<StudioConfig>(starter);
   const [preview, setPreview] = useState<'desktop'|'tablet'|'mobile'>('desktop');
@@ -121,7 +121,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
     const { data, error: loadError } = await supabase.from('visual_studio_layouts').select('id,name,scope,draft_config,published_config,version,is_default,updated_at,published_at').order('updated_at', { ascending: false });
     if (loadError) setError('Chargement des dispositions impossible : ' + loadError.message);
     else {
-      const rows = (data ?? []) as LayoutRow[];
+      const rows = ((data ?? []) as LayoutRow[]).filter(row => row.scope !== 'dashboard');
       setLayouts(rows);
       if (rows.length && !selectedId) {
         const row = rows[0]; setSelectedId(row.id); setName(row.name); setScope((row.scope || 'dashboard') as PageScope);
@@ -250,12 +250,12 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
         const existing = layouts.find(row => row.scope === nextScope);
         setScope(nextScope);
         setSelectedId(existing?.id ?? '');
-        const nextName = existing?.name ?? (nextScope === 'custom' ? 'Ma nouvelle page' : ({dashboard:'Tableau de bord',studio:'Studio IA',projects:'Projets',organizations:'Espace entreprise',academy:'Académie',resources:'Bibliothèque de ressources',discover:'Découverte',media:'Médiathèque',timeline:'Planning',insights:'Analyses',library:'Bibliothèque de formation',roadmap:'Feuille de route',billing:'Abonnement et facturation',administration:'Administration'} as Record<string,string>)[nextScope] ?? 'Nouvelle page');
+        const nextName = existing?.name ?? (nextScope === 'custom' ? 'Ma nouvelle page' : ({studio:'Studio IA',projects:'Projets',organizations:'Espace entreprise',profile:'Profil et préférences',academy:'Académie',resources:'Bibliothèque de ressources',discover:'Découverte',media:'Médiathèque',timeline:'Planning',insights:'Analyses',library:'Bibliothèque de formation',roadmap:'Feuille de route',billing:'Abonnement et facturation',administration:'Administration'} as Record<string,string>)[nextScope] ?? 'Nouvelle page');
         setName(nextName);
         const nextConfig = existing ? safeConfig(existing.draft_config) : starter;
         setConfig(nextConfig); setSavedConfig(nextConfig); setSelectedBlockId(''); setHistory([]); setFuture([]); setError('');
         setNotice(existing ? 'Disposition chargée pour cette page.' : 'Page sélectionnée. Cliquez sur « Créer » pour commencer une disposition indépendante.');
-      }}><option value="dashboard">Tableau de bord</option><option value="studio">Studio IA</option><option value="projects">Projets</option><option value="organizations">Espace entreprise</option><option value="academy">Académie</option><option value="resources">Bibliothèque de ressources</option><option value="discover">Découverte</option><option value="media">Médiathèque</option><option value="timeline">Planning</option><option value="insights">Analyses</option><option value="library">Bibliothèque de formation</option><option value="roadmap">Feuille de route</option><option value="billing">Abonnement et facturation</option><option value="administration">Administration</option><option value="profile">Profil et préférences</option><option value="custom">Nouvelle page personnalisée</option>{layouts.filter(row => row.scope.startsWith('custom:')).map(row => <option key={row.id} value={row.scope}>{row.name}</option>)}</select></label><label>Nom de la page<input value={name} maxLength={100} onChange={event => setName(event.target.value)} /></label>
+      }}><option value="studio">Studio IA</option><option value="projects">Projets</option><option value="organizations">Espace entreprise</option><option value="academy">Académie</option><option value="resources">Bibliothèque de ressources</option><option value="discover">Découverte</option><option value="media">Médiathèque</option><option value="timeline">Planning</option><option value="insights">Analyses</option><option value="library">Bibliothèque de formation</option><option value="roadmap">Feuille de route</option><option value="billing">Abonnement et facturation</option><option value="administration">Administration</option><option value="profile">Profil et préférences</option><option value="custom">Nouvelle page personnalisée</option>{layouts.filter(row => row.scope.startsWith('custom:')).map(row => <option key={row.id} value={row.scope}>{row.name}</option>)}</select></label><label>Nom de la page<input value={name} maxLength={100} onChange={event => setName(event.target.value)} /></label>
       <button type="button" className="logout-button" onClick={() => void createLayout()} disabled={busy}><Plus size={15}/> Créer</button>
       <button type="button" className="logout-button" onClick={duplicate} disabled={busy || !selectedId}><Copy size={15}/> Dupliquer</button>
       <span className={dirty ? 'visual-studio-dirty' : 'visual-studio-clean'}>{dirty ? 'Modifications non enregistrées' : 'Brouillon synchronisé'}</span>
