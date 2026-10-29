@@ -11,10 +11,13 @@ const themes: Record<string,{background:string;surface:string;text:string}> = {
   'nexora-light': {background:'#0B0B0D',surface:'#202024',text:'#F5F2EA'},
   ocean: {background:'#0B0B0D',surface:'#202024',text:'#F5F2EA'},
 };
-const BRAND_COLORS = new Set(['#0B0B0D','#202024','#F5F2EA','#D6B66E','#C9C1B2']);
-function normalizeBrandColor(value: unknown, fallback: string): string {
+function normalizeTextColor(value: unknown): string {
   const normalized = typeof value === 'string' ? value.toUpperCase() : '';
-  return BRAND_COLORS.has(normalized) ? normalized : fallback;
+  return ['#F5F2EA','#C9C1B2','#D6B66E'].includes(normalized) ? normalized : '#F5F2EA';
+}
+function normalizeBackgroundColor(value: unknown): string {
+  const normalized = typeof value === 'string' ? value.toUpperCase() : '';
+  return ['#0B0B0D','#202024'].includes(normalized) ? normalized : '#202024';
 }
 function isAllowedImageUrl(value: string): boolean {
   try {
@@ -41,7 +44,7 @@ function validate(value: unknown): Config | null {
   const config = value as Partial<Config>;
   if (config.schemaVersion !== 1 || !Array.isArray(config.components) || config.components.length > 80) return null;
   const allowed = new Set(['heading','text','stat','action','card','divider','image','video']);
-  const components = config.components.filter((item): item is Block => Boolean(item && typeof item === 'object' && typeof item.id === 'string' && typeof item.title === 'string' && allowed.has((item as Block).type))).map(item => ({...item, color: normalizeBrandColor(item.color,'#F5F2EA'), background: normalizeBrandColor(item.background,'#202024'), dataBinding: isPageDataBindingKey(item.dataBinding) ? item.dataBinding : undefined, actionTarget: isPageActionTarget(item.actionTarget) ? item.actionTarget : undefined, url: typeof item.url === 'string' && (item.type === 'image' ? isAllowedImageUrl(item.url) : item.type === 'video' ? isAllowedVideoUrl(item.url) : false) ? item.url.slice(0, 2000) : undefined, objectFit: item.objectFit === 'contain' ? 'contain' as const : 'cover' as const}));
+  const components = config.components.filter((item): item is Block => Boolean(item && typeof item === 'object' && typeof item.id === 'string' && typeof item.title === 'string' && allowed.has((item as Block).type))).map(item => ({...item, color: normalizeTextColor(item.color), background: normalizeBackgroundColor(item.background), dataBinding: isPageDataBindingKey(item.dataBinding) ? item.dataBinding : undefined, actionTarget: isPageActionTarget(item.actionTarget) ? item.actionTarget : undefined, url: typeof item.url === 'string' && (item.type === 'image' ? isAllowedImageUrl(item.url) : item.type === 'video' ? isAllowedVideoUrl(item.url) : false) ? item.url.slice(0, 2000) : undefined, objectFit: item.objectFit === 'contain' ? 'contain' as const : 'cover' as const}));
   return {schemaVersion:1,theme:'nexora-dark',components};
 }
 export default function PublishedVisualLayout({ scope }: { scope: string }) {
