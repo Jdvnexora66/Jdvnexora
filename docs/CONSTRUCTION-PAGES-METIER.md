@@ -60,6 +60,7 @@ Une page n'est déclarée terminée qu'après :
 ## Passe déjà effectuée
 
 - Une passe responsive commune a été fusionnée dans `main`; elle ne vaut pas validation fonctionnelle.
+- Une passe visuelle métier dédiée ajoute des accents de couleur par module, des surfaces en dégradé, une hiérarchie de titres renforcée, des cartes interactives et des états de focus visibles. Cette passe doit encore être contrôlée sur le site déployé et ne constitue pas, à elle seule, une validation fonctionnelle.
 - L'aperçu de page réelle du Studio Design a été fusionné; l'édition directe des composants métier natifs reste ouverte.
 - Correction en cours : la page Profil doit aussi être accessible dans l'aperçu du Studio Design.
 - Sécurité : ne pas affaiblir RLS, ne pas exposer de clés serveur, ne pas présenter les paiements ou intégrations comme opérationnels sans vérification.
