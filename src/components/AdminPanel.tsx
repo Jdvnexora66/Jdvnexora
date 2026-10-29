@@ -27,18 +27,23 @@ export default function AdminPanel({ userId, role }: { userId: string; role: str
   const load = useCallback(async () => {
     if (!supabase || !isAdmin) { setLoading(false); return; }
     setLoading(true); setError('');
-    const [profileResult, logResult,courseResult] = await Promise.all([
-      supabase.from('profiles').select('id,display_name,preferred_language,role,created_at').order('created_at', { ascending: false }).limit(200),
-      supabase.from('audit_logs').select('id,actor_id,action,table_name,record_id,metadata,created_at').order('created_at', { ascending: false }).limit(50),
-      supabase.from('nexora_courses').select('id,slug,title,short_description,description,instructor_name,cover_image_url,price_xof,status,duration_minutes,level').order('created_at',{ascending:false}),
-    ]);
-    if (profileResult.error) setError('Chargement des comptes impossible : ' + profileResult.error.message);
-    else setProfiles((profileResult.data ?? []) as Profile[]);
-    if (logResult.error) setError('Chargement du journal impossible : ' + logResult.error.message);
-    else setLogs((logResult.data ?? []) as AuditLog[]);
-    if (courseResult.error) setError('Chargement des formations impossible : '+courseResult.error.message);
-    else setCourses((courseResult.data??[]) as Course[]);
-    setLoading(false);
+    try {
+      const [profileResult, logResult,courseResult] = await Promise.all([
+        supabase.from('profiles').select('id,display_name,preferred_language,role,created_at').order('created_at', { ascending: false }).limit(200),
+        supabase.from('audit_logs').select('id,actor_id,action,table_name,record_id,metadata,created_at').order('created_at', { ascending: false }).limit(50),
+        supabase.from('nexora_courses').select('id,slug,title,short_description,description,instructor_name,cover_image_url,price_xof,status,duration_minutes,level').order('created_at',{ascending:false}),
+      ]);
+      if (profileResult.error) setError('Chargement des comptes impossible : ' + profileResult.error.message);
+      else setProfiles((profileResult.data ?? []) as Profile[]);
+      if (logResult.error) setError('Chargement du journal impossible : ' + logResult.error.message);
+      else setLogs((logResult.data ?? []) as AuditLog[]);
+      if (courseResult.error) setError('Chargement des formations impossible : '+courseResult.error.message);
+      else setCourses((courseResult.data??[]) as Course[]);
+    } catch {
+      setError('Erreur réseau pendant le chargement de l’administration. Vérifiez la connexion puis réessayez.');
+    } finally {
+      setLoading(false);
+    }
   }, [isAdmin]);
 
   useEffect(() => { void load(); }, [load]);
