@@ -15,7 +15,7 @@ Cette carte répertorie les sources appelées par le dépôt. Une table citée i
 | 9. Bibliothèque de formation | `LearningLibrary` | `user_learning_items`, `entrepreneurs`, `content_items` | Notes, favoris et progression privés |
 | 10. Ressources | `ResourceLibrary` | `nexora_resources`, `nexora_resource_progress` | Catalogue publié + progression de l'utilisateur |
 | 11. Découvrir | `Discover` | `entrepreneurs`, `content_sources`, `followed_entrepreneurs` | Profils publics filtrés; suivi individuel |
-| 12. Vidéothèque / créateurs | `MediaLibrary`, `CreatorCatalog` | `media_library_items`, Storage `nexora-media` | Edge Functions `media-integrations`, `sync-public-creators`; OAuth optionnel |
+| 12. Vidéothèque / créateurs | `MediaLibrary`, `CreatorCatalog` | `media_library_items`, Storage `nexora-media` | Edge Functions `media-integrations`, `sync-public-creators`; OAuth optionnel; formulaire d'ajout, recherche et résultats séparés par une pile responsive explicite |
 | 13. Roadmap | `Roadmap` | `roadmap_tasks` | Filtrage `user_id` |
 | 14. Timeline | `Timeline` | `timeline_events`, `entrepreneurs`, `content_sources` | Événements publiquement documentés; les dates nécessitent une source |
 | 15. Insights | `Insights` | `content_items`, relation `content_analyses` | Ne pas fabriquer d'analyses/indicateurs |
@@ -79,6 +79,7 @@ Les pages métier authentifiées sont les 16 identifiants internes ci-dessus. La
 
 - Chaque page métier et chaque panneau doit conserver `min-width: 0`, `max-width: 100%` et `box-sizing: border-box` pour éviter qu'un texte ou un formulaire force le débordement horizontal.
 - Les grilles utilisent des colonnes minimales réductibles; les cellules et éléments flexibles autorisent le retour à la ligne.
+- Les formulaires des pages métier ont un espacement commun, des libellés séparés de leurs champs et des boutons qui restent dans le conteneur. La vidéothèque dispose d'une grille dédiée pour son formulaire d'ajout et sa recherche, empilée sur mobile.
 - Les noms de sources, statuts, titres et boutons longs doivent se couper ou revenir à la ligne au lieu de se chevaucher.
 - Le panneau de synthèse réduit ses colonnes sur petit écran et empile les sources en dessous des métriques.
 - Le tableau de bord référentiel reste exclu des nouvelles règles visuelles ciblant les pages métier.

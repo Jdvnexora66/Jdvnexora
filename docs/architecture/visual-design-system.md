@@ -80,3 +80,19 @@ La couleur et la structure visuelle ne prouvent pas qu'une source fonctionne. Ch
 ## 6. Validation exigée avant une déclaration de conformité totale
 
 Une conformité complète doit être confirmée sur le rendu déployé : navigation de chaque écran, mode administrateur/utilisateur, chargement/erreur/état vide, actions longues, texte long, et tailles bureau/tablette/mobile. Le build et les vérifications statiques ne remplacent pas les tests visuels réels. Une capture présentant un chevauchement reste un défaut à corriger, même si la compilation réussit.
+
+## 7. Contrat d'espacement appliqué aux formulaires et sections
+
+- Les formulaires des pages métier utilisent un flux en grille, avec des espacements réguliers entre libellés, champs, retours de validation et actions. Les lignes qui possèdent leur propre grille gardent leurs colonnes définies par leur module.
+- Les champs sont empilés avec les libellés lisibles, une hauteur tactile cohérente, une largeur limitée au conteneur et aucun débordement horizontal.
+- Les actions de formulaire ne se collent pas au module qui suit : les sections voisines sont séparées par un gap commun plutôt que par des marges aléatoires.
+- La vidéothèque est une pile dédiée : synthèse, catalogue des créateurs, intégrations, formulaire d'ajout, recherche et résultats. Le formulaire d'ajout et la recherche sont deux blocs autonomes séparés par un espace net ; la ligne de recherche passe en une colonne sur petit écran.
+- La grille des intégrations média, les boutons multiples, les longues URL, les statuts et les champs de recherche doivent se réorganiser lorsque la largeur diminue.
+- Le thème de marque s'applique aux règles de mise en page des pages métier ; les règles sont scopées sous `.page-shell.brand-theme` pour ne pas retoucher la page de référence.
+
+## 8. Résultat du dernier contrôle statique
+
+Le dernier contrôle a identifié que `.media-import-form` et `.media-search-row` n'avaient pas de règle de disposition dédiée dans la feuille principale, alors que leurs champs utilisaient une largeur de 100 %. Cela provoquait un flux peu fiable entre le bouton d'enregistrement et la recherche. Des règles explicites sont ajoutées pour la grille du formulaire, l'espacement entre les sections, les lignes de recherche et le comportement mobile.
+
+Cette correction traite la cause CSS identifiée dans la capture. Elle ne remplace pas le contrôle navigateur authentifié de tous les états de chacune des 17 vues.
+
