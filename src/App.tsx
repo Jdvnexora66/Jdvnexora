@@ -36,7 +36,11 @@ type StudioProject = {
 
 export default function App() {
   const [mode, setMode] = useState<AuthMode>(() => new URLSearchParams(window.location.search).get('mode') === 'signup' ? 'signup' : 'signin');
-  const [activeSection, setActiveSection] = useState('dashboard');
+  const [activeSection, setActiveSection] = useState(() => {
+    const requested = new URLSearchParams(window.location.search).get('studioPreview');
+    const previewableSections = ['dashboard','studio','media','discover','library','academy','resources','projects','organizations','timeline','insights','roadmap','billing','administration'];
+    return requested && previewableSections.includes(requested) ? requested : 'dashboard';
+  });
   const [customDesignPages, setCustomDesignPages] = useState<CustomDesignPage[]>([]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
