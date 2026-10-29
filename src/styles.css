@@ -1165,3 +1165,65 @@ body { background: radial-gradient(ellipse at 12% 0%, rgba(85,56,232,.20), trans
 .visual-studio-real-preview.frame-mobile{max-width:390px}
 .visual-studio-real-iframe{display:block;width:100%;height:100%;border:0;background:#0b1120}
 @media(max-width:720px){.visual-studio-canvas-tools{flex-wrap:wrap;gap:8px}.visual-studio-real-preview{height:650px}.visual-studio-preview-modes{order:3;width:100%}.visual-studio-canvas-tools>span{margin-left:auto}}
+/* Production pass 1 — business pages after the reference dashboard.
+   Keep native data/actions intact; these rules address layout resilience only. */
+.studio-workspace,.project-panel{min-width:0;width:100%;box-sizing:border-box}
+.studio-workspace :is(button,input,textarea,select),.project-panel :is(button,input,textarea,select){font:inherit}
+.studio-workspace :is(input,textarea,select),.project-panel :is(input,textarea,select){max-width:100%;min-width:0;box-sizing:border-box}
+.studio-workspace :is(button,a),.project-panel :is(button,a){overflow-wrap:anywhere}
+.studio-workspace .studio-workspace-heading,.project-panel .section-heading{min-width:0;flex-wrap:wrap;gap:12px}
+.studio-workspace .studio-workspace-heading>div:first-child,.project-panel .section-heading>div:first-child{min-width:0;flex:1 1 240px}
+.studio-workspace .studio-heading-actions,.project-panel .project-meta,.project-panel .editor-actions{display:flex;flex-wrap:wrap;gap:8px;min-width:0}
+.studio-workspace .studio-chat-card,.studio-workspace .studio-context-card,.studio-workspace .studio-transcript,.studio-workspace .studio-composer{min-width:0;max-width:100%;box-sizing:border-box}
+.studio-workspace .studio-message-body,.studio-workspace .studio-system-message,.studio-workspace .studio-privacy-note{overflow-wrap:anywhere;word-break:break-word}
+.studio-workspace .studio-composer textarea{width:100%;resize:vertical}
+.studio-workspace .studio-send-button{flex:0 0 auto}
+.project-panel .organization-invitation-result,.project-panel .organization-security-note,.project-panel .workspace-footnote{overflow-wrap:anywhere;word-break:break-word}
+.project-panel .academy-course-grid,.project-panel .academy-path-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,245px),1fr))}
+.project-panel .academy-course-card,.project-panel .resource-library-item,.project-panel .learning-item,.project-panel .discover-item,.project-panel .timeline-event-card,.project-panel .insight-item,.project-panel .roadmap-task,.project-panel .billing-plans>*{min-width:0;max-width:100%;box-sizing:border-box}
+.project-panel .academy-course-card .project-info,.project-panel .resource-library-info,.project-panel .learning-item-main,.project-panel .discover-item-main,.project-panel .roadmap-task-main{min-width:0;overflow-wrap:anywhere}
+.project-panel .resource-library-actions,.project-panel .academy-course-footer,.project-panel .discover-heading-actions,.project-panel .discover-form-actions,.project-panel .roadmap-form-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}
+.project-panel .resource-library-actions>* ,.project-panel .academy-course-footer>*{max-width:100%}
+.project-panel .discover-global-filters,.project-panel .discover-form-grid,.project-panel .learning-form-grid{min-width:0}
+.project-panel .discover-form-grid>* ,.project-panel .learning-form-grid>*{min-width:0}
+.project-panel .discover-basket-heading{display:flex;flex-wrap:wrap;align-items:flex-start;gap:12px}
+.project-panel .discover-basket-heading>div{min-width:0;flex:1 1 220px}
+.project-panel .timeline-event-card,.project-panel .analysis-result,.project-panel .analysis-result-head{min-width:0;overflow-wrap:anywhere}
+.project-panel .insights-metrics,.project-panel .roadmap-summary,.project-panel .resource-library-summary{grid-template-columns:repeat(auto-fit,minmax(min(100%,155px),1fr))}
+.project-panel .dashboard-stats{grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}
+.project-panel .admin-section .project-item{min-width:0;flex-wrap:wrap;align-items:flex-start}
+.project-panel .admin-section .project-info{min-width:0;flex:1 1 220px}
+.project-panel .admin-section select{max-width:100%}
+@media(max-width:900px){
+ .studio-workspace .studio-workspace-grid{grid-template-columns:minmax(0,1fr)}
+ .studio-workspace .studio-context-column{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px}
+ .project-panel .roadmap-form-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:680px){
+ .studio-workspace{padding:clamp(12px,3.5vw,20px)}
+ .studio-workspace .studio-heading-actions{width:100%}
+ .studio-workspace .studio-heading-actions>*{flex:1 1 135px}
+ .studio-workspace .studio-composer-footer{align-items:stretch;flex-wrap:wrap;gap:8px}
+ .studio-workspace .studio-send-button{min-height:42px}
+ .project-panel{padding:clamp(12px,3.5vw,20px)}
+ .project-panel .section-heading{align-items:flex-start}
+ .project-panel .section-heading h2{font-size:clamp(1.1rem,4.5vw,1.45rem);overflow-wrap:anywhere}
+ .project-panel .project-form,.project-panel .organization-form,.project-panel .learning-form,.project-panel .roadmap-form{min-width:0}
+ .project-panel .project-form :is(input,select,textarea),.project-panel form :is(input,select,textarea){width:100%;min-width:0}
+ .project-panel .project-meta>*{flex:1 1 125px;min-width:0}
+ .project-panel .roadmap-form-row{grid-template-columns:minmax(0,1fr)}
+ .project-panel .discover-heading-actions{width:100%}
+ .project-panel .discover-heading-actions>*{flex:1 1 135px}
+ .project-panel .discover-form-actions>*{flex:1 1 140px}
+ .project-panel .resource-library-actions{width:100%}
+ .project-panel .resource-library-actions>*{flex:1 1 130px}
+ .project-panel .admin-section .project-item{display:flex}
+}
+@media(max-width:420px){
+ .studio-workspace .studio-heading-actions>*{flex-basis:100%}
+ .studio-workspace .studio-prompt-suggestions{display:flex;flex-wrap:wrap}
+ .project-panel .insights-metrics,.project-panel .roadmap-summary,.project-panel .resource-library-summary,.project-panel .dashboard-stats{grid-template-columns:minmax(0,1fr)}
+ .project-panel .discover-heading-actions>* ,.project-panel .discover-form-actions>*{width:100%;flex-basis:100%}
+ .project-panel .resource-library-actions>*{flex-basis:100%}
+ .project-panel .project-item{align-items:flex-start}
+}
