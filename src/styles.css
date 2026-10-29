@@ -2099,7 +2099,7 @@ body:has(.page-shell.brand-theme) { background: #0B0B0D; color: #F5F2EA; }
   gap: 20px;
 }
 .page-shell.brand-theme .workspace-main #media-library.media-library-panel > :is(
-  .module-data-overview,.creator-catalog,.media-provider-panel,.media-import-form,
+  .section-heading,.module-data-overview,.creator-catalog,.media-provider-panel,.media-import-form,
   .media-search-row,.media-grid,.empty-state,.feedback,.workspace-footnote
 ) {
   min-width: 0;
