@@ -41,6 +41,7 @@ export default function PublishedVisualLayout({ scope }: { scope: string }) {
   const [published,setPublished] = useState<Published|null>(null);
   useEffect(() => {
     let active = true;
+    setPublished(null);
     if (!supabase) return;
     supabase.from('visual_studio_publications').select('name,config,published_at').eq('is_default',true).eq('scope', scope).limit(1).maybeSingle().then(({data,error}) => {
       if (!active || error || !data) return;
