@@ -418,3 +418,57 @@ hr {
     width: 100%;
   }
 }
+
+
+/* JDV NEXORA brand system */
+.workspace-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin: 8px 8px 18px;
+  padding: 10px;
+  border: 1px solid rgba(214,182,110,.22);
+  border-radius: 14px;
+  color: #f5f2ea;
+  text-decoration: none;
+  background: linear-gradient(135deg, rgba(214,182,110,.09), rgba(9,16,28,.2));
+}
+.workspace-brand img {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  object-fit: contain;
+}
+.workspace-brand span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  line-height: 1.2;
+}
+.workspace-brand strong {
+  font-size: .82rem;
+  letter-spacing: .045em;
+}
+.workspace-brand small {
+  color: #D6B66E;
+  font-size: .62rem;
+  letter-spacing: .2em;
+}
+.vitrine-brand-image {
+  width: 43px;
+  height: 43px;
+  flex: 0 0 43px;
+  object-fit: contain;
+  border-radius: 13px;
+}
+.vitrine-core-mark img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+}
+@media (max-width: 760px) {
+  .workspace-brand { justify-content: center; margin-inline: 4px; padding: 7px; }
+  .workspace-brand span { display: none; }
+  .workspace-brand img { width: 38px; height: 38px; flex-basis: 38px; }
+}
