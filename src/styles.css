@@ -2232,3 +2232,199 @@ body:has(.page-shell.brand-theme) { background: #0B0B0D; color: #F5F2EA; }
   }
 }
 
+/* AUDIT GLOBAL — rythme vertical, formulaires et lisibilité des pages métier */
+:root {
+  --layout-gap-xs: 8px;
+  --layout-gap-sm: 12px;
+  --layout-gap-md: 18px;
+  --layout-gap-lg: 24px;
+  --layout-gap-xl: 32px;
+}
+
+/* Zone d'authentification : inscription, connexion et récupération. */
+.page-shell.brand-theme .hero-grid,
+.page-shell.brand-theme .hero-copy,
+.page-shell.brand-theme .auth-card {
+  min-width: 0;
+}
+.page-shell.brand-theme .auth-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: clamp(22px, 3.2vw, 34px);
+}
+.page-shell.brand-theme .auth-card > :is(.eyebrow,h1,h2,h3,p) {
+  margin-block: 0;
+  line-height: 1.55;
+}
+.page-shell.brand-theme .auth-card > .eyebrow {
+  margin-bottom: 0;
+  line-height: 1.4;
+}
+.page-shell.brand-theme .auth-card > h2 {
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .auth-card > .muted,
+.page-shell.brand-theme .auth-card > .terms,
+.page-shell.brand-theme .auth-card > .feedback,
+.page-shell.brand-theme .auth-card > .config-warning {
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .auth-card > form {
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+  align-content: start;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+.page-shell.brand-theme .auth-card > form > label {
+  margin: 4px 0 -5px;
+  line-height: 1.5;
+}
+.page-shell.brand-theme .auth-card > form > :is(input,select,textarea) {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  box-sizing: border-box;
+}
+.page-shell.brand-theme .auth-card > form > button {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 8px;
+  white-space: normal;
+  line-height: 1.45;
+}
+.page-shell.brand-theme .auth-card > .mode-switch,
+.page-shell.brand-theme .auth-card > [role="tablist"] {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+}
+.page-shell.brand-theme .auth-card > .mode-switch button,
+.page-shell.brand-theme .auth-card > [role="tablist"] button {
+  min-width: 0;
+  min-height: 44px;
+  white-space: normal;
+  line-height: 1.4;
+}
+
+/* Espacement transversal des formulaires métier sans remplacer leurs grilles internes. */
+.page-shell.brand-theme .workspace-main .project-panel form,
+.page-shell.brand-theme .workspace-main .studio-panel form,
+.page-shell.brand-theme .workspace-main .organization-panel form,
+.page-shell.brand-theme .workspace-main .admin-panel form,
+.page-shell.brand-theme .workspace-main .academy-panel form,
+.page-shell.brand-theme .workspace-main .resource-library form,
+.page-shell.brand-theme .workspace-main .learning-library form,
+.page-shell.brand-theme .workspace-main .discover-panel form,
+.page-shell.brand-theme .workspace-main .timeline-panel form,
+.page-shell.brand-theme .workspace-main .insights-panel form,
+.page-shell.brand-theme .workspace-main .roadmap-panel form,
+.page-shell.brand-theme .workspace-main .billing-panel form,
+.page-shell.brand-theme .workspace-main .collaboration-panel form,
+.page-shell.brand-theme .workspace-main .visual-design-studio form {
+  min-width: 0;
+  max-width: 100%;
+  row-gap: 12px;
+}
+.page-shell.brand-theme .workspace-main :is(
+  .project-panel,.studio-panel,.organization-panel,.admin-panel,.academy-panel,
+  .resource-library,.learning-library,.discover-panel,.timeline-panel,.insights-panel,
+  .roadmap-panel,.billing-panel,.collaboration-panel,.visual-design-studio
+) :is(label,.field-label,.form-label) {
+  display: block;
+  min-width: 0;
+  margin-block: 4px 0;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .workspace-main :is(
+  .project-panel,.studio-panel,.organization-panel,.admin-panel,.academy-panel,
+  .resource-library,.learning-library,.discover-panel,.timeline-panel,.insights-panel,
+  .roadmap-panel,.billing-panel,.collaboration-panel,.visual-design-studio
+) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),select,textarea) {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+.page-shell.brand-theme .workspace-main :is(
+  .project-panel,.studio-panel,.organization-panel,.admin-panel,.academy-panel,
+  .resource-library,.learning-library,.discover-panel,.timeline-panel,.insights-panel,
+  .roadmap-panel,.billing-panel,.collaboration-panel,.visual-design-studio
+) textarea {
+  min-height: 112px;
+  line-height: 1.65;
+}
+.page-shell.brand-theme .workspace-main :is(
+  .project-panel,.studio-panel,.organization-panel,.admin-panel,.academy-panel,
+  .resource-library,.learning-library,.discover-panel,.timeline-panel,.insights-panel,
+  .roadmap-panel,.billing-panel,.collaboration-panel,.visual-design-studio
+) :is(.feedback,.error,.success,.muted,.empty-state) {
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+/* Séparation visuelle entre sections, en-têtes, cartes et zones d'action. */
+.page-shell.brand-theme .workspace-main :is(
+  .project-panel,.studio-panel,.organization-panel,.admin-panel,.academy-panel,
+  .resource-library,.learning-library,.discover-panel,.timeline-panel,.insights-panel,
+  .roadmap-panel,.billing-panel,.collaboration-panel,.visual-design-studio
+) > :is(.section-heading,.pipeline-heading,.module-data-overview,.creator-catalog,
+.media-provider-panel,.media-import-form,.media-search-row,.media-grid,.empty-state,
+.feedback,.workspace-footnote,.project-filters,.project-list,.studio-grid,.academy-grid,
+.resource-grid,.discover-grid,.roadmap-grid,.billing-grid,.admin-grid,.visual-grid,
+.insights-grid,.timeline-list,.timeline-grid,.organization-grid) {
+  min-width: 0;
+  max-width: 100%;
+}
+.page-shell.brand-theme .workspace-main :is(.project-panel,.studio-panel,.organization-panel,
+.admin-panel,.academy-panel,.resource-library,.learning-library,.discover-panel,
+.timeline-panel,.insights-panel,.roadmap-panel,.billing-panel,.collaboration-panel,
+.visual-design-studio) :is(.section-heading,.pipeline-heading,.quick-access-heading) {
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.page-shell.brand-theme .workspace-main :is(.project-panel,.studio-panel,.organization-panel,
+.admin-panel,.academy-panel,.resource-library,.learning-library,.discover-panel,
+.timeline-panel,.insights-panel,.roadmap-panel,.billing-panel,.collaboration-panel,
+.visual-design-studio) :is(.section-heading h1,.section-heading h2,.section-heading h3,
+.pipeline-heading h2,.pipeline-heading h3) {
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .workspace-main :is(.project-panel,.studio-panel,.organization-panel,
+.admin-panel,.academy-panel,.resource-library,.learning-library,.discover-panel,
+.timeline-panel,.insights-panel,.roadmap-panel,.billing-panel,.collaboration-panel,
+.visual-design-studio) :is(.stat-card,.pipeline-card,.project-item,.media-provider-card,
+.discover-basket,.insight-item,.timeline-event-card,.roadmap-task,.empty-state) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .workspace-main :is(button,a) {
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .workspace-main :is(button.primary-button,button.secondary-button,
+button.logout-button) {
+  min-height: 42px;
+  line-height: 1.45;
+  white-space: normal;
+}
+@media (max-width: 760px) {
+  .page-shell.brand-theme .auth-card {
+    gap: 14px;
+    padding: 20px 16px;
+  }
+  .page-shell.brand-theme .auth-card > form {
+    gap: 11px;
+  }
+  .page-shell.brand-theme .workspace-main :is(.section-heading,.pipeline-heading,.quick-access-heading) {
+    margin-bottom: 16px;
+  }
+}
