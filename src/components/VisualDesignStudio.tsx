@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, Check, Clock3, Copy, Eye, EyeOff, LayoutDashboard, Palette, Plus, Save, ShieldCheck, Smartphone, Tablet, Trash2, Undo2, Monitor, Rocket, RotateCcw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import ModuleDataOverview from './ModuleDataOverview';
 
 type StudioBlock = {
   id: string;
@@ -216,6 +217,8 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
   const displayed = config.components.filter(block => !block.hidden);
   return <section className="project-panel visual-studio" id="visual-design-studio" aria-labelledby="visual-studio-title">
     <div className="section-heading"><div><p className="eyebrow">OUTIL ADMINISTRATEUR</p><h2 id="visual-studio-title"><Palette size={21}/> Studio de conception visuelle</h2><p className="muted">Composez une disposition autorisée, ajustez les styles et publiez explicitement après validation.</p></div><span className="visual-studio-badge"><ShieldCheck size={14}/> Administrateur</span></div>
+    <ModuleDataOverview sources={["visual_studio_layouts", "visual_studio_versions", "visual_studio_publications"]} metrics={[{ label: "Dispositions disponibles", value: layouts.length }, { label: "Versions chargées", value: versions.length }, { label: "Bloc sélectionné", value: selectedBlock ? "Oui" : "Non" }]} loading={busy} error={Boolean(error)} caption="Les dispositions restent en brouillon jusqu'à une publication explicite." />
+
     <div className="visual-studio-toolbar">
       <label>Disposition<select value={selectedId} onChange={event => { const row = layouts.find(item => item.id === event.target.value); if (row) selectLayout(row); else setSelectedId(''); }}><option value="">Choisir une disposition…</option>{layouts.map(row => <option key={row.id} value={row.id}>{row.name}{row.is_default ? ' · Par défaut' : ''}</option>)}</select></label>
       <label>Page à personnaliser<select value={scope} disabled={busy} onChange={event => {
