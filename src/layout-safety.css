@@ -10,7 +10,7 @@
 
 body {
   line-height: var(--text-leading);
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
 }
 
 #root,
