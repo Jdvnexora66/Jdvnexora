@@ -321,3 +321,100 @@ hr {
     padding: 9px 8px;
   }
 }
+
+
+/* Discover page: keep the search icon and input on one aligned row. */
+.project-panel .discover-global-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-block: 14px 20px;
+}
+
+.project-panel .discover-country-filter {
+  flex: 1 1 280px;
+  min-width: 0;
+  margin: 0;
+}
+
+.project-panel .discover-global-filters > button {
+  flex: 0 1 auto;
+  margin: 0;
+}
+
+.project-panel .discover-baskets {
+  display: grid;
+  gap: 16px;
+}
+
+.project-panel .discover-basket {
+  gap: 16px;
+  margin: 0;
+}
+
+.project-panel .discover-basket-heading > div {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.project-panel .discover-basket-heading h3,
+.project-panel .discover-basket-heading p {
+  margin: 0;
+}
+
+.project-panel .discover-basket-count {
+  display: inline-block;
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+.project-panel .discover-basket-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+}
+
+.project-panel .discover-basket-search > svg {
+  flex: 0 0 auto;
+}
+
+.project-panel .discover-basket-search > input {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  margin: 0;
+}
+
+.project-panel .discover-basket-empty {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+
+.project-panel .discover-basket-empty p {
+  margin: 0;
+}
+
+.project-panel .discover-add {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 560px) {
+  .project-panel .discover-basket-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .project-panel .discover-add {
+    justify-self: start;
+  }
+
+  .project-panel .discover-global-filters > button {
+    width: 100%;
+  }
+}
