@@ -2056,7 +2056,6 @@ body:has(.page-shell.brand-theme) { background: #0B0B0D; color: #F5F2EA; }
 /* AUDIT FINAL — espacement des formulaires et modules métier */
 .page-shell.brand-theme .workspace-main .project-panel form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 12px;
   min-width: 0;
