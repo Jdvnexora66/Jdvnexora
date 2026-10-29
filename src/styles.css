@@ -1084,7 +1084,6 @@ body { background: radial-gradient(ellipse at 12% 0%, rgba(85,56,232,.20), trans
  .organization-invitation-result .logout-button{justify-self:stretch}
 }
 
- feat/coordinate-all-pages-ui-pass
 
 /* Passe de cohérence transversale — pages NEXORA.
    Les règles ci-dessous harmonisent le responsive sans remplacer les styles de chaque module. */
@@ -2053,4 +2052,183 @@ body:has(.page-shell.brand-theme) { background: #0B0B0D; color: #F5F2EA; }
 .page-shell.brand-theme .workspace-main .visual-studio-properties,
 .page-shell.brand-theme .workspace-main .visual-studio-canvas-wrap,
 .page-shell.brand-theme .workspace-main .visual-studio-footer { border-color: var(--line); }
+
+/* AUDIT FINAL — espacement des formulaires et modules métier */
+.page-shell.brand-theme .workspace-main .project-panel form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+  max-width: 100%;
+}
+.page-shell.brand-theme .workspace-main .project-panel form > *,
+.page-shell.brand-theme .workspace-main .project-panel form :is(input,select,textarea,button) {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.page-shell.brand-theme .workspace-main .project-panel form label {
+  display: block;
+  margin: 2px 0 -4px;
+  line-height: 1.4;
+}
+.page-shell.brand-theme .workspace-main .project-panel form :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),select,textarea) {
+  width: 100%;
+  min-height: 44px;
+}
+.page-shell.brand-theme .workspace-main .project-panel form textarea {
+  min-height: 112px;
+}
+.page-shell.brand-theme .workspace-main .project-panel form .feedback {
+  margin: 4px 0;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .workspace-main .project-panel form > .primary-button,
+.page-shell.brand-theme .workspace-main .project-panel form > .logout-button {
+  justify-self: start;
+  white-space: normal;
+  line-height: 1.4;
+}
+
+/* La vidéothèque est empilée sur une seule colonne logique avec des gaps réguliers. */
+.page-shell.brand-theme .workspace-main #media-library.media-library-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 20px;
+}
+.page-shell.brand-theme .workspace-main #media-library.media-library-panel > :is(
+  .module-data-overview,.creator-catalog,.media-provider-panel,.media-import-form,
+  .media-search-row,.media-grid,.empty-state,.feedback,.workspace-footnote
+) {
+  min-width: 0;
+  max-width: 100%;
+  margin-block: 0;
+}
+.page-shell.brand-theme .workspace-main #media-library .media-import-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: 9px;
+  margin: 0;
+  padding: clamp(16px, 2.2vw, 24px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(32,32,36,.82), rgba(11,11,13,.76));
+}
+.page-shell.brand-theme .workspace-main #media-library .media-import-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
+  margin-bottom: 8px;
+}
+.page-shell.brand-theme .workspace-main #media-library .media-import-heading > div {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.page-shell.brand-theme .workspace-main #media-library .media-import-heading p {
+  margin: 6px 0 0;
+  line-height: 1.55;
+}
+.page-shell.brand-theme .workspace-main #media-library .media-import-form > label {
+  margin: 5px 0 -3px;
+  font-weight: 650;
+}
+.page-shell.brand-theme .workspace-main #media-library .media-import-form :is(input:not([type="file"]),select,textarea) {
+  width: 100%;
+  min-height: 46px;
+}
+.page-shell.brand-theme .workspace-main #media-library .media-file-upload {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 8px 0;
+  padding: 16px;
+}
+.page-shell.brand-theme .workspace-main #media-library .media-file-upload label {
+  margin: 0;
+}
+.page-shell.brand-theme .workspace-main #media-library .media-file-upload .primary-button {
+  justify-self: start;
+}
+.page-shell.brand-theme .workspace-main #media-library .media-import-form .media-add-button {
+  justify-self: start;
+  align-self: start;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 46px;
+  margin-top: 10px;
+  padding-inline: 18px;
+}
+.page-shell.brand-theme .workspace-main #media-library .media-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 0 0 18px;
+  border-bottom: 1px solid var(--line);
+}
+.page-shell.brand-theme .workspace-main #media-library .media-search-row .search-field {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+}
+.page-shell.brand-theme .workspace-main #media-library .media-search-row .search-field svg {
+  flex: 0 0 auto;
+}
+.page-shell.brand-theme .workspace-main #media-library .media-search-row .search-field input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding-inline: 2px;
+}
+.page-shell.brand-theme .workspace-main #media-library .media-search-row > .muted {
+  margin: 0;
+  line-height: 1.45;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .workspace-main #media-library .media-provider-panel {
+  margin: 0;
+}
+.page-shell.brand-theme .workspace-main #media-library .creator-catalog {
+  margin: 0;
+}
+.page-shell.brand-theme .workspace-main #media-library .media-grid {
+  gap: 16px;
+}
+@media (max-width: 760px) {
+  .page-shell.brand-theme .workspace-main .project-panel form {
+    gap: 10px;
+  }
+  .page-shell.brand-theme .workspace-main #media-library .media-search-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+  .page-shell.brand-theme .workspace-main #media-library .media-search-row > .muted {
+    text-align: left;
+  }
+  .page-shell.brand-theme .workspace-main #media-library .media-import-form .media-add-button {
+    justify-self: stretch;
+    width: 100%;
+  }
+  .page-shell.brand-theme .workspace-main #media-library .media-file-upload .primary-button {
+    justify-self: stretch;
+    width: 100%;
+    white-space: normal;
+  }
+}
 
