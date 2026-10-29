@@ -103,7 +103,6 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
     <div className="section-heading"><div><p className="eyebrow">OFFRES & ABONNEMENTS</p><h2><CreditCard size={21}/> Forfaits et abonnement</h2><p className="muted">Consultez les offres et le statut de votre abonnement.</p></div><button type="button" className="icon-button" onClick={() => void load()} disabled={loading} aria-label="Actualiser les forfaits"><RefreshCw size={16}/></button></div>
     <ModuleDataOverview sources={["plans", "subscriptions"]} metrics={[{ label: "Forfaits chargés", value: plans.length }, { label: "Abonnement", value: subscription ? statusLabel[subscription.status] : "Aucun enregistré" }, { label: "Forfait actif", value: subscribedPlan?.name ?? "Non disponible" }]} loading={loading} error={Boolean(error)} caption="Le statut est lu depuis la base; aucun paiement n'est déclaré réussi par cette page." />
 
-    <ModuleDataOverview sources={["plans", "subscriptions"]} metrics={[{ label: "Forfaits chargés", value: plans.length }, { label: "Abonnement", value: subscription ? statusLabel[subscription.status] : "Aucun enregistré" }, { label: "Forfait actif", value: subscribedPlan?.name ?? "Non disponible" }]} loading={loading} error={Boolean(error)} caption="Le statut est lu depuis la base; aucun paiement n'est déclaré réussi par cette page." />
 
     <div className="billing-current">
       <h3><BadgeCheck size={17}/> Votre abonnement</h3>
