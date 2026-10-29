@@ -1582,3 +1582,346 @@ body { background: radial-gradient(ellipse at 12% 0%, rgba(85,56,232,.20), trans
     align-self: flex-start;
   }
 }
+
+/* JDV NEXORA — contrôle visuel des pages métier : palette maître et prévention des chevauchements */
+.page-shell.brand-theme {
+  color-scheme: dark;
+  --bg: #0B0B0D;
+  --bg-soft: #17171A;
+  --panel: rgba(32, 32, 36, .96);
+  --panel-strong: #202024;
+  --panel-hover: #2B2B30;
+  --text: #F5F2EA;
+  --muted: #C9C1B2;
+  --subtle: #A79D8B;
+  --line: rgba(214, 182, 110, .20);
+  --line-strong: rgba(214, 182, 110, .42);
+  --primary: #D6B66E;
+  --primary-strong: #B89449;
+  --cyan: #D6B66E;
+  --yellow: #D6B66E;
+  --focus: 0 0 0 3px rgba(214, 182, 110, .28);
+  --nx-bg: #0B0B0D;
+  --nx-panel: rgba(32, 32, 36, .96);
+  --nx-panel-soft: rgba(32, 32, 36, .82);
+  --nx-border: rgba(214, 182, 110, .20);
+  --nx-border-hover: rgba(214, 182, 110, .52);
+  --nx-text: #F5F2EA;
+  --nx-muted: #C9C1B2;
+  --nx-purple: #D6B66E;
+  --nx-cyan: #D6B66E;
+  min-height: 100vh;
+  background: #0B0B0D;
+  color: #F5F2EA;
+}
+body:has(.page-shell.brand-theme) { background: #0B0B0D; color: #F5F2EA; }
+.page-shell.brand-theme .topbar {
+  background: rgba(11,11,13,.96);
+  border-bottom-color: var(--line);
+}
+.page-shell.brand-theme .brand-mark,
+.page-shell.brand-theme .empty-icon {
+  border-color: rgba(214,182,110,.48);
+  background: linear-gradient(135deg,rgba(214,182,110,.18),rgba(214,182,110,.06));
+  color: #D6B66E;
+}
+.page-shell.brand-theme .brand strong,
+.page-shell.brand-theme .workspace-main h1,
+.page-shell.brand-theme .workspace-main h2,
+.page-shell.brand-theme .workspace-main h3,
+.page-shell.brand-theme .workspace-main h4 { color: #F5F2EA; }
+.page-shell.brand-theme .workspace-sidebar {
+  border-color: var(--line);
+  background: linear-gradient(180deg,#202024,#141416);
+  box-shadow: 0 18px 44px rgba(0,0,0,.24);
+}
+.page-shell.brand-theme .workspace-sidebar .nav-section-label { color: #C4A766; }
+.page-shell.brand-theme .workspace-sidebar .workspace-nav-link { color: #C9C1B2; }
+.page-shell.brand-theme .workspace-sidebar .workspace-nav-link svg { color: #D6B66E; }
+.page-shell.brand-theme .workspace-sidebar .workspace-nav-link:hover,
+.page-shell.brand-theme .workspace-sidebar .workspace-nav-link.active {
+  color: #F5F2EA;
+  border-color: rgba(214,182,110,.42);
+  background: linear-gradient(100deg,rgba(214,182,110,.18),rgba(214,182,110,.05));
+  box-shadow: inset 3px 0 #D6B66E;
+}
+.page-shell.brand-theme .workspace-sidebar .workspace-nav-link.active svg { color: #E6D19B; }
+.page-shell.brand-theme .secure-label { color: #D6B66E; }
+.page-shell.brand-theme .workspace-main { color: var(--text); gap: 20px; }
+.page-shell.brand-theme .workspace-main > *:not(.reference-dashboard),
+.page-shell.brand-theme .workspace-main .project-panel,
+.page-shell.brand-theme .workspace-main .studio-panel,
+.page-shell.brand-theme .workspace-main .billing-panel,
+.page-shell.brand-theme .workspace-main .admin-panel,
+.page-shell.brand-theme .workspace-main .organization-panel,
+.page-shell.brand-theme .workspace-main .media-library,
+.page-shell.brand-theme .workspace-main .discover-panel,
+.page-shell.brand-theme .workspace-main .timeline-panel,
+.page-shell.brand-theme .workspace-main .insights-panel,
+.page-shell.brand-theme .workspace-main .roadmap-panel,
+.page-shell.brand-theme .workspace-main .academy-panel,
+.page-shell.brand-theme .workspace-main .resource-library,
+.page-shell.brand-theme .workspace-main .learning-library,
+.page-shell.brand-theme .workspace-main .collaboration-panel,
+.page-shell.brand-theme .workspace-main .visual-design-studio,
+.page-shell.brand-theme .auth-card {
+  border-color: var(--line);
+  background: linear-gradient(150deg,rgba(32,32,36,.97),rgba(17,17,19,.99));
+  color: var(--text);
+}
+.page-shell.brand-theme .workspace-main .eyebrow,
+.page-shell.brand-theme .workspace-main .module-data-overview-kicker { color: #D6B66E; }
+.page-shell.brand-theme .workspace-main p,
+.page-shell.brand-theme .workspace-main label,
+.page-shell.brand-theme .workspace-main .muted,
+.page-shell.brand-theme .workspace-main small { color: var(--muted); }
+.page-shell.brand-theme .workspace-main input,
+.page-shell.brand-theme .workspace-main select,
+.page-shell.brand-theme .workspace-main textarea,
+.page-shell.brand-theme .auth-card input,
+.page-shell.brand-theme .auth-card select,
+.page-shell.brand-theme .auth-card textarea {
+  border-color: var(--line-strong);
+  background: #0B0B0D;
+  color: #F5F2EA;
+}
+.page-shell.brand-theme .workspace-main input::placeholder,
+.page-shell.brand-theme .workspace-main textarea::placeholder,
+.page-shell.brand-theme .auth-card input::placeholder { color: #A79D8B; }
+.page-shell.brand-theme .workspace-main input:hover,
+.page-shell.brand-theme .workspace-main select:hover,
+.page-shell.brand-theme .workspace-main textarea:hover { border-color: #D6B66E; }
+.page-shell.brand-theme .primary-button,
+.page-shell.brand-theme .sidebar-upgrade button {
+  border-color: rgba(214,182,110,.65);
+  background: linear-gradient(135deg,#D6B66E,#B89449);
+  color: #0B0B0D;
+  box-shadow: 0 8px 22px rgba(214,182,110,.13);
+}
+.page-shell.brand-theme .logout-button,
+.page-shell.brand-theme .icon-button,
+.page-shell.brand-theme .open-project-button,
+.page-shell.brand-theme .save-button,
+.page-shell.brand-theme .chapter-item,
+.page-shell.brand-theme .quick-access-card {
+  border-color: var(--line);
+  background: rgba(214,182,110,.055);
+  color: #F5F2EA;
+}
+.page-shell.brand-theme .open-project-button,
+.page-shell.brand-theme .quick-access-card:hover,
+.page-shell.brand-theme .chapter-item.active { border-color: var(--line-strong); background: rgba(214,182,110,.12); color: #F5F2EA; }
+.page-shell.brand-theme .stat-card,
+.page-shell.brand-theme .studio-card,
+.page-shell.brand-theme .academy-card,
+.page-shell.brand-theme .resource-card,
+.page-shell.brand-theme .media-card,
+.page-shell.brand-theme .media-provider-card,
+.page-shell.brand-theme .discover-card,
+.page-shell.brand-theme .discover-basket,
+.page-shell.brand-theme .insight-item,
+.page-shell.brand-theme .timeline-event-card,
+.page-shell.brand-theme .roadmap-task,
+.page-shell.brand-theme .organization-card,
+.page-shell.brand-theme .billing-card,
+.page-shell.brand-theme .admin-card,
+.page-shell.brand-theme .visual-card,
+.page-shell.brand-theme .learning-card,
+.page-shell.brand-theme .module-data-metric,
+.page-shell.brand-theme .module-data-source {
+  min-width: 0;
+  border-color: rgba(214,182,110,.19);
+  background: rgba(32,32,36,.78);
+  color: #F5F2EA;
+}
+.page-shell.brand-theme .stat-icon,
+.page-shell.brand-theme .quick-access-icon,
+.page-shell.brand-theme .project-type-icon,
+.page-shell.brand-theme .module-data-sources-label svg { color: #D6B66E; }
+.page-shell.brand-theme .stat-icon,
+.page-shell.brand-theme .quick-access-icon {
+  border-color: rgba(214,182,110,.30);
+  background: rgba(214,182,110,.10);
+}
+.page-shell.brand-theme .project-type-icon { background: rgba(214,182,110,.10); }
+.page-shell.brand-theme .status-in_progress,
+.page-shell.brand-theme .status-running,
+.page-shell.brand-theme .status-pill:not(.success),
+.page-shell.brand-theme .project-type-label {
+  border-color: rgba(214,182,110,.28);
+  background: rgba(214,182,110,.09);
+  color: #E7D6AB;
+}
+.page-shell.brand-theme .timeline-marker { background: #D6B66E; box-shadow: 0 0 0 5px rgba(214,182,110,.13); }
+.page-shell.brand-theme .module-data-overview {
+  border-color: var(--line);
+  background: radial-gradient(ellipse at 0 0,rgba(214,182,110,.09),transparent 44%),linear-gradient(145deg,rgba(32,32,36,.94),rgba(17,17,19,.96));
+}
+.page-shell.brand-theme .module-data-status,
+.page-shell.brand-theme .module-data-source {
+  border-color: var(--line);
+}
+.page-shell.brand-theme .module-data-source { background: rgba(214,182,110,.06); color: #E8D7AD; }
+.page-shell.brand-theme .module-data-status.is-ready { color: #A9E7C8; }
+.page-shell.brand-theme .module-data-status.has-error { color: #FFB2B2; }
+.page-shell.brand-theme .empty-state,
+.page-shell.brand-theme .pipeline-empty,
+.page-shell.brand-theme .chapter-empty { border-color: var(--line-strong); }
+.page-shell.brand-theme .workspace-main [class*="panel"],
+.page-shell.brand-theme .workspace-main [class*="card"],
+.page-shell.brand-theme .workspace-main [class*="grid"] > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .workspace-main .section-heading,
+.page-shell.brand-theme .workspace-main .pipeline-heading,
+.page-shell.brand-theme .workspace-main .media-provider-heading,
+.page-shell.brand-theme .workspace-main .creator-catalog-heading {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.page-shell.brand-theme .workspace-main .section-heading > div,
+.page-shell.brand-theme .workspace-main .pipeline-heading > div,
+.page-shell.brand-theme .workspace-main .media-provider-heading > div,
+.page-shell.brand-theme .workspace-main .creator-catalog-heading > div { min-width: 0; max-width: 100%; }
+.page-shell.brand-theme .workspace-main .media-provider-panel,
+.page-shell.brand-theme .workspace-main .creator-catalog {
+  min-width: 0;
+  margin-block: 18px;
+  padding: clamp(16px,2vw,22px);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #202024;
+}
+.page-shell.brand-theme .workspace-main .media-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(min(100%,260px),1fr));
+  align-items: stretch;
+  gap: 14px;
+}
+.page-shell.brand-theme .workspace-main .media-provider-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  min-height: 190px;
+  padding: 16px;
+  border-radius: 13px;
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .workspace-main .media-provider-card-top {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.page-shell.brand-theme .workspace-main .media-provider-card > div { min-width: 0; flex: 0 0 auto; }
+.page-shell.brand-theme .workspace-main .media-provider-card > p { min-width: 0; margin: 0; line-height: 1.55; }
+.page-shell.brand-theme .workspace-main .media-provider-status { white-space: normal; overflow-wrap: anywhere; }
+.page-shell.brand-theme .workspace-main .media-provider-account,
+.page-shell.brand-theme .workspace-main .media-provider-last-sync { overflow-wrap: anywhere; }
+.page-shell.brand-theme .workspace-main .media-provider-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: auto;
+}
+.page-shell.brand-theme .workspace-main .media-provider-card .primary-button,
+.page-shell.brand-theme .workspace-main .media-provider-card .media-remove-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .workspace-main .creator-catalog-empty,
+.page-shell.brand-theme .workspace-main .creator-channel-card {
+  border-color: var(--line);
+  background: rgba(32,32,36,.76);
+  color: #F5F2EA;
+}
+.page-shell.brand-theme .workspace-main .creator-catalog-input-row { flex-wrap: wrap; }
+.page-shell.brand-theme .workspace-main .creator-catalog-input-row > * { min-width: 0; }
+.page-shell.brand-theme .workspace-main .module-data-overview-head { flex-wrap: wrap; }
+.page-shell.brand-theme .workspace-main .module-data-status { white-space: normal; }
+.page-shell.brand-theme .workspace-main .module-data-sources,
+.page-shell.brand-theme .workspace-main .module-data-sources-label { min-width: 0; flex-wrap: wrap; }
+.page-shell.brand-theme .workspace-main .module-data-source-list { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.page-shell.brand-theme .workspace-main .module-data-source { max-width: 100%; overflow-wrap: anywhere; }
+.page-shell.brand-theme .workspace-main .project-filters,
+.page-shell.brand-theme .workspace-main .editor-layout,
+.page-shell.brand-theme .workspace-main .discover-layout { min-width: 0; }
+.page-shell.brand-theme .workspace-main .project-item {
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: start;
+  gap: 12px;
+}
+.page-shell.brand-theme .workspace-main .project-item > * { min-width: 0; max-width: 100%; }
+.page-shell.brand-theme .workspace-main .project-item > .open-project-button,
+.page-shell.brand-theme .workspace-main .project-item > .delete-button { grid-row: auto; }
+.page-shell.brand-theme .workspace-main .project-info { min-width: 0; }
+.page-shell.brand-theme .workspace-main .project-info h3,
+.page-shell.brand-theme .workspace-main .project-info p { overflow-wrap: anywhere; }
+.page-shell.brand-theme .workspace-main button,
+.page-shell.brand-theme .workspace-main a,
+.page-shell.brand-theme .workspace-main label { overflow-wrap: anywhere; }
+.page-shell.brand-theme .workspace-main button { max-width: 100%; }
+.page-shell.brand-theme .workspace-main .creator-channel-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.page-shell.brand-theme .workspace-main .creator-channel-info { min-width: 0; flex: 1 1 220px; }
+.page-shell.brand-theme .workspace-main .creator-channel-actions { min-width: 0; flex-wrap: wrap; }
+.page-shell.brand-theme .workspace-main .visual-grid,
+.page-shell.brand-theme .workspace-main .admin-grid,
+.page-shell.brand-theme .workspace-main .billing-grid,
+.page-shell.brand-theme .workspace-main .insights-grid { grid-template-columns: repeat(auto-fit,minmax(min(100%,220px),1fr)); }
+.page-shell.brand-theme .workspace-main .media-grid { grid-template-columns: repeat(auto-fit,minmax(min(100%,220px),1fr)); }
+@media (max-width: 900px) {
+  .page-shell.brand-theme .workspace-main .studio-grid,
+  .page-shell.brand-theme .workspace-main .academy-grid,
+  .page-shell.brand-theme .workspace-main .resource-grid,
+  .page-shell.brand-theme .workspace-main .discover-grid,
+  .page-shell.brand-theme .workspace-main .organization-grid,
+  .page-shell.brand-theme .workspace-main .billing-grid,
+  .page-shell.brand-theme .workspace-main .admin-grid,
+  .page-shell.brand-theme .workspace-main .visual-grid,
+  .page-shell.brand-theme .workspace-main .insights-grid { grid-template-columns: repeat(auto-fit,minmax(min(100%,240px),1fr)); }
+}
+@media (max-width: 760px) {
+  .page-shell.brand-theme { padding-left: 13px; padding-right: 13px; }
+  .page-shell.brand-theme .workspace-layout { grid-template-columns: minmax(0,1fr); gap: 14px; }
+  .page-shell.brand-theme .workspace-sidebar { position: sticky; top: 68px; z-index: 20; max-width: 100%; }
+  .page-shell.brand-theme .workspace-main { padding: 14px 0 24px; gap: 16px; }
+  .page-shell.brand-theme .workspace-main > #studio-ia,
+  .page-shell.brand-theme .workspace-main > #media-library,
+  .page-shell.brand-theme .workspace-main > #discover,
+  .page-shell.brand-theme .workspace-main > #library,
+  .page-shell.brand-theme .workspace-main > #academy,
+  .page-shell.brand-theme .workspace-main > #resource-library,
+  .page-shell.brand-theme .workspace-main > #roadmap,
+  .page-shell.brand-theme .workspace-main > #timeline,
+  .page-shell.brand-theme .workspace-main > #insights,
+  .page-shell.brand-theme .workspace-main > #organizations,
+  .page-shell.brand-theme .workspace-main > #billing,
+  .page-shell.brand-theme .workspace-main > #administration,
+  .page-shell.brand-theme .workspace-main > #visual-design-studio,
+  .page-shell.brand-theme .workspace-main > .profile-panel { padding: 16px; }
+  .page-shell.brand-theme .workspace-main .media-provider-grid { grid-template-columns: minmax(0,1fr); }
+  .page-shell.brand-theme .workspace-main .media-provider-actions { display: grid; grid-template-columns: repeat(auto-fit,minmax(0,1fr)); }
+  .page-shell.brand-theme .workspace-main .media-provider-actions button { width: 100%; }
+  .page-shell.brand-theme .auth-card { padding: 20px; }
+}
+
