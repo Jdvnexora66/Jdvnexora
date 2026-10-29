@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Film, Headphones, Play, Plus, Search, Trash2, Youtube, Video, RefreshCw, Globe2, LockKeyhole, Link2, Unplug, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import ModuleDataOverview from './ModuleDataOverview';
 import './media-provider.css';
 import CreatorCatalog from './CreatorCatalog';
 import './creator-catalog.css';
@@ -390,7 +391,6 @@ export default function MediaLibrary({ userId }: Props) {
   }
 
   return <section id="media-library" className="project-panel media-library-panel">
-    <CreatorCatalog />
     <div className="section-heading">
       <div>
         <p className="eyebrow">NEXORA MEDIA · VIDÉOTHÈQUE</p>
@@ -399,6 +399,9 @@ export default function MediaLibrary({ userId }: Props) {
       </div>
       <button className="icon-button" type="button" onClick={() => void load()} disabled={loading} aria-label="Actualiser la vidéothèque"><RefreshCw size={16} /></button>
     </div>
+    <ModuleDataOverview sources={["media_library_items", "Storage: nexora-media", "Edge Function: media-integrations", "Catalogue public des créateurs"]} metrics={[{ label: "Médias enregistrés", value: items.length }, { label: "Résultats affichés", value: filtered.length }, { label: "Plateformes suivies", value: connections.length }]} loading={loading} error={Boolean(error || providerError)} />
+    <CreatorCatalog />
+
 
     <section className="media-provider-panel" aria-labelledby="media-provider-title">
       <div className="media-provider-heading"><div><h3 id="media-provider-title"><Link2 size={17} /> Intégrations personnelles (optionnelles)</h3><p>Facultatif : connectez un compte uniquement si vous souhaitez importer vos propres contenus autorisés. Ce n’est pas nécessaire pour découvrir les créateurs référencés dans NEXORA.</p></div><span className="media-provider-badge">API officielle</span></div>
