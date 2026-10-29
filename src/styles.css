@@ -1084,6 +1084,79 @@ body { background: radial-gradient(ellipse at 12% 0%, rgba(85,56,232,.20), trans
  .organization-invitation-result .logout-button{justify-self:stretch}
 }
 
+ feat/coordinate-all-pages-ui-pass
+
+/* Passe de cohérence transversale — pages NEXORA.
+   Les règles ci-dessous harmonisent le responsive sans remplacer les styles de chaque module. */
+.project-panel,.studio-workspace,.reference-dashboard,.visual-design-studio{min-width:0;max-width:100%}
+.project-panel :is(input,select,textarea),.studio-workspace :is(input,select,textarea){max-width:100%;box-sizing:border-box}
+.project-panel :is(button,a),.studio-workspace :is(button,a){overflow-wrap:anywhere}
+.project-panel .section-heading{gap:14px;min-width:0}
+.project-panel .section-heading>div:first-child{min-width:0;flex:1 1 280px}
+.project-panel .section-heading p{overflow-wrap:anywhere}
+.project-panel .project-item,.project-panel .insight-item,.project-panel .timeline-event-card,.project-panel .roadmap-task{min-width:0;max-width:100%;box-sizing:border-box}
+.project-panel .project-info,.project-panel .learning-item-main,.project-panel .roadmap-task-main{min-width:0;overflow-wrap:anywhere}
+.project-panel .project-meta,.project-panel .editor-actions,.project-panel .roadmap-form-actions{flex-wrap:wrap}
+.project-panel .project-meta>*{min-width:0;overflow-wrap:anywhere}
+.project-panel .project-form :is(input,select,textarea),.project-panel form :is(input,select,textarea){width:100%;min-width:0}
+.project-panel .project-form label,.project-panel form label{min-width:0}
+.project-panel :is(.discover-heading-actions,.discover-form-actions,.media-import-heading,.media-provider-actions,.academy-course-footer){display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.project-panel .discover-basket-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.project-panel .discover-basket-heading>div{flex:1 1 240px;min-width:0}
+.project-panel .admin-section,.project-panel .billing-admin,.project-panel .academy-courses-section{min-width:0}
+.project-panel .admin-section .project-item{align-items:flex-start;flex-wrap:wrap}
+.project-panel .admin-section .project-info{flex:1 1 240px}
+.project-panel .admin-section select{max-width:100%}
+.studio-workspace .studio-workspace-grid{min-width:0}
+.studio-workspace .studio-chat-column,.studio-workspace .studio-chat-card{min-width:0;max-width:100%}
+.reference-dashboard .reference-main-column{min-width:0}
+.reference-dashboard .reference-section-head{gap:12px;flex-wrap:wrap}
+.reference-dashboard .reference-section-head>div{min-width:0;flex:1 1 220px}
+.reference-dashboard .reference-live-project{min-width:0}
+.visual-studio-workbench,.visual-studio-ai-proposal{min-width:0;max-width:100%}
+.visual-studio-workbench>*{min-width:0}
+@media(max-width:1000px){
+ .reference-dashboard .reference-module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .project-panel .roadmap-summary,.project-panel .resource-library-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .studio-workspace .studio-workspace-grid{grid-template-columns:minmax(0,1fr)}
+ .studio-workspace .studio-chat-column{width:100%}
+}
+@media(max-width:720px){
+ .project-panel{padding:clamp(12px,3.5vw,20px)}
+ .project-panel .section-heading{align-items:flex-start}
+ .project-panel .section-heading h2{font-size:clamp(1.15rem,4.5vw,1.5rem);overflow-wrap:anywhere}
+ .project-panel .section-heading>.icon-button{flex:0 0 auto}
+ .project-panel .project-list,.project-panel .learning-list,.project-panel .insights-list,.project-panel .timeline-list,.project-panel .roadmap-list{min-width:0}
+ .project-panel .project-item{gap:10px}
+ .project-panel .project-meta{gap:7px}
+ .project-panel .project-meta .text-button{flex:1 1 120px;justify-content:center}
+ .project-panel .discover-heading-actions{width:100%}
+ .project-panel .discover-heading-actions .primary-button{flex:1 1 auto}
+ .project-panel .roadmap-form-row{grid-template-columns:minmax(0,1fr)}
+ .project-panel .roadmap-summary,.project-panel .resource-library-summary,.project-panel .insights-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .project-panel .admin-section .project-item{display:flex}
+ .project-panel .admin-section .project-item .icon-button{flex:0 0 auto}
+ .project-panel .billing-current .project-item{align-items:flex-start;flex-wrap:wrap}
+ .project-panel .billing-current .project-item .project-info{flex:1 1 180px}
+ .studio-workspace .studio-workspace-heading{align-items:flex-start;flex-wrap:wrap}
+ .studio-workspace .studio-heading-actions{width:100%;flex-wrap:wrap}
+ .studio-workspace .studio-heading-actions button{flex:1 1 140px}
+ .reference-dashboard .reference-module-grid{grid-template-columns:minmax(0,1fr)}
+ .reference-dashboard .reference-hero{gap:16px}
+ .reference-dashboard .reference-hero-actions{flex-wrap:wrap}
+ .reference-dashboard .reference-hero-actions button{flex:1 1 180px}
+}
+@media(max-width:460px){
+ .project-panel .roadmap-summary,.project-panel .resource-library-summary,.project-panel .insights-metrics{grid-template-columns:minmax(0,1fr)}
+ .project-panel .project-item{align-items:flex-start}
+ .project-panel .project-type-icon{flex:0 0 auto}
+ .project-panel .project-meta .text-button{flex-basis:100%}
+ .project-panel .discover-form-actions>*{width:100%}
+ .project-panel .media-provider-actions{display:grid;grid-template-columns:minmax(0,1fr)}
+ .project-panel .media-provider-actions>*{width:100%}
+ .studio-workspace .studio-heading-actions button{flex-basis:100%}
+}
+=======
 .visual-studio-preview-modes{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
 .visual-studio-preview-modes button{border:1px solid var(--line);border-radius:7px;padding:7px 9px;background:transparent;color:inherit;font-size:11px;cursor:pointer}
 .visual-studio-preview-modes button.active{background:rgba(111,92,255,.18);border-color:#8172ff;color:var(--text)}
@@ -1093,3 +1166,4 @@ body { background: radial-gradient(ellipse at 12% 0%, rgba(85,56,232,.20), trans
 .visual-studio-real-preview.frame-mobile{max-width:390px}
 .visual-studio-real-iframe{display:block;width:100%;height:100%;border:0;background:#0b1120}
 @media(max-width:720px){.visual-studio-canvas-tools{flex-wrap:wrap;gap:8px}.visual-studio-real-preview{height:650px}.visual-studio-preview-modes{order:3;width:100%}.visual-studio-canvas-tools>span{margin-left:auto}}
+ main
