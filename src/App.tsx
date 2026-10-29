@@ -41,7 +41,7 @@ export default function App() {
   const [mode, setMode] = useState<AuthMode>(() => new URLSearchParams(window.location.search).get('mode') === 'signup' ? 'signup' : 'signin');
   const [showVitrine, setShowVitrine] = useState(() => new URLSearchParams(window.location.search).get('view') === 'public');
   const embeddedPreview = new URLSearchParams(window.location.search).get('embeddedPreview') === '1';
-  const [activeSection, setActiveSection] = useState(() => {
+  const [activeSection, setActiveSection] = useState<string>(() => {
     const params = new URLSearchParams(window.location.search);
     const requested = params.get('studioPreview') ?? params.get('section');
     // Keep direct links and published Studio Design actions aligned with the same allowlist.
