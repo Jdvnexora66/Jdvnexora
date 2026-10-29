@@ -1474,3 +1474,111 @@ body { background: radial-gradient(ellipse at 12% 0%, rgba(85,56,232,.20), trans
 }
 .vitrine-auth-link:hover { color: #fff; }
 .vitrine-auth-link:focus-visible { outline: 2px solid #a78bfa; outline-offset: 4px; border-radius: 6px; }
+
+
+/* Cross-page layout guard: prevent long labels, source names and form controls
+   from forcing métier panels wider than their workspace. */
+.workspace-main,
+.workspace-main > * {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.workspace-main[data-active-section="design"] {
+  --page-accent: #a78bfa;
+  --page-accent-soft: rgba(167,139,250,.14);
+  --page-accent-line: rgba(167,139,250,.42);
+}
+
+.workspace-main[data-active-section]:not([data-active-section="dashboard"]) > :is(
+  .project-panel,.studio-workspace,.media-library,.discover-panel,.timeline-panel,
+  .insights-panel,.roadmap-panel,.academy-panel,.resource-library,.learning-library,
+  .organization-panel,.billing-panel,.admin-panel,.collaboration-panel,.visual-design-studio
+) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.workspace-main[data-active-section]:not([data-active-section="dashboard"]) :is(
+  .module-data-overview,.section-heading,.studio-workspace-heading,.media-library-heading,
+  .discover-heading,.academy-heading,.resource-library-heading,.timeline-heading,
+  .insights-heading,.roadmap-heading,.project-form,.learning-form,.roadmap-form,
+  .organization-form,.billing-current,.billing-plans,.media-provider-panel,
+  .discover-global-filters,.timeline-list,.insights-list,.roadmap-list,.project-list
+) {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.workspace-main[data-active-section]:not([data-active-section="dashboard"]) :is(
+  .module-data-overview-head,.module-data-metrics,.module-data-sources,
+  .project-item,.project-meta,.roadmap-task,.timeline-event,.timeline-event-card,
+  .insight-item,.media-card,.media-provider-card,.discover-card,.organization-card,
+  .billing-card,.admin-card,.learning-item,.resource-library-item
+) > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.workspace-main[data-active-section]:not([data-active-section="dashboard"]) :is(
+  h1,h2,h3,h4,p,label,small,strong,a,button,span
+) {
+  overflow-wrap: anywhere;
+}
+
+.module-data-overview,
+.module-data-metrics,
+.module-data-metric,
+.module-data-sources,
+.module-data-source-list {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.module-data-source {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.module-data-status {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.workspace-main[data-active-section]:not([data-active-section="dashboard"]) :is(
+  .project-filters,.project-meta,.roadmap-summary,.insights-metrics,.dashboard-stats,
+  .media-library-grid,.discover-grid,.academy-courses-grid,.learning-form-grid,
+  .project-form-grid,.roadmap-form-row,.module-data-metrics
+) > * {
+  min-width: 0;
+}
+
+@media (max-width: 680px) {
+  .workspace-main[data-active-section]:not([data-active-section="dashboard"]) > :is(
+    .project-panel,.studio-workspace,.media-library,.discover-panel,.timeline-panel,
+    .insights-panel,.roadmap-panel,.academy-panel,.resource-library,.learning-library,
+    .organization-panel,.billing-panel,.admin-panel,.collaboration-panel,.visual-design-studio
+  ) {
+    border-radius: 15px;
+  }
+
+  .module-data-metrics {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 145px), 1fr));
+  }
+
+  .module-data-overview-head,
+  .module-data-sources {
+    align-items: stretch;
+  }
+
+  .module-data-status {
+    align-self: flex-start;
+  }
+}

@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Building2, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette, BookOpen } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
+import { isPageRouteId } from './lib/pageDataBindings';
 import Discover from './components/Discover';
 import MediaLibrary from './components/MediaLibrary';
 import Timeline from './components/Timeline';
@@ -40,11 +41,11 @@ export default function App() {
   const [mode, setMode] = useState<AuthMode>(() => new URLSearchParams(window.location.search).get('mode') === 'signup' ? 'signup' : 'signin');
   const [showVitrine, setShowVitrine] = useState(() => new URLSearchParams(window.location.search).get('view') === 'public');
   const embeddedPreview = new URLSearchParams(window.location.search).get('embeddedPreview') === '1';
-  const [activeSection, setActiveSection] = useState(() => {
+  const [activeSection, setActiveSection] = useState<string>(() => {
     const params = new URLSearchParams(window.location.search);
     const requested = params.get('studioPreview') ?? params.get('section');
-    const previewableSections = ['dashboard','studio','media','discover','library','academy','resources','projects','organizations','timeline','insights','roadmap','billing','administration','profile'];
-    return requested && previewableSections.includes(requested) ? requested : 'dashboard';
+    // Keep direct links and published Studio Design actions aligned with the same allowlist.
+    return requested && isPageRouteId(requested) ? requested : 'dashboard';
   });
   const [customDesignPages, setCustomDesignPages] = useState<CustomDesignPage[]>([]);
   const [email, setEmail] = useState('');
@@ -765,7 +766,16 @@ export default function App() {
 
           {!activeProject && activeSection === 'administration' && <AdminPanel userId={session.user.id} role={profile?.role ?? 'user'} />}
 
-          {!activeProject && activeSection === 'design' && profile?.role === 'admin' && <VisualDesignStudio userId={session.user.id} role={profile.role} />}
+          {!activeProject && activeSection === 'design' && (profile?.role === 'admin'
+            ? <VisualDesignStudio userId={session.user.id} role={profile.role} />
+            : <section className="project-panel access-denied-panel" role="status" aria-live="polite">
+                <div className="section-heading">
+                  <div><p className="eyebrow">ACCÈS CONTRÔLÉ</p><h2><ShieldCheck size={20} /> Studio de conception visuelle</h2>
+                    <p className="muted">{loadingProfile ? 'Vérification de vos autorisations…' : 'Cette page est réservée aux administrateurs autorisés.'}</p>
+                  </div>
+                </div>
+              </section>
+          )}
 
 
 

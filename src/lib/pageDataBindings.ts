@@ -110,6 +110,18 @@ export async function loadPageDataBindings(keys: readonly string[]): Promise<Rec
 }
 
 
+export const PAGE_ROUTE_IDS = [
+  'dashboard','studio','design','projects','organizations','profile','administration',
+  'academy','library','resources','discover','media','roadmap','timeline','insights','billing',
+] as const;
+
+export type PageRouteId = typeof PAGE_ROUTE_IDS[number];
+
+export function isPageRouteId(value: unknown): value is PageRouteId {
+  return typeof value === 'string' && (PAGE_ROUTE_IDS as readonly string[]).includes(value);
+}
+
+/** Destinations safe to expose as actions in published layouts. Admin-only Studio Design is excluded. */
 export const PAGE_ACTION_TARGETS = [
   { value: 'dashboard', label: 'Tableau de bord' },
   { value: 'studio', label: 'Studio IA' },
