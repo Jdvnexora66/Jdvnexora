@@ -24,7 +24,7 @@ export default function PublicVitrine({ onLogin }: PublicVitrineProps) {
     <main className="vitrine-page">
       <header className="vitrine-nav">
         <a className="vitrine-brand" href="#accueil" aria-label="JDV NEXORA AI STUDIO, accueil">
-          <span className="vitrine-brand-mark"><Sparkles size={22} /></span>
+          <img className="vitrine-brand-image" src="/nexora-brand.svg" alt="" aria-hidden="true" />
           <span><strong>JDV NEXORA</strong><small>AI STUDIO</small></span>
         </a>
         <nav className="vitrine-links" aria-label="Navigation de la page">
@@ -49,7 +49,7 @@ export default function PublicVitrine({ onLogin }: PublicVitrineProps) {
           <div className="vitrine-orbit orbit-one" /><div className="vitrine-orbit orbit-two" />
           <div className="vitrine-visual-glow" />
           <div className="vitrine-float-card float-top"><span className="vitrine-mini-icon purple"><Lightbulb size={18} /></span><span><b>Une idée</b><small>Le point de départ</small></span><CheckCircle2 size={17} /></div>
-          <div className="vitrine-core"><span className="vitrine-core-mark"><Sparkles size={35} /></span><b>NEXORA</b><small>AI STUDIO</small><div className="vitrine-core-line" /><span className="vitrine-core-caption">Imaginer · Organiser · Créer</span></div>
+          <div className="vitrine-core"><span className="vitrine-core-mark"><img src="/nexora-brand.svg" alt="" aria-hidden="true" /></span><b>NEXORA</b><small>AI STUDIO</small><div className="vitrine-core-line" /><span className="vitrine-core-caption">Imaginer · Organiser · Créer</span></div>
           <div className="vitrine-float-card float-left"><span className="vitrine-mini-icon cyan"><Workflow size={18} /></span><span><b>Structurer</b><small>Donner une forme au projet</small></span></div>
           <div className="vitrine-float-card float-bottom"><span className="vitrine-mini-icon green"><CheckCircle2 size={18} /></span><span><b>Passer à l’action</b><small>Avancer étape par étape</small></span></div>
           <div className="vitrine-visual-caption">Votre ambition est le point de départ.</div>
@@ -128,7 +128,7 @@ export default function PublicVitrine({ onLogin }: PublicVitrineProps) {
 
       <section className="vitrine-final-cta"><div><p className="vitrine-eyebrow">PRÊT À COMMENCER ?</p><h2>Votre prochaine idée peut commencer ici.</h2><p>Accédez à votre espace NEXORA pour poursuivre votre parcours de création.</p></div><a className="vitrine-button primary" href="/app" onClick={onLogin}>Entrer dans NEXORA <ArrowRight size={17} /></a></section>
 
-      <footer className="vitrine-footer"><a className="vitrine-brand" href="#accueil"><span className="vitrine-brand-mark"><Sparkles size={20} /></span><span><strong>JDV NEXORA</strong><small>AI STUDIO</small></span></a><p>De l’idée au projet. Du projet à l’action.</p><div><a href="#vision">Notre vision</a><a href="#avis">Avis & besoins</a><a href="#vitrine-contact">Contact</a><a href="/app">Connexion</a><a href="/app?mode=signup">Créer un compte</a></div><small>© {new Date().getFullYear()} JDV GLOBAL CENTER · Cotonou, Bénin</small></footer>
+      <footer className="vitrine-footer"><a className="vitrine-brand" href="#accueil"><img className="vitrine-brand-image" src="/nexora-brand.svg" alt="" aria-hidden="true" /><span><strong>JDV NEXORA</strong><small>AI STUDIO</small></span></a><p>De l’idée au projet. Du projet à l’action.</p><div><a href="#vision">Notre vision</a><a href="#avis">Avis & besoins</a><a href="#vitrine-contact">Contact</a><a href="/app">Connexion</a><a href="/app?mode=signup">Créer un compte</a></div><small>© {new Date().getFullYear()} JDV GLOBAL CENTER · Cotonou, Bénin</small></footer>
     </main>
   );
 }
