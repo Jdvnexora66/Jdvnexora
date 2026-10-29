@@ -2428,3 +2428,108 @@ button.logout-button) {
     margin-bottom: 16px;
   }
 }
+
+/* PASS GLOBAL 2 — espacement cohérent des champs, sections et états */
+/* Les pages métier sont dans .brand-theme; le dashboard référentiel reste hors de ce scope. */
+.page-shell.brand-theme .workspace-main {
+  min-width: 0;
+}
+.page-shell.brand-theme .workspace-main :is(section,article,form,fieldset,details) {
+  min-width: 0;
+  max-width: 100%;
+}
+.page-shell.brand-theme .workspace-main form {
+  box-sizing: border-box;
+}
+.page-shell.brand-theme .workspace-main form :is(label,legend,.field-label,.form-label) {
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .workspace-main form :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="color"]),
+  select,textarea
+) {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  line-height: 1.5;
+}
+.page-shell.brand-theme .workspace-main form :is(textarea) {
+  min-height: 100px;
+  resize: vertical;
+}
+.page-shell.brand-theme .workspace-main form :is(input[type="checkbox"],input[type="radio"]) {
+  flex: 0 0 auto;
+}
+.page-shell.brand-theme .workspace-main form :is(button,[type="submit"],[type="button"]) {
+  max-width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  white-space: normal;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .workspace-main form :is(.form-actions,.editor-actions,.editor-button-group,.button-row,.action-row) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  min-width: 0;
+  margin-top: 8px;
+}
+.page-shell.brand-theme .workspace-main :is(
+  .section-heading,.pipeline-heading,.module-heading,.page-heading,.panel-heading,
+  .card-heading,.toolbar,.filter-row,.project-filters,.media-search-row
+) {
+  min-width: 0;
+  gap: 12px;
+}
+.page-shell.brand-theme .workspace-main :is(
+  .section-heading,.pipeline-heading,.module-heading,.page-heading,.panel-heading
+) > :is(div,section) {
+  min-width: 0;
+}
+.page-shell.brand-theme .workspace-main :is(
+  .section-heading,.pipeline-heading,.module-heading,.page-heading,.panel-heading
+) :is(h1,h2,h3,p) {
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .workspace-main :is(
+  .feedback,.error,.success,[role="alert"],[role="status"],.empty-state,.workspace-footnote
+) {
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .workspace-main :is(
+  .stat-card,.metric-card,.summary-card,.project-item,.resource-card,.course-card,
+  .media-card,.media-provider-card,.insight-item,.timeline-event-card,.roadmap-task,
+  .organization-card,.member-card,.billing-card,.design-card,.empty-state
+) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .workspace-main :is(
+  .stat-grid,.metrics-grid,.module-grid,.card-grid,.project-list,.resource-grid,
+  .course-grid,.media-grid,.insights-grid,.timeline-grid,.roadmap-grid,
+  .organization-grid,.member-grid,.billing-grid,.design-grid
+) {
+  min-width: 0;
+  align-items: stretch;
+}
+.page-shell.brand-theme .workspace-main :is(input,select,textarea,button,a) {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 760px) {
+  .page-shell.brand-theme .workspace-main :is(
+    .section-heading,.pipeline-heading,.module-heading,.page-heading,.panel-heading,
+    .filter-row,.project-filters,.media-search-row
+  ) {
+    row-gap: 10px;
+  }
+  .page-shell.brand-theme .workspace-main form :is(.form-actions,.editor-actions,.editor-button-group,.button-row,.action-row) {
+    align-items: stretch;
+  }
+  .page-shell.brand-theme .workspace-main form :is(.form-actions,.button-row,.action-row) > button {
+    flex: 1 1 100%;
+  }
+}
