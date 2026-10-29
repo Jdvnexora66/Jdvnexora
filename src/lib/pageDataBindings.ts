@@ -108,3 +108,32 @@ export async function loadPageDataBindings(keys: readonly string[]): Promise<Rec
   }));
   return result;
 }
+
+
+export const PAGE_ACTION_TARGETS = [
+  { value: 'dashboard', label: 'Tableau de bord' },
+  { value: 'studio', label: 'Studio IA' },
+  { value: 'projects', label: 'Mes projets' },
+  { value: 'organizations', label: 'Entreprise et équipe' },
+  { value: 'profile', label: 'Profil et préférences' },
+  { value: 'administration', label: 'Administration' },
+  { value: 'academy', label: 'Académie' },
+  { value: 'library', label: 'Bibliothèque de formation' },
+  { value: 'resources', label: 'Ressources numériques' },
+  { value: 'discover', label: 'Découvrir' },
+  { value: 'media', label: 'Vidéothèque et créateurs' },
+  { value: 'roadmap', label: 'Roadmap' },
+  { value: 'timeline', label: 'Timeline' },
+  { value: 'insights', label: 'Analyses et Insights' },
+  { value: 'billing', label: 'Abonnement et facturation' },
+] as const;
+
+export type PageActionTarget = typeof PAGE_ACTION_TARGETS[number]['value'];
+
+export function isPageActionTarget(value: unknown): value is PageActionTarget {
+  return typeof value === 'string' && PAGE_ACTION_TARGETS.some(target => target.value === value);
+}
+
+export function pageActionTargetLabel(value: PageActionTarget): string {
+  return PAGE_ACTION_TARGETS.find(target => target.value === value)?.label ?? 'Ouvrir le module';
+}

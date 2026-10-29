@@ -41,7 +41,8 @@ export default function App() {
   const [showVitrine, setShowVitrine] = useState(() => new URLSearchParams(window.location.search).get('view') === 'public');
   const embeddedPreview = new URLSearchParams(window.location.search).get('embeddedPreview') === '1';
   const [activeSection, setActiveSection] = useState(() => {
-    const requested = new URLSearchParams(window.location.search).get('studioPreview');
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get('studioPreview') ?? params.get('section');
     const previewableSections = ['dashboard','studio','media','discover','library','academy','resources','projects','organizations','timeline','insights','roadmap','billing','administration','profile'];
     return requested && previewableSections.includes(requested) ? requested : 'dashboard';
   });
