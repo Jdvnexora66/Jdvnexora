@@ -47,7 +47,7 @@ async function syncChannel(admin: ReturnType<typeof createClient>, ownerId: stri
     throw new Error("Impossible de joindre le flux public YouTube après plusieurs tentatives. Vérifiez la connexion puis réessayez.");
   }
   const xml = await response.text();
-  if (!/<feed(?:\\s|>)/i.test(xml) || !/<(?:entry|title)(?:\\s|>)/i.test(xml)) {
+  if (!/<feed(?:\s|>)/i.test(xml) || !/<(?:entry|title)(?:\s|>)/i.test(xml)) {
     throw new Error("YouTube a renvoyé une réponse qui ne ressemble pas à un flux Atom valide. Réessayez dans quelques minutes.");
   }
   const titleMatch = xml.match(/<title>([\s\S]*?)<\/title>/);
