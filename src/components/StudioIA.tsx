@@ -151,17 +151,25 @@ export default function StudioIA() {
 
   async function clearConversation() {
     if (busy) return;
+    setError('');
     if (supabase && userId && conversationId) {
-      const { error: deleteError } = await supabase.from('studio_ai_messages')
-        .delete().eq('user_id', userId).eq('conversation_id', conversationId);
-      if (deleteError) {
-        setError('Impossible d’effacer cette conversation enregistrée. Réessayez.');
+      setBusy(true);
+      try {
+        const { error: deleteError } = await supabase.from('studio_ai_messages')
+          .delete().eq('user_id', userId).eq('conversation_id', conversationId);
+        if (deleteError) {
+          setError('Impossible d’effacer cette conversation enregistrée. Réessayez.');
+          return;
+        }
+      } catch {
+        setError('La suppression de la conversation a échoué à cause d’un problème réseau. Votre historique enregistré est conservé.');
         return;
+      } finally {
+        setBusy(false);
       }
     }
     setMessages([]);
     setConversationId(crypto.randomUUID());
-    setError('');
     setPrompt('');
   }
 
