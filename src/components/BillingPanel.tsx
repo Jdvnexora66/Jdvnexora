@@ -110,7 +110,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
     if (typeof members === 'number' || (typeof members === 'string' && members.trim())) details.push(`${members} membre(s) inclus`);
     if (features.billing_mode === 'quote') details.push('Accompagnement et capacité adaptés à votre organisation');
     if (features.discount_months === 2) details.push('Économie de 2 mois sur la formule annuelle');
-    const hiddenKeys = new Set(['billing_mode','monthly_ai_units','included_members','discount_months','audience','projects']);
+    const hiddenKeys = new Set(['billing_mode','monthly_ai_units','included_members','discount_months','audience']);
     const friendlyFeatures: Record<string, string> = { core_tools: 'Outils essentiels', advanced_tools: 'Outils avancés', multiple_projects: 'Projets multiples', export_when_available: 'Export disponible selon les fonctionnalités activées', professional_features: 'Fonctionnalités professionnelles', roles_and_access: 'Gestion des rôles et des accès', shared_workspace: 'Espace de travail partagé', collective_usage_tracking: 'Suivi des usages de l’équipe', custom_capacity: 'Capacité personnalisée', advanced_administration_subject_to_availability: 'Administration avancée selon disponibilité' };
     for (const [key, value] of Object.entries(features)) {
       if (hiddenKeys.has(key) || value === false || value == null || value === '') continue;
