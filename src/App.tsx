@@ -715,6 +715,7 @@ export default function App() {
 
 
 
+          {!activeProject && activeSection !== 'design' && <PublishedVisualLayout scope={activeSection} />}
           {!activeProject && activeSection === 'studio' && <StudioIA />}
           {!activeProject && activeSection === 'academy' && <Academy userId={session.user.id} />}
           {!activeProject && activeSection === 'resources' && <ResourceLibrary userId={session.user.id} />}
