@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { CalendarClock, CheckCircle2, Circle, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import ModuleDataOverview from './ModuleDataOverview';
 
 type Task = { id:string; user_id:string; title:string; description:string|null; status:'planned'|'in_progress'|'completed'|'paused'; priority:'low'|'medium'|'high'; due_date:string|null; position:number; completed_at:string|null; created_at:string };
 export default function Roadmap({ userId }: { userId:string }) {
@@ -77,6 +78,9 @@ export default function Roadmap({ userId }: { userId:string }) {
   const priorityLabel:Record<Task['priority'],string>={low:'Basse',medium:'Moyenne',high:'Haute'};
   return <section id="roadmap" className="project-panel roadmap-panel">
     <div className="section-heading"><div><p className="eyebrow">ROADMAP · OBJECTIFS ET EXÉCUTION</p><h2><CalendarClock size={21}/> Ma feuille de route</h2><p className="muted">Transformez vos apprentissages en actions suivies, avec échéances et priorités.</p></div><button className="icon-button" type="button" onClick={()=>void load()} disabled={loading} aria-label="Actualiser la Roadmap"><RefreshCw size={16}/></button></div>
+    <ModuleDataOverview sources={["roadmap_tasks"]} loading={loading} error={Boolean(error)} caption="Les objectifs, statuts et échéances proviennent de votre feuille de route sauvegardée." />
+
+
     <div className="roadmap-summary"><div><span>Objectifs terminés</span><strong>{completed}/{tasks.length}</strong></div><div><span>Progression globale</span><strong>{percent}%</strong><div className="roadmap-progress-track"><span style={{width:percent+'%'}}/></div></div></div>
     <form className="roadmap-form" onSubmit={add}><h3><Plus size={16}/> Ajouter un objectif</h3><label>Titre<input required maxLength={180} value={title} onChange={e=>setTitle(e.target.value)} placeholder="Ex. Étudier trois modèles économiques"/></label><label>Description<textarea rows={2} maxLength={2000} value={description} onChange={e=>setDescription(e.target.value)} placeholder="Résultat attendu ou prochaines actions"/></label><div className="roadmap-form-row"><label>Priorité<select value={priority} onChange={e=>setPriority(e.target.value as Task['priority'])}><option value="low">Basse</option><option value="medium">Moyenne</option><option value="high">Haute</option></select></label><label>Échéance<input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)}/></label></div><div className="roadmap-form-actions"><button className="primary-button" type="submit" disabled={saving||!title.trim()}>{saving?'Enregistrement…':'Ajouter à la Roadmap'}</button></div></form>
     <div className="roadmap-filter"><label htmlFor="roadmap-status-filter">Afficher</label><select id="roadmap-status-filter" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">Tous les objectifs</option><option value="planned">À faire</option><option value="in_progress">En cours</option><option value="completed">Terminés</option><option value="paused">En pause</option></select></div>

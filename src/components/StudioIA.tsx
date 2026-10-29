@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Sparkles, Send, LoaderCircle, Trash2, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import ModuleDataOverview from './ModuleDataOverview';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 type StoredMessage = Message & { id: string; conversation_id: string; created_at: string };
@@ -185,6 +186,8 @@ export default function StudioIA() {
         {messages.length > 0 && <button type="button" className="studio-quiet-button" onClick={() => void clearConversation()} disabled={busy}><Trash2 size={15} /> Nouvelle conversation</button>}
       </div>
     </div>
+    <ModuleDataOverview sources={["studio_ai_messages", "Edge Function: studio-ai"]} metrics={[{ label: "Messages dans la conversation", value: messages.length }, { label: "Quota restant", value: usage ? usage.remaining : "N/D", note: usage ? usage.plan : "Disponible après réponse IA" }, { label: "Historique", value: historyReady ? "Chargé" : "En cours" }]} loading={!historyReady || busy} error={Boolean(error)} />
+
 
     <div className="studio-feature-banner">
       <div className="studio-feature-orb"><Sparkles size={28} /></div>

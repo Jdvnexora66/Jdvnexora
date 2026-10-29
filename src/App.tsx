@@ -18,6 +18,8 @@ import OrganizationPanel from './components/OrganizationPanel';
 import VisualDesignStudio from './components/VisualDesignStudio';
 import PublishedVisualLayout from './components/PublishedVisualLayout';
 import ReferenceDashboard from './components/ReferenceDashboard';
+import ModuleDataOverview from './components/ModuleDataOverview';
+import PublicVitrine from './components/PublicVitrine';
 
 type AuthMode = 'signin' | 'signup';
 type UserProfile = { id: string; display_name: string | null; preferred_language: string; timezone: string; role: string; };
@@ -36,6 +38,8 @@ type StudioProject = {
 
 export default function App() {
   const [mode, setMode] = useState<AuthMode>(() => new URLSearchParams(window.location.search).get('mode') === 'signup' ? 'signup' : 'signin');
+  const [showVitrine, setShowVitrine] = useState(() => new URLSearchParams(window.location.search).get('view') === 'public');
+  const embeddedPreview = new URLSearchParams(window.location.search).get('embeddedPreview') === '1';
   const [activeSection, setActiveSection] = useState(() => {
     const requested = new URLSearchParams(window.location.search).get('studioPreview');
     const previewableSections = ['dashboard','studio','media','discover','library','academy','resources','projects','organizations','timeline','insights','roadmap','billing','administration','profile'];
@@ -612,8 +616,12 @@ export default function App() {
     draft: 'Brouillon', in_progress: 'En cours', completed: 'Terminé', archived: 'Archivé',
   };
 
+  if (authReady && !session && showVitrine) {
+    return <PublicVitrine onLogin={() => { setShowVitrine(false); setMode('signin'); }} />;
+  }
+
   return (
-    <main className="page-shell">
+    <main className={`page-shell${embeddedPreview ? ' embedded-preview-shell' : ''}`}>
       <header className="topbar">
         <a className="brand" href="/" aria-label="JDV NEXORA accueil">
           <span className="brand-mark"><Sparkles size={20} /></span>
@@ -715,6 +723,7 @@ export default function App() {
               <div><p className="eyebrow">VOTRE COMPTE</p><h2 id="profile-title"><UserRound size={20} /> Profil et préférences</h2><p className="muted">Personnalisez les informations affichées dans votre espace de travail.</p></div>
               <button className="icon-button" type="button" onClick={() => void loadProfile()} disabled={loadingProfile || savingProfile} aria-label="Actualiser le profil"><RefreshCw size={16} /></button>
             </div>
+            <ModuleDataOverview sources={["profiles", "Supabase Auth session"]} metrics={[{ label: "État du profil", value: profile ? "Enregistré" : "À compléter" }, { label: "Langue", value: profile?.preferred_language || profileLanguage }, { label: "Fuseau horaire", value: profile?.timezone || profileTimezone }]} loading={loadingProfile} error={Boolean(error)} caption="Le profil et les préférences sont chargés depuis le compte connecté." />
             <form className="project-form profile-form" onSubmit={saveProfile}>
               <label htmlFor="profile-email">Adresse e-mail du compte</label>
               <input id="profile-email" type="email" value={session.user.email ?? ''} readOnly aria-readonly="true" />
@@ -779,6 +788,7 @@ export default function App() {
                 <div><h2>Mes projets</h2><p className="muted">Vos créations enregistrées dans Supabase.</p></div>
                 <button className="icon-button" onClick={() => void loadProjects()} disabled={loadingProjects} aria-label="Actualiser les projets"><RefreshCw size={16} /></button>
               </div>
+              <ModuleDataOverview sources={["studio_projects", "studio_assets", "studio_project_members"]} metrics={[{ label: "Projets accessibles", value: projects.length }, { label: "En cours", value: projects.filter(project => project.status === "in_progress").length }, { label: "Terminés", value: projects.filter(project => project.status === "completed").length }]} loading={loadingProjects} error={Boolean(error)} caption="Les projets personnels, partagés et d'entreprise sont dédupliqués avant affichage." />
               <div className="project-filters">
                 <label className="search-field"><Search size={16} /><input aria-label="Rechercher un projet" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Rechercher un projet…" /></label>
                 <select aria-label="Filtrer par statut" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}><option value="all">Tous les statuts</option><option value="draft">Brouillons</option><option value="in_progress">En cours</option><option value="completed">Terminés</option><option value="archived">Archivés</option></select>
@@ -841,6 +851,7 @@ export default function App() {
               <div><span className="feature-dot">✓</span><span>Vos projets réunis au même endroit</span></div>
               <div><span className="feature-dot">✓</span><span>Une base prête pour les prochaines fonctionnalités</span></div>
             </div>
+            <button type="button" className="vitrine-auth-link" onClick={() => setShowVitrine(true)}>Découvrir la vitrine publique <ArrowRight size={16}/></button>
           </div>
           <section className="auth-card" aria-labelledby="auth-title">
             <p className="eyebrow">BIENVENUE CHEZ JDV NEXORA</p>

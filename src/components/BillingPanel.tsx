@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { BadgeCheck, CreditCard, Plus, RefreshCw, ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import ModuleDataOverview from './ModuleDataOverview';
 
 type Plan = { id: string; code: string; name: string; description: string | null; active: boolean; features: Record<string, unknown>; price_minor: number; currency: string; billing_interval: 'month'|'year'|'one_time'; trial_days: number; created_at: string };
 type PlanBrief = { name: string; code: string; price_minor: number; currency: string; billing_interval: string };
@@ -100,6 +101,9 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
 
   return <section id="billing" className="project-panel billing-panel">
     <div className="section-heading"><div><p className="eyebrow">OFFRES & ABONNEMENTS</p><h2><CreditCard size={21}/> Forfaits et abonnement</h2><p className="muted">Consultez les offres et le statut de votre abonnement.</p></div><button type="button" className="icon-button" onClick={() => void load()} disabled={loading} aria-label="Actualiser les forfaits"><RefreshCw size={16}/></button></div>
+    <ModuleDataOverview sources={["plans", "subscriptions"]} metrics={[{ label: "Forfaits chargés", value: plans.length }, { label: "Abonnement", value: subscription ? statusLabel[subscription.status] : "Aucun enregistré" }, { label: "Forfait actif", value: subscribedPlan?.name ?? "Non disponible" }]} loading={loading} error={Boolean(error)} caption="Le statut est lu depuis la base; aucun paiement n'est déclaré réussi par cette page." />
+
+
     <div className="billing-current">
       <h3><BadgeCheck size={17}/> Votre abonnement</h3>
       {subscription ? <div className="project-item"><div className="project-type-icon"><CreditCard size={18}/></div><div className="project-info"><h3>{subscribedPlan?.name ?? 'Forfait non disponible'}</h3><p>{statusLabel[subscription.status]}{subscription.ends_at ? ' · échéance ' + new Date(subscription.ends_at).toLocaleDateString('fr-FR') : ''}</p></div><span className="project-type-label">{subscribedPlan ? formatPrice({ price_minor: subscribedPlan.price_minor, currency: subscribedPlan.currency, billing_interval: subscribedPlan.billing_interval as Plan['billing_interval'] }) : subscription.status}</span></div> : <p className="muted">Aucun abonnement enregistré pour ce compte.</p>}

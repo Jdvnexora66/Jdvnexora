@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Bookmark, CheckCircle2, Heart, RefreshCw, StickyNote, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import ModuleDataOverview from './ModuleDataOverview';
 
 type LearningItem = {
   id: string; user_id: string; content_item_id: string | null; entrepreneur_id: string | null;
@@ -86,6 +87,8 @@ export default function LearningLibrary({ userId }: { userId: string }) {
 
   return <section id="library" className="project-panel learning-panel">
     <div className="section-heading"><div><p className="eyebrow">BIBLIOTHÈQUE PERSONNELLE · APPRENTISSAGE</p><h2><Bookmark size={21}/> Favoris, notes et progression</h2><p className="muted">Conservez des ressources et suivez votre apprentissage dans votre espace privé.</p></div><button className="icon-button" type="button" onClick={() => void load()} disabled={loading} aria-label="Actualiser la bibliothèque"><RefreshCw size={16}/></button></div>
+    <ModuleDataOverview sources={["user_learning_items", "entrepreneurs", "content_items"]} metrics={[{ label: "Éléments enregistrés", value: items.length }, { label: "Favoris", value: items.filter(item => item.item_type === "favorite").length }, { label: "Notes", value: items.filter(item => item.item_type === "note").length }]} loading={loading} error={Boolean(error)} />
+
     <form className="learning-form" onSubmit={add}>
       <div className="learning-form-grid">
         <label>Type<select value={kind} onChange={e => setKind(e.target.value as typeof kind)}><option value="note">Note</option><option value="favorite">Favori</option><option value="bookmark">À consulter</option><option value="goal">Objectif</option></select></label>

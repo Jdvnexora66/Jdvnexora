@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Building2, UserPlus, RefreshCw, Copy, ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import ModuleDataOverview from './ModuleDataOverview';
 
 type Organization = { id: string; name: string; slug: string; status: string; created_at: string };
 type InvitationResult = { invitation?: { id?: string; email: string; role: string; expires_at: string }; token?: string; invitation_url?: string | null; delivery?: string; message?: string };
@@ -103,6 +104,8 @@ export default function OrganizationPanel({ userId, activeOrganizationId, onActi
       <div><p className="eyebrow">ESPACE ENTREPRISE</p><h2 id="organizations-title"><Building2 size={20} /> Organisations & équipe</h2><p className="muted">Créez un espace B2B et invitez vos collaborateurs avec des rôles contrôlés.</p></div>
       <button className="icon-button" type="button" onClick={() => void loadOrganizations()} disabled={loading || busy} aria-label="Actualiser les organisations"><RefreshCw size={16} /></button>
     </div>
+    <ModuleDataOverview sources={["organizations", "organization_members", "organization_invitations", "Edge Functions: invite/accept"]} metrics={[{ label: "Organisations accessibles", value: organizations.length }, { label: "Espace actif", value: activeOrganizationId ? "Sélectionné" : "Aucun" }, { label: "Invitation préparée", value: invitationUrl ? "Oui" : "Non" }]} loading={loading} error={Boolean(error)} caption="Les opérations d'invitation continuent d'être validées par les fonctions serveur." />
+
     <form className="project-form organization-form" onSubmit={createOrganization}>
       <label htmlFor="organization-name">Nom de l’organisation</label>
       <input id="organization-name" value={organizationName} onChange={e => setOrganizationName(e.target.value)} maxLength={160} minLength={2} placeholder="Ex. JDV Global Center" required />
