@@ -67,6 +67,8 @@ export default function ResourceLibrary({ userId }: { userId: string }) {
     <div className="section-heading"><div><p className="eyebrow">JDV NEXORA · RESSOURCES</p><h2><BookOpen size={21}/> Bibliothèque numérique</h2><p className="muted">Vidéos, podcasts, cours et guides sélectionnés. Les ressources originales restent hébergées chez leurs éditeurs.</p></div><button className="icon-button" onClick={()=>void load()} disabled={loading} aria-label="Actualiser le catalogue"><RefreshCw size={16}/></button></div>
     <ModuleDataOverview sources={["nexora_resources", "nexora_resource_progress"]} loading={loading} error={Boolean(error)} caption="Le catalogue et la progression sont chargés depuis les ressources persistées." />
 
+    <ModuleDataOverview sources={["nexora_resources", "nexora_resource_progress"]} loading={loading} error={Boolean(error)} caption="Le catalogue et la progression sont chargés depuis les ressources persistées." />
+
     <div className="project-filters resource-library-filters">
       <label className="search-field"><Search size={16}/><input aria-label="Rechercher une ressource" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Rechercher un expert, un sujet…"/></label>
       <select aria-label="Filtrer par thème" value={topic} onChange={e=>setTopic(e.target.value)}><option value="all">Tous les thèmes</option>{Object.entries(topicLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select>
