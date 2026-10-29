@@ -1443,3 +1443,34 @@ body { background: radial-gradient(ellipse at 12% 0%, rgba(85,56,232,.20), trans
   .module-data-sources { flex-direction: column; }
 }
 @media (prefers-reduced-motion: reduce) { .module-data-spin { animation: none; } }
+
+/* Embedded preview displays the selected native page without a second app shell. */
+.embedded-preview-shell > .topbar,
+.embedded-preview-shell > .footer,
+.embedded-preview-shell .workspace-heading,
+.embedded-preview-shell .workspace-sidebar,
+.embedded-preview-shell .workspace-footnote {
+  display: none !important;
+}
+.embedded-preview-shell { width: 100%; max-width: none; padding: 0; margin: 0; }
+.embedded-preview-shell .workspace { margin: 0; padding: 10px; width: 100%; max-width: none; }
+.embedded-preview-shell .workspace-layout { display: block; width: 100%; }
+.embedded-preview-shell .workspace-main { width: 100%; min-width: 0; max-width: none; margin: 0; padding: 0; }
+.embedded-preview-shell .project-panel,
+.embedded-preview-shell .studio-workspace,
+.embedded-preview-shell .reference-dashboard { margin-top: 0; }
+.vitrine-auth-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  padding: 10px 0;
+  border: 0;
+  color: #b8c0ff;
+  background: transparent;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+.vitrine-auth-link:hover { color: #fff; }
+.vitrine-auth-link:focus-visible { outline: 2px solid #a78bfa; outline-offset: 4px; border-radius: 6px; }
