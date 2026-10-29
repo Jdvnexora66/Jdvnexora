@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import PublicVitrine from './components/PublicVitrine';
 import './styles.css';
+import './layout-safety.css';
 import './vitrine.css';
 
 const isPublicHome = window.location.pathname === '/' || window.location.pathname === '';

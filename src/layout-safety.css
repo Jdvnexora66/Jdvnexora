@@ -1,0 +1,474 @@
+/* Global layout and typography guardrails for the authenticated workspace.
+   Keep this file after styles.css so component-specific rules can still refine it. */
+:root {
+  --layout-gap-xs: 8px;
+  --layout-gap-sm: 12px;
+  --layout-gap-md: 16px;
+  --layout-gap-lg: 22px;
+  --text-leading: 1.6;
+}
+
+body {
+  line-height: var(--text-leading);
+  overflow-wrap: normal;
+}
+
+#root,
+#root main,
+.workspace-layout,
+.workspace-content,
+.page-shell,
+.discover-panel,
+.project-panel,
+.studio-panel,
+.billing-panel,
+.admin-panel,
+.organization-panel,
+.quick-access,
+.pipeline-section,
+.media-library,
+.timeline-panel,
+.insights-panel,
+.roadmap-panel,
+.academy-panel,
+.resource-library,
+.learning-library,
+.collaboration-panel,
+.visual-design-studio {
+  min-width: 0;
+}
+
+#root main,
+.workspace-content {
+  padding-bottom: 28px;
+}
+
+p,
+li,
+label,
+small,
+figcaption,
+.helper-text,
+.muted,
+.description {
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+h1, h2, h3, h4, h5, h6,
+p, ul, ol, blockquote, figure {
+  max-width: 100%;
+}
+
+p {
+  margin-bottom: 0.85em;
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+button,
+[role="button"],
+input,
+select,
+textarea {
+  line-height: 1.45;
+}
+
+button,
+[role="button"] {
+  min-height: 38px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+input,
+select,
+textarea {
+  min-height: 42px;
+}
+
+textarea {
+  min-height: 110px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+form,
+fieldset {
+  min-width: 0;
+}
+
+form {
+  row-gap: 14px;
+}
+
+fieldset {
+  padding: 16px;
+  border: 1px solid var(--line, rgba(148,169,213,.16));
+  border-radius: 12px;
+}
+
+fieldset > legend {
+  padding: 0 7px;
+  line-height: 1.5;
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+th,
+td {
+  padding: 12px 14px;
+  line-height: 1.55;
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+th {
+  font-weight: 700;
+}
+
+.table-wrapper,
+.table-container,
+[role="region"][aria-label*="table" i] {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.workspace-layout,
+.workspace-content,
+.discover-layout,
+.discover-grid,
+.discover-basket,
+.section-heading,
+.pipeline-heading,
+.quick-access-heading,
+.project-item,
+.stat-card,
+.media-provider-card,
+.insight-item,
+.timeline-event-card,
+.roadmap-task {
+  min-width: 0;
+}
+
+.discover-panel,
+.project-panel,
+.studio-panel,
+.billing-panel,
+.admin-panel,
+.organization-panel,
+.quick-access,
+.pipeline-section,
+.media-library,
+.timeline-panel,
+.insights-panel,
+.roadmap-panel,
+.academy-panel,
+.resource-library,
+.learning-library,
+.collaboration-panel,
+.visual-design-studio {
+  padding: clamp(16px, 2vw, 24px);
+}
+
+.discover-basket {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  padding: clamp(16px, 2vw, 22px);
+  margin-block: 12px;
+}
+
+.discover-basket > *,
+.discover-panel > *,
+.project-panel > *,
+.studio-panel > *,
+.billing-panel > *,
+.admin-panel > *,
+.organization-panel > *,
+.quick-access > *,
+.pipeline-section > *,
+.media-library > *,
+.timeline-panel > *,
+.insights-panel > *,
+.roadmap-panel > *,
+.academy-panel > *,
+.resource-library > *,
+.learning-library > *,
+.collaboration-panel > *,
+.visual-design-studio > * {
+  min-width: 0;
+}
+
+.discover-basket h1,
+.discover-basket h2,
+.discover-basket h3,
+.discover-basket h4,
+.discover-basket p {
+  margin-block: 0;
+}
+
+.discover-basket button {
+  max-width: 100%;
+}
+
+.section-heading,
+.pipeline-heading,
+.quick-access-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 18px;
+}
+
+.section-heading > *,
+.pipeline-heading > *,
+.quick-access-heading > * {
+  min-width: 0;
+}
+
+.grid,
+[class$="-grid"],
+[class*=" grid-"] {
+  min-width: 0;
+}
+
+.grid > *,
+[class$="-grid"] > *,
+[class*=" grid-"] > * {
+  min-width: 0;
+}
+
+.project-item,
+.stat-card,
+.media-provider-card,
+.insight-item,
+.timeline-event-card,
+.roadmap-task {
+  gap: 12px;
+}
+
+hr {
+  margin-block: 16px;
+}
+
+@media (max-width: 760px) {
+  th, td {
+    padding: 10px;
+  }
+
+  .section-heading,
+  .pipeline-heading,
+  .quick-access-heading {
+    align-items: stretch;
+  }
+
+  .section-heading > button,
+  .pipeline-heading > button,
+  .quick-access-heading > button {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    line-height: 1.65;
+  }
+
+  .discover-panel,
+  .project-panel,
+  .studio-panel,
+  .billing-panel,
+  .admin-panel,
+  .organization-panel,
+  .quick-access,
+  .pipeline-section,
+  .media-library,
+  .timeline-panel,
+  .insights-panel,
+  .roadmap-panel,
+  .academy-panel,
+  .resource-library,
+  .learning-library,
+  .collaboration-panel,
+  .visual-design-studio,
+  .discover-basket {
+    padding: 14px;
+  }
+
+  th, td {
+    padding: 9px 8px;
+  }
+}
+
+
+/* Discover page: keep the search icon and input on one aligned row. */
+.project-panel .discover-global-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-block: 14px 20px;
+}
+
+.project-panel .discover-country-filter {
+  flex: 1 1 280px;
+  min-width: 0;
+  margin: 0;
+}
+
+.project-panel .discover-global-filters > button {
+  flex: 0 1 auto;
+  margin: 0;
+}
+
+.project-panel .discover-baskets {
+  display: grid;
+  gap: 16px;
+}
+
+.project-panel .discover-basket {
+  gap: 16px;
+  margin: 0;
+}
+
+.project-panel .discover-basket-heading > div {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.project-panel .discover-basket-heading h3,
+.project-panel .discover-basket-heading p {
+  margin: 0;
+}
+
+.project-panel .discover-basket-count {
+  display: inline-block;
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+.project-panel .discover-basket-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin: 0;
+}
+
+.project-panel .discover-basket-search > svg {
+  flex: 0 0 auto;
+}
+
+.project-panel .discover-basket-search > input {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+  margin: 0;
+}
+
+.project-panel .discover-basket-empty {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+}
+
+.project-panel .discover-basket-empty p {
+  margin: 0;
+}
+
+.project-panel .discover-add {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 560px) {
+  .project-panel .discover-basket-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .project-panel .discover-add {
+    justify-self: start;
+  }
+
+  .project-panel .discover-global-filters > button {
+    width: 100%;
+  }
+}
+
+
+/* JDV NEXORA brand system */
+.workspace-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin: 8px 8px 18px;
+  padding: 10px;
+  border: 1px solid rgba(214,182,110,.22);
+  border-radius: 14px;
+  color: #f5f2ea;
+  text-decoration: none;
+  background: linear-gradient(135deg, rgba(214,182,110,.09), rgba(9,16,28,.2));
+}
+.workspace-brand img {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  object-fit: contain;
+}
+.workspace-brand span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  line-height: 1.2;
+}
+.workspace-brand strong {
+  font-size: .82rem;
+  letter-spacing: .045em;
+}
+.workspace-brand small {
+  color: #D6B66E;
+  font-size: .62rem;
+  letter-spacing: .2em;
+}
+.vitrine-brand-image {
+  width: 43px;
+  height: 43px;
+  flex: 0 0 43px;
+  object-fit: contain;
+  border-radius: 13px;
+}
+.vitrine-core-mark img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+}
+@media (max-width: 760px) {
+  .workspace-brand { justify-content: center; margin-inline: 4px; padding: 7px; }
+  .workspace-brand span { display: none; }
+  .workspace-brand img { width: 38px; height: 38px; flex-basis: 38px; }
+}
