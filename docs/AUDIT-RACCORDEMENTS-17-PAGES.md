@@ -83,3 +83,21 @@ Pour chaque module, suivre ce parcours sans utiliser de données fictives comme 
 ### Limites de preuve
 
 Cette revue est une inspection statique du code et des configurations disponibles. Elle ne prouve pas à elle seule qu'une transaction Supabase, une politique RLS, un appel Edge Function ou un rendu visuel fonctionne dans l'environnement de production.
+
+
+## Vérification réelle du projet Supabase — 2026-10-29
+
+### Éléments confirmés par inspection du projet
+
+- Les tables métier interrogées sont protégées par RLS, y compris `profiles`, `plans`, `subscriptions` et les tables de projets/catalogues.
+- Les Edge Functions attendues existent et sont actives : `studio-ai`, `media-integrations`, `sync-public-creators`, `sync-public-creators-cron`, `invite-organization-member`, `accept-organization-invitation` et `verify-kkiapay-payment`. La configuration `verify_jwt` varie selon le type de fonction; les endpoints OAuth/cron doivent continuer à vérifier leurs secrets/signatures dans leur code.
+- Trois tables ont RLS activé sans politiques : `media_oauth_states`, `media_provider_connections` et `organization_invitations`. Cela bloque par défaut les accès via les rôles Data API, et peut être intentionnel si ces tables sont utilisées exclusivement par des fonctions serveur. Ne pas ajouter une politique client générique; vérifier les chemins Edge Function et les permissions de service avant tout changement.
+- Les fonctions `nexora_create_course_payment_order`, `nexora_enroll_free_course` et `nexora_reserve_ai_usage` sont SECURITY DEFINER et exécutables par `authenticated`. Leur corps vérifié contient une vérification de `auth.uid()`, la validation du cours publié/prix ou du quota et n'expose pas de confirmation de paiement par simple retour client. Les migrations révoquent l'exécution pour `public` et `anon`. Elles ne doivent pas être rendues invocables par des visiteurs anonymes.
+- Les advisors Supabase signalent également `pg_net` dans le schéma public, la protection contre les mots de passe compromis désactivée, et des clés étrangères non indexées. Ces points doivent être planifiés séparément; ne pas déplacer une extension ni ajouter des index en production sans confirmer les dépendances et mesurer l'impact.
+
+### État de preuve
+
+- CI et Build NEXORA : réussite sur le commit `cbc8726cab70b85efa45eaf25b41a72548f270c6`.
+- Aperçu Netlify de la demande de fusion : déploiement `ready` pour le commit ci-dessus.
+- La consultation automatisée du site d'aperçu depuis l'environnement de contrôle n'a pas permis de récupérer le rendu des pages. Le contrôle visuel par navigateur connecté et les tests avec session réelle restent donc nécessaires.
+- Aucune donnée utilisateur, aucun abonnement ni aucune politique RLS n'a été supprimé ou affaibli dans cette passe.
