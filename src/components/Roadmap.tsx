@@ -32,24 +32,43 @@ export default function Roadmap({ userId }: { userId:string }) {
 
   async function add(event:FormEvent<HTMLFormElement>){
     event.preventDefault(); if(!supabase||!title.trim())return;
+    if(saving)return;
     setSaving(true);setError('');setMessage('');
-    const {data,error:insertError}=await supabase.from('roadmap_tasks').insert({user_id:userId,title:title.trim(),description:description.trim()||null,priority,due_date:dueDate||null,position:tasks.length}).select('id,user_id,title,description,status,priority,due_date,position,completed_at,created_at').single();
-    setSaving(false);
-    if(insertError){setError(insertError.message);return;}
-    setTasks(current=>[data as Task,...current]);setTitle('');setDescription('');setPriority('medium');setDueDate('');setMessage('Objectif ajouté à votre Roadmap.');
+    try {
+      const {data,error:insertError}=await supabase.from('roadmap_tasks').insert({user_id:userId,title:title.trim(),description:description.trim()||null,priority,due_date:dueDate||null,position:tasks.length}).select('id,user_id,title,description,status,priority,due_date,position,completed_at,created_at').single();
+      if(insertError){setError('Impossible d’ajouter cet objectif. Vérifiez la connexion puis réessayez.');return;}
+      setTasks(current=>[data as Task,...current]);setTitle('');setDescription('');setPriority('medium');setDueDate('');setMessage('Objectif ajouté à votre Roadmap.');
+    } catch {
+      setError('Erreur réseau pendant l’ajout. Votre objectif n’a pas pu être confirmé; actualisez la Roadmap avant de réessayer.');
+    } finally {
+      setSaving(false);
+    }
   }
   async function update(task:Task,patch:Partial<Task>){
-    if(!supabase)return;
-    setError('');setMessage('');
-    const {data,error:updateError}=await supabase.from('roadmap_tasks').update(patch).eq('id',task.id).eq('user_id',userId).select('id,user_id,title,description,status,priority,due_date,position,completed_at,created_at').single();
-    if(updateError){setError(updateError.message);return;}
-    setTasks(current=>current.map(row=>row.id===task.id?data as Task:row));setMessage('Roadmap mise à jour.');
+    if(!supabase||saving)return;
+    setSaving(true);setError('');setMessage('');
+    try {
+      const {data,error:updateError}=await supabase.from('roadmap_tasks').update(patch).eq('id',task.id).eq('user_id',userId).select('id,user_id,title,description,status,priority,due_date,position,completed_at,created_at').single();
+      if(updateError){setError('Impossible de modifier cet objectif. Actualisez la Roadmap puis réessayez.');return;}
+      setTasks(current=>current.map(row=>row.id===task.id?data as Task:row));setMessage('Roadmap mise à jour.');
+    } catch {
+      setError('Erreur réseau pendant la modification. Actualisez la Roadmap pour vérifier le statut enregistré.');
+    } finally {
+      setSaving(false);
+    }
   }
   async function remove(task:Task){
-    if(!supabase||!window.confirm('Supprimer cet objectif de la Roadmap ?'))return;
-    const {error:deleteError}=await supabase.from('roadmap_tasks').delete().eq('id',task.id).eq('user_id',userId);
-    if(deleteError){setError(deleteError.message);return;}
-    setTasks(current=>current.filter(row=>row.id!==task.id));setMessage('Objectif supprimé.');
+    if(!supabase||saving||!window.confirm('Supprimer cet objectif de la Roadmap ?'))return;
+    setSaving(true);setError('');setMessage('');
+    try {
+      const {error:deleteError}=await supabase.from('roadmap_tasks').delete().eq('id',task.id).eq('user_id',userId);
+      if(deleteError){setError('Impossible de supprimer cet objectif. Actualisez la Roadmap puis réessayez.');return;}
+      setTasks(current=>current.filter(row=>row.id!==task.id));setMessage('Objectif supprimé.');
+    } catch {
+      setError('Erreur réseau pendant la suppression. Actualisez la Roadmap pour vérifier si l’objectif existe encore.');
+    } finally {
+      setSaving(false);
+    }
   }
   const visible=useMemo(()=>tasks.filter(task=>filter==='all'||task.status===filter),[tasks,filter]);
   const completed=tasks.filter(task=>task.status==='completed').length;
@@ -62,6 +81,6 @@ export default function Roadmap({ userId }: { userId:string }) {
     <form className="roadmap-form" onSubmit={add}><h3><Plus size={16}/> Ajouter un objectif</h3><label>Titre<input required maxLength={180} value={title} onChange={e=>setTitle(e.target.value)} placeholder="Ex. Étudier trois modèles économiques"/></label><label>Description<textarea rows={2} maxLength={2000} value={description} onChange={e=>setDescription(e.target.value)} placeholder="Résultat attendu ou prochaines actions"/></label><div className="roadmap-form-row"><label>Priorité<select value={priority} onChange={e=>setPriority(e.target.value as Task['priority'])}><option value="low">Basse</option><option value="medium">Moyenne</option><option value="high">Haute</option></select></label><label>Échéance<input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)}/></label></div><div className="roadmap-form-actions"><button className="primary-button" type="submit" disabled={saving||!title.trim()}>{saving?'Enregistrement…':'Ajouter à la Roadmap'}</button></div></form>
     <div className="roadmap-filter"><label htmlFor="roadmap-status-filter">Afficher</label><select id="roadmap-status-filter" value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">Tous les objectifs</option><option value="planned">À faire</option><option value="in_progress">En cours</option><option value="completed">Terminés</option><option value="paused">En pause</option></select></div>
     {error&&<p className="feedback error" role="alert">{error}</p>}{message&&<p className="feedback success" role="status">{message}</p>}
-    {loading?<p className="empty-state">Chargement de votre Roadmap…</p>:visible.length===0?<div className="empty-state"><div className="empty-icon"><CalendarClock size={24}/></div><h3>Aucun objectif dans cette vue</h3><p>Ajoutez un objectif pour planifier vos prochaines étapes. Chaque objectif est privé à votre compte.</p></div>:<div className="roadmap-list">{visible.map(task=><article className={'roadmap-task roadmap-task-'+task.status} key={task.id}><div className="roadmap-task-symbol">{task.status==='completed'?<CheckCircle2 size={19}/>:<Circle size={19}/>}</div><div className="roadmap-task-main"><div className="roadmap-task-heading"><h3>{task.title}</h3><span className={'roadmap-priority priority-'+task.priority}>{priorityLabel[task.priority]}</span></div>{task.description&&<p>{task.description}</p>}<div className="roadmap-task-meta">{task.due_date&&<span>Échéance : {new Intl.DateTimeFormat('fr-FR',{dateStyle:'medium',timeZone:'UTC'}).format(new Date(task.due_date+'T00:00:00Z'))}</span>}<span>{statusLabel[task.status]}</span></div><label className="roadmap-status-label">Statut<select aria-label={'Statut de '+task.title} value={task.status} onChange={e=>{const status=e.target.value as Task['status'];void update(task,{status,completed_at:status==='completed'?new Date().toISOString():null});}}><option value="planned">À faire</option><option value="in_progress">En cours</option><option value="completed">Terminé</option><option value="paused">En pause</option></select></label></div><button className="chapter-delete-button" type="button" onClick={()=>void remove(task)} aria-label={'Supprimer '+task.title}><Trash2 size={15}/></button></article>)}</div>}
+    {loading?<p className="empty-state">Chargement de votre Roadmap…</p>:visible.length===0?<div className="empty-state"><div className="empty-icon"><CalendarClock size={24}/></div><h3>Aucun objectif dans cette vue</h3><p>Ajoutez un objectif pour planifier vos prochaines étapes. Chaque objectif est privé à votre compte.</p></div>:<div className="roadmap-list">{visible.map(task=><article className={'roadmap-task roadmap-task-'+task.status} key={task.id}><div className="roadmap-task-symbol">{task.status==='completed'?<CheckCircle2 size={19}/>:<Circle size={19}/>}</div><div className="roadmap-task-main"><div className="roadmap-task-heading"><h3>{task.title}</h3><span className={'roadmap-priority priority-'+task.priority}>{priorityLabel[task.priority]}</span></div>{task.description&&<p>{task.description}</p>}<div className="roadmap-task-meta">{task.due_date&&<span>Échéance : {new Intl.DateTimeFormat('fr-FR',{dateStyle:'medium',timeZone:'UTC'}).format(new Date(task.due_date+'T00:00:00Z'))}</span>}<span>{statusLabel[task.status]}</span></div><label className="roadmap-status-label">Statut<select aria-label={'Statut de '+task.title} disabled={saving} value={task.status} onChange={e=>{const status=e.target.value as Task['status'];void update(task,{status,completed_at:status==='completed'?new Date().toISOString():null});}}><option value="planned">À faire</option><option value="in_progress">En cours</option><option value="completed">Terminé</option><option value="paused">En pause</option></select></label></div><button className="chapter-delete-button" type="button" onClick={()=>void remove(task)} disabled={saving} aria-label={'Supprimer '+task.title}><Trash2 size={15}/></button></article>)}</div>}
   </section>;
 }
