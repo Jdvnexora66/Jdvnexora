@@ -21,6 +21,7 @@ import ReferenceDashboard from './components/ReferenceDashboard';
 
 type AuthMode = 'signin' | 'signup';
 type UserProfile = { id: string; display_name: string | null; preferred_language: string; timezone: string; role: string; };
+type CustomDesignPage = { scope: string; name: string };
 type StudioAsset = { id: string; project_id: string; owner_id: string; title: string; content: string | null; kind: string; updated_at: string; };
 type StudioProject = {
   id: string;
@@ -36,6 +37,7 @@ type StudioProject = {
 export default function App() {
   const [mode, setMode] = useState<AuthMode>(() => new URLSearchParams(window.location.search).get('mode') === 'signup' ? 'signup' : 'signin');
   const [activeSection, setActiveSection] = useState('dashboard');
+  const [customDesignPages, setCustomDesignPages] = useState<CustomDesignPage[]>([]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [session, setSession] = useState<Session | null>(null);
@@ -118,6 +120,20 @@ export default function App() {
     window.addEventListener('beforeunload', warnBeforeLeaving);
     return () => window.removeEventListener('beforeunload', warnBeforeLeaving);
   }, [activeProject, activeAsset, projectAssets, editorContent]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadCustomDesignPages() {
+      if (!supabase || !session?.user.id) { setCustomDesignPages([]); return; }
+      const { data, error: pagesError } = await supabase.from('visual_studio_publications').select('scope,name').like('scope','custom:%').order('published_at',{ascending:false});
+      if (!active || pagesError) return;
+      const unique = new Map<string, CustomDesignPage>();
+      (data ?? []).forEach((row: {scope:string;name:string}) => { if (row.scope.startsWith('custom:') && !unique.has(row.scope)) unique.set(row.scope,{scope:row.scope,name:row.name}); });
+      setCustomDesignPages([...unique.values()]);
+    }
+    void loadCustomDesignPages();
+    return () => { active = false; };
+  }, [session?.user.id, activeSection]);
 
   useEffect(() => {
     if (session?.user.id) {
