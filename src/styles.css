@@ -1065,3 +1065,21 @@ body { background: radial-gradient(ellipse at 12% 0%, rgba(85,56,232,.20), trans
 .resource-library-footnote{margin-top:18px;line-height:1.65}
 @media(max-width:760px){.resource-library-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.resource-library-item{padding:14px;gap:12px}.resource-library-actions{gap:6px}.resource-library-actions .text-button{font-size:.82rem}}
 @media(max-width:480px){.resource-library-filters{display:grid;grid-template-columns:minmax(0,1fr)}.resource-library-filters .search-field,.resource-library-filters select{width:100%;min-width:0}.resource-library-summary{gap:8px}.resource-library-summary>div{padding:12px}.resource-library-summary strong{font-size:1.25rem}.resource-library-item{display:flex;flex-direction:column}.resource-library-type-icon{width:38px;height:38px;flex-basis:38px}.resource-library-actions{align-items:stretch}.resource-library-status{width:100%;margin:0 0 4px}.resource-library-actions .text-button{flex:1 1 calc(50% - 6px)}}
+
+
+/* Espace entreprise — formulaires et états responsives */
+.organization-form{gap:10px;margin-bottom:16px}
+.organization-form label{margin-top:4px}
+.organization-form input,.organization-form select{width:100%;min-width:0}
+.organization-form .primary-button{align-self:flex-start;min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.organization-select-form{padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.organization-invitation-result{display:grid;gap:10px;overflow-wrap:anywhere}
+.organization-invitation-result p{margin:0}
+.organization-invitation-result input{min-width:0;width:100%}
+.organization-invitation-result .logout-button{justify-self:start;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.organization-security-note{margin-top:14px;font-size:.82rem;line-height:1.65}
+@media(max-width:560px){
+ .organization-form{padding:14px}
+ .organization-form .primary-button,.organization-invitation-result .logout-button{width:100%}
+ .organization-invitation-result .logout-button{justify-self:stretch}
+}

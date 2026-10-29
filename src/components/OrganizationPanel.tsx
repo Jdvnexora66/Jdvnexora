@@ -98,18 +98,18 @@ export default function OrganizationPanel({ userId, activeOrganizationId, onActi
       <div><p className="eyebrow">ESPACE ENTREPRISE</p><h2 id="organizations-title"><Building2 size={20} /> Organisations & équipe</h2><p className="muted">Créez un espace B2B et invitez vos collaborateurs avec des rôles contrôlés.</p></div>
       <button className="icon-button" type="button" onClick={() => void loadOrganizations()} disabled={loading || busy} aria-label="Actualiser les organisations"><RefreshCw size={16} /></button>
     </div>
-    <form className="project-form" onSubmit={createOrganization}>
+    <form className="project-form organization-form" onSubmit={createOrganization}>
       <label htmlFor="organization-name">Nom de l’organisation</label>
       <input id="organization-name" value={organizationName} onChange={e => setOrganizationName(e.target.value)} maxLength={160} minLength={2} placeholder="Ex. JDV Global Center" required />
       <button className="primary-button" type="submit" disabled={busy || organizationName.trim().length < 2}>{busy ? 'Traitement…' : 'Créer une organisation'} <Building2 size={16} /></button>
     </form>
-    <div className="project-form">
+    <div className="project-form organization-form organization-select-form">
       <label htmlFor="organization-select">Organisation active</label>
       <select id="organization-select" value={activeOrganizationId} onChange={e => onActiveOrganizationChange(e.target.value)} disabled={loading || organizations.length === 0}>
         {organizations.length === 0 ? <option value="">Aucune organisation disponible</option> : organizations.map(org => <option key={org.id} value={org.id}>{org.name} · {org.status}</option>)}
       </select>
     </div>
-    <form className="project-form" onSubmit={inviteMember}>
+    <form className="project-form organization-form organization-invite-form" onSubmit={inviteMember}>
       <label htmlFor="invite-email">E-mail du collaborateur</label>
       <input id="invite-email" type="email" autoComplete="off" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="collaborateur@exemple.com" required />
       <label htmlFor="invite-role">Rôle à attribuer</label>
@@ -118,9 +118,9 @@ export default function OrganizationPanel({ userId, activeOrganizationId, onActi
       </select>
       <button className="primary-button" type="submit" disabled={busy || !activeOrganizationId || !inviteEmail.trim()}><UserPlus size={16} /> {busy ? 'Traitement…' : 'Créer une invitation'}</button>
     </form>
-    {invitationUrl && <div className="feedback success"><p><strong>Lien d’invitation (valable 7 jours)</strong></p><input aria-label="Lien d’invitation" readOnly value={invitationUrl} onFocus={e => e.currentTarget.select()} /><button className="logout-button" type="button" onClick={() => void copyInvitation()}><Copy size={15} /> Copier le lien</button></div>}
+    {invitationUrl && <div className="feedback success organization-invitation-result"><p><strong>Lien d’invitation (valable 7 jours)</strong></p><input aria-label="Lien d’invitation" readOnly value={invitationUrl} onFocus={e => e.currentTarget.select()} /><button className="logout-button" type="button" onClick={() => void copyInvitation()}><Copy size={15} /> Copier le lien</button></div>}
     {error && <p className="feedback error" role="alert">{error}</p>}
     {message && <p className="feedback success" role="status"><ShieldCheck size={15} /> {message}</p>}
-    <p className="muted">Le service d’envoi d’e-mails n’est pas encore configuré. Les droits sont validés côté serveur ; les liens ne doivent être transmis qu’au destinataire.</p>
+    <p className="muted organization-security-note">Le service d’envoi d’e-mails n’est pas encore configuré. Les droits sont validés côté serveur ; les liens ne doivent être transmis qu’au destinataire.</p>
   </section>;
 }
