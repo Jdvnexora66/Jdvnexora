@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { Bookmark, Compass, ExternalLink, Plus, RefreshCw, Search, ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import ModuleDataOverview from './ModuleDataOverview';
 
 type Entrepreneur = {
   id: string;
@@ -152,6 +153,8 @@ export default function Discover({ userId }: Props) {
       <div><p className="eyebrow">DISCOVER · VEILLE ENTREPRENEURIALE</p><h2><Compass size={21} /> Catalogue des acteurs sélectionnés</h2><p className="muted">Ajoutez uniquement les acteurs que vous avez choisis après vos recherches. Chaque fiche doit documenter son site professionnel, son parcours et ses sources avant validation.</p></div>
       <div className="discover-heading-actions"><button className="icon-button" type="button" onClick={() => void load()} disabled={loading} aria-label="Actualiser Discover"><RefreshCw size={16}/></button><button className="primary-button discover-add" type="button" onClick={() => setShowForm(v => !v)}><Plus size={16}/> Ajouter un profil</button></div>
     </div>
+    <ModuleDataOverview sources={["entrepreneurs", "content_sources", "followed_entrepreneurs"]} metrics={[{ label: "Profils du catalogue", value: items.length }, { label: "Profils suivis", value: followedIds.length }, { label: "Profils documentés avec sources", value: Object.keys(sourcesByProfile).length }]} loading={loading} error={Boolean(error)} />
+
     <div className="discover-global-filters">
       <label className="discover-country-filter">Filtrer tous les paniers par pays<input aria-label="Filtrer tous les paniers par pays" value={country} onChange={e => setCountry(e.target.value)} placeholder="Ex. Bénin, Sénégal, Canada"/></label>
       <button type="button" className={showFollowedOnly ? 'secondary-button active' : 'secondary-button'} onClick={() => setShowFollowedOnly(value => !value)}><Bookmark size={14}/>{showFollowedOnly ? 'Afficher tous les profils' : 'Mes créateurs suivis (' + followedIds.length + ')'}</button>
