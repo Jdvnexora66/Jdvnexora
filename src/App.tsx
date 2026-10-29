@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Building2, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette, BookOpen } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
+import { isPageActionTarget } from './lib/pageDataBindings';
 import Discover from './components/Discover';
 import MediaLibrary from './components/MediaLibrary';
 import Timeline from './components/Timeline';
@@ -43,8 +44,8 @@ export default function App() {
   const [activeSection, setActiveSection] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const requested = params.get('studioPreview') ?? params.get('section');
-    const previewableSections = ['dashboard','studio','media','discover','library','academy','resources','projects','organizations','timeline','insights','roadmap','billing','administration','profile'];
-    return requested && previewableSections.includes(requested) ? requested : 'dashboard';
+    // Keep direct links and published Studio Design actions aligned with the same allowlist.
+    return requested && isPageActionTarget(requested) ? requested : 'dashboard';
   });
   const [customDesignPages, setCustomDesignPages] = useState<CustomDesignPage[]>([]);
   const [email, setEmail] = useState('');
