@@ -623,7 +623,7 @@ export default function App() {
   }
 
   return (
-    <main className={`page-shell${embeddedPreview ? ' embedded-preview-shell' : ''}`}>
+    <main className={`page-shell${embeddedPreview ? ' embedded-preview-shell' : ''}${!session || activeSection !== 'dashboard' ? ' brand-theme' : ''}`}>
       <header className="topbar">
         <a className="brand" href="/" aria-label="JDV NEXORA accueil">
           <span className="brand-mark"><Sparkles size={20} /></span>
