@@ -37,7 +37,7 @@ Cette carte répertorie les sources appelées par le dépôt. Une table citée i
 - `organizations.accessible` → `organizations`, compteur limité aux lignes visibles selon RLS;
 - `academy.enrollments` → `nexora_course_enrollments`, filtré par `user_id` et statut actif.
 
-Les blocs `text`, `card` et `stat` peuvent sélectionner une clé de cette liste. Aucune table libre, expression SQL ou fonction serveur n'est exécutable depuis le concepteur. Si la source ne peut pas être lue, la valeur doit rester indisponible (« N/D »), jamais être inventée.
+Les blocs `text`, `card` et `stat` peuvent sélectionner une clé de cette liste. Les blocs d'action peuvent pointer vers une destination de page choisie dans une liste blanche; la destination est un module existant, pas du code libre. Aucune table libre, expression SQL ou fonction serveur n'est exécutable depuis le concepteur. Si la source ne peut pas être lue, la valeur doit rester indisponible (« N/D »), jamais être inventée.
 
 ## Règles de raccordement
 
