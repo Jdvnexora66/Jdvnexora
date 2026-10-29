@@ -41,19 +41,27 @@ export default function Discover({ userId }: Props) {
   const load = useCallback(async () => {
     if (!supabase) { setLoading(false); setError('Supabase n’est pas configuré.'); return; }
     setLoading(true); setError('');
-    let request = supabase.from('entrepreneurs')
-      .select('id,name,slug,summary,biography,country,industry,website_url,verification_status')
-      .eq('visibility', 'public').order('name', { ascending: true }).limit(200);
-    if (country.trim()) request = request.ilike('country', '%' + country.trim() + '%');
-    const { data, error: loadError } = await request;
-    if (loadError) setError(loadError.message.includes('entrepreneurs') ? 'Le module Discover attend l’application de la migration Supabase.' : loadError.message);
-    else {
+    try {
+      let request = supabase.from('entrepreneurs')
+        .select('id,name,slug,summary,biography,country,industry,website_url,verification_status')
+        .eq('visibility', 'public').order('name', { ascending: true }).limit(200);
+      if (country.trim()) request = request.ilike('country', '%' + country.trim() + '%');
+      const { data, error: loadError } = await request;
+      if (loadError) {
+        setError(loadError.message.includes('entrepreneurs') ? 'Le module Discover attend l’application de la migration Supabase.' : 'Impossible de charger les créateurs. Réessayez.');
+        return;
+      }
       const profiles = (data ?? []) as Entrepreneur[];
       setItems(profiles);
       if (profiles.length) {
-        const { data: sourceRows } = await supabase.from('content_sources')
+        const { data: sourceRows, error: sourceError } = await supabase.from('content_sources')
           .select('id,entrepreneur_id,title,source_url,publisher,source_type,excerpt,credibility_note,checked_at')
           .in('entrepreneur_id', profiles.map(item => item.id));
+        if (sourceError) {
+          setSourcesByProfile({});
+          setError('Les créateurs sont chargés, mais leurs sources sont temporairement indisponibles.');
+          return;
+        }
         const grouped: Record<string, CreatorSource[]> = {};
         for (const source of (sourceRows ?? []) as CreatorSource[]) {
           if (!source.entrepreneur_id) continue;
@@ -61,8 +69,11 @@ export default function Discover({ userId }: Props) {
         }
         setSourcesByProfile(grouped);
       } else setSourcesByProfile({});
+    } catch {
+      setError('Erreur réseau pendant le chargement de Discover. Vérifiez la connexion puis réessayez.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [country]);
 
   useEffect(() => { void load(); }, [load]);
