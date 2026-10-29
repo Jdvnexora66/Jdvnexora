@@ -61,3 +61,25 @@ Pour chaque module, suivre ce parcours sans utiliser de données fictives comme 
 - Le CI du commit qui intègre le logo et les dernières retouches CSS est en attente au moment de cette mise à jour.
 - Aucun audit runtime de toutes les tables/RLS/Edge Functions n'est considéré terminé par la seule présence de leurs noms dans le code.
 - La production ne doit pas être annoncée comme mise à jour avant qu'un déploiement production récent et le contrôle de son URL soient confirmés.
+
+
+## Audit approfondi — raccordement des actions du Studio Design
+
+### Défaut confirmé et correction préparée
+
+- **Constat confirmé dans la branche principale :** les boutons d'action rendus par `PublishedVisualLayout` redirigeaient vers `/?section=<module>`.
+- **Cause :** `src/main.tsx` rend la vitrine publique lorsque le chemin est `/`, quel que soit le paramètre `section`. La navigation d'une action publiée ne pouvait donc pas garantir l'ouverture du module demandé.
+- **Correction préparée sur la branche d'audit :** les actions redirigent désormais vers `/app?section=<module>`, chemin qui utilise la réécriture Netlify `/app /index.html 200` et charge l'application.
+- **Validation requise avant clôture :** cliquer chaque destination publiée (dashboard, studio, projets, entreprise, profil, administration, académie, bibliothèques, ressources, découverte, vidéothèque, roadmap, timeline, insights et facturation) avec une session autorisée, puis vérifier le comportement sans session et pour un utilisateur sans droits administrateur.
+
+### Conformité du Studio Design
+
+- [x] La source du code comporte un sélecteur de page, un mode « Page réelle », un mode « Brouillon éditable », les vues ordinateur/tablette/téléphone, les blocs prédéfinis et un panneau de propriétés.
+- [x] Les blocs offrent des propriétés de texte, largeur, couleurs autorisées, arrondi, espacement intérieur, visibilité et duplication; l'ordre peut être modifié.
+- [x] Les données dynamiques sont limitées à une liste blanche de clés; les URL d'image/vidéo sont validées.
+- [ ] L'édition directe des composants natifs existants de chaque écran (pas uniquement la superposition de blocs) reste à implémenter ou à démontrer. Le dépôt documente explicitement cette limite.
+- [ ] Le rendu exact des 17 pages, les raccordements de données, les permissions et le responsive restent à confirmer sur un déploiement accessible.
+
+### Limites de preuve
+
+Cette revue est une inspection statique du code et des configurations disponibles. Elle ne prouve pas à elle seule qu'une transaction Supabase, une politique RLS, un appel Edge Function ou un rendu visuel fonctionne dans l'environnement de production.
