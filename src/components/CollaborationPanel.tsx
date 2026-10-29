@@ -22,15 +22,20 @@ export default function CollaborationPanel({ projectId, ownerId, userId, assets 
   const load = useCallback(async () => {
     if (!supabase) { setError('Supabase n’est pas configuré.'); setLoading(false); return; }
     setLoading(true); setError('');
-    const [memberResult, commentResult] = await Promise.all([
-      supabase.from('studio_project_members').select('id,project_id,user_id,role,created_at').eq('project_id', projectId).order('created_at'),
-      supabase.from('studio_project_comments').select('id,project_id,user_id,body,created_at,updated_at').eq('project_id', projectId).order('created_at', { ascending: false }).limit(100),
-    ]);
-    if (memberResult.error) setError('Chargement des membres impossible : ' + memberResult.error.message);
-    else setMembers((memberResult.data ?? []) as Member[]);
-    if (commentResult.error) setError('Chargement des commentaires impossible : ' + commentResult.error.message);
-    else setComments((commentResult.data ?? []) as Comment[]);
-    setLoading(false);
+    try {
+      const [memberResult, commentResult] = await Promise.all([
+        supabase.from('studio_project_members').select('id,project_id,user_id,role,created_at').eq('project_id', projectId).order('created_at'),
+        supabase.from('studio_project_comments').select('id,project_id,user_id,body,created_at,updated_at').eq('project_id', projectId).order('created_at', { ascending: false }).limit(100),
+      ]);
+      if (memberResult.error) setError('Chargement des membres impossible : ' + memberResult.error.message);
+      else setMembers((memberResult.data ?? []) as Member[]);
+      if (commentResult.error) setError('Chargement des commentaires impossible : ' + commentResult.error.message);
+      else setComments((commentResult.data ?? []) as Comment[]);
+    } catch {
+      setError('Erreur réseau pendant le chargement de la collaboration. Vérifiez la connexion puis réessayez.');
+    } finally {
+      setLoading(false);
+    }
   }, [projectId]);
 
   useEffect(() => { void load(); }, [load]);
