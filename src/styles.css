@@ -2092,8 +2092,9 @@ body:has(.page-shell.brand-theme) { background: #0B0B0D; color: #F5F2EA; }
 }
 
 /* La vidéothèque est empilée sur une seule colonne logique avec des gaps réguliers. */
-.page-shell.brand-theme .workspace-main #media-library.media-library-panel {
-  display: flex;
+.page-shell.brand-theme .workspace-main[data-active-section="media"] > #media-library.media-library-panel {
+  /* Override route-isolation display:block!important so the vertical gap takes effect. */
+  display: flex !important;
   flex-direction: column;
   align-items: stretch;
   gap: 20px;
