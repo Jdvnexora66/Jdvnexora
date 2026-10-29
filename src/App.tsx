@@ -125,7 +125,7 @@ export default function App() {
     let active = true;
     async function loadCustomDesignPages() {
       if (!supabase || !session?.user.id) { setCustomDesignPages([]); return; }
-      const { data, error: pagesError } = await supabase.from('visual_studio_publications').select('scope,name').like('scope','custom:%').order('published_at',{ascending:false});
+      const { data, error: pagesError } = await supabase.from('visual_studio_publications').select('scope,name').like('scope','custom:%').eq('is_default',true).order('published_at',{ascending:false});
       if (!active || pagesError) return;
       const unique = new Map<string, CustomDesignPage>();
       (data ?? []).forEach((row: {scope:string;name:string}) => { if (row.scope.startsWith('custom:') && !unique.has(row.scope)) unique.set(row.scope,{scope:row.scope,name:row.name}); });
