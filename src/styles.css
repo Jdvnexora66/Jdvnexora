@@ -1026,7 +1026,7 @@ body { background: radial-gradient(ellipse at 12% 0%, rgba(85,56,232,.20), trans
 .academy-courses-section{margin-bottom:28px}
 .academy-course-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));margin-bottom:12px}
 .academy-course-card{display:flex;flex-direction:column;align-items:stretch;gap:14px;min-width:0}
-.academy-course-cover{display:block;width:100%;max-height:180px;aspect-ratio:16/9;object-fit:cover;border-radius:12px;background:var(--surface)}
+.academy-course-cover{display:block;width:100%;max-height:180px;aspect-ratio:16/9;object-fit:cover;border-radius:12px;background:var(--panel)}
 .academy-inline-icon{display:inline;vertical-align:-2px}
 .academy-course-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;flex-wrap:wrap}
 .academy-payment-pending{font-size:.75rem}
@@ -1040,3 +1040,28 @@ body { background: radial-gradient(ellipse at 12% 0%, rgba(85,56,232,.20), trans
 .academy-progress-track{height:7px;overflow:hidden;margin-bottom:20px;border-radius:999px;background:var(--line)}
 .academy-progress-fill{height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--primary),var(--cyan));transition:width .25s ease}
 @media(max-width:560px){.academy-course-footer{align-items:flex-start}.academy-course-footer .primary-button{width:100%;justify-content:center}.academy-course-grid,.academy-path-grid{grid-template-columns:minmax(0,1fr)}}
+
+
+/* Bibliothèque numérique — cartes, filtres et actions adaptatifs */
+.resource-library-panel{min-width:0}
+.resource-library-filters{align-items:stretch;gap:10px}
+.resource-library-filters .search-field{flex:1 1 260px;min-width:min(100%,220px)}
+.resource-library-filters select{flex:1 1 155px;min-width:0;max-width:100%}
+.resource-library-summary{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.resource-library-summary>div{min-width:0;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.resource-library-summary span{display:block;color:var(--muted);font-size:.78rem;line-height:1.45}
+.resource-library-summary strong{display:block;margin-top:5px;font-size:1.45rem;font-weight:750;letter-spacing:-.03em}
+.resource-library-list{gap:12px}
+.resource-library-item{align-items:flex-start;gap:16px;min-width:0;padding:18px}
+.resource-library-type-icon{flex:0 0 42px;width:42px;height:42px;display:grid;place-items:center;border-radius:12px;background:var(--panel);color:var(--primary)}
+.resource-library-info{min-width:0;flex:1}
+.resource-library-metadata{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.resource-library-info h3{margin:0 0 7px;line-height:1.35;overflow-wrap:anywhere}
+.resource-library-info>p{overflow-wrap:anywhere;line-height:1.65}
+.resource-library-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:12px}
+.resource-library-status{display:inline-flex;align-items:center;gap:5px;margin-right:auto}
+.resource-library-actions .text-button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:34px;padding:6px 10px;border:1px solid var(--line);border-radius:9px;text-decoration:none;white-space:nowrap}
+.resource-library-actions .text-button:hover{border-color:var(--primary);background:var(--panel)}
+.resource-library-footnote{margin-top:18px;line-height:1.65}
+@media(max-width:760px){.resource-library-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.resource-library-item{padding:14px;gap:12px}.resource-library-actions{gap:6px}.resource-library-actions .text-button{font-size:.82rem}}
+@media(max-width:480px){.resource-library-filters{display:grid;grid-template-columns:minmax(0,1fr)}.resource-library-filters .search-field,.resource-library-filters select{width:100%;min-width:0}.resource-library-summary{gap:8px}.resource-library-summary>div{padding:12px}.resource-library-summary strong{font-size:1.25rem}.resource-library-item{display:flex;flex-direction:column}.resource-library-type-icon{width:38px;height:38px;flex-basis:38px}.resource-library-actions{align-items:stretch}.resource-library-status{width:100%;margin:0 0 4px}.resource-library-actions .text-button{flex:1 1 calc(50% - 6px)}}
