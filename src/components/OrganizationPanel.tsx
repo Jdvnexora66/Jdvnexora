@@ -19,14 +19,19 @@ export default function OrganizationPanel({ userId, activeOrganizationId, onActi
   async function loadOrganizations() {
     if (!supabase) return;
     setLoading(true); setError('');
-    const { data, error: queryError } = await supabase.from('organizations')
-      .select('id, name, slug, status, created_at').order('created_at', { ascending: false });
-    setLoading(false);
-    if (queryError) { setError('Impossible de charger les organisations. Vérifiez que les migrations B2B sont appliquées.'); return; }
-    const rows = (data ?? []) as Organization[];
-    setOrganizations(rows);
-    if (!activeOrganizationId && rows[0]) onActiveOrganizationChange(rows[0].id);
-    else if (activeOrganizationId && !rows.some(row => row.id === activeOrganizationId)) onActiveOrganizationChange(rows[0]?.id ?? '');
+    try {
+      const { data, error: queryError } = await supabase.from('organizations')
+        .select('id, name, slug, status, created_at').order('created_at', { ascending: false });
+      if (queryError) { setError('Impossible de charger les organisations. Vérifiez que les migrations B2B sont appliquées.'); return; }
+      const rows = (data ?? []) as Organization[];
+      setOrganizations(rows);
+      if (!activeOrganizationId && rows[0]) onActiveOrganizationChange(rows[0].id);
+      else if (activeOrganizationId && !rows.some(row => row.id === activeOrganizationId)) onActiveOrganizationChange(rows[0]?.id ?? '');
+    } catch {
+      setError('Erreur réseau pendant le chargement des organisations. Vérifiez la connexion puis réessayez.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { void loadOrganizations(); }, [userId]);
