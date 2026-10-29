@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, Check, Clock3, Copy, Eye, EyeOff, LayoutDashboard, Palette, Plus, Save, ShieldCheck, Smartphone, Tablet, Trash2, Undo2, Monitor, Rocket, RotateCcw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ModuleDataOverview from './ModuleDataOverview';
+import { isPageDataBindingKey, loadPageDataBindings, PAGE_DATA_BINDINGS, pageDataBindingLabel, type PageDataBindingKey } from '../lib/pageDataBindings';
 
 type StudioBlock = {
   id: string;
@@ -16,16 +17,17 @@ type StudioBlock = {
   padding?: number;
   width?: 'full' | 'half' | 'third';
   hidden?: boolean;
+  dataBinding?: PageDataBindingKey;
 };
 type StudioConfig = { schemaVersion: 1; theme: 'nexora-dark' | 'nexora-light' | 'ocean'; components: StudioBlock[] };
 type PageScope = string;
 type LayoutRow = { id: string; name: string; scope: PageScope; draft_config: StudioConfig; published_config: StudioConfig | null; version: number; is_default: boolean; updated_at: string; published_at: string | null };
 type VersionRow = { id: string; layout_id: string; version: number; snapshot: StudioConfig; action: string; created_at: string };
 
-const presets: Array<{ type: StudioBlock['type']; title: string; content?: string; url?: string }> = [
+const presets: Array<{ type: StudioBlock['type']; title: string; content?: string; url?: string; dataBinding?: PageDataBindingKey }> = [
   { type: 'heading', title: 'Titre de section', content: 'Un espace pour vos idées' },
   { type: 'text', title: 'Bloc de texte', content: 'Présentez une information utile à vos utilisateurs.' },
-  { type: 'stat', title: 'Carte statistique', content: 'Connectez ici une vraie source de données avant publication.' },
+  { type: 'stat', title: 'Carte statistique', content: 'Valeur calculée depuis une source autorisée.', dataBinding: 'projects.total' },
   { type: 'card', title: 'Carte de contenu', content: 'Une carte réutilisable pour organiser les contenus.' },
   { type: 'action', title: 'Action rapide', content: 'Action de démonstration non connectée' },
   { type: 'divider', title: 'Séparateur' },
@@ -35,7 +37,7 @@ const presets: Array<{ type: StudioBlock['type']; title: string; content?: strin
 const starter: StudioConfig = { schemaVersion: 1, theme: 'nexora-dark', components: [
   { id: 'welcome-title', type: 'heading', title: 'Bienvenue dans votre espace', content: 'Configurez votre tableau de bord NEXORA', color: '#f4f6ff', width: 'full', padding: 16 },
   { id: 'welcome-text', type: 'text', title: 'Votre espace de travail', content: 'Ajoutez des blocs, personnalisez leur apparence et enregistrez votre brouillon.', color: '#b8c3df', width: 'full', padding: 12 },
-  { id: 'welcome-card', type: 'card', title: 'Vos projets', content: 'Connectez ce bloc à un module métier existant avant de l’utiliser pour des données opérationnelles.', background: '#182440', color: '#f4f6ff', radius: 16, padding: 20, width: 'half' },
+  { id: 'welcome-card', type: 'card', title: 'Vos projets', content: 'Nombre de projets enregistrés dans votre compte.', dataBinding: 'projects.total', background: '#182440', color: '#f4f6ff', radius: 16, padding: 20, width: 'half' },
 ] };
 const themes: Record<StudioConfig['theme'], { background: string; surface: string; accent: string; text: string }> = {
   'nexora-dark': { background: '#0b1120', surface: '#141e34', accent: '#8995ff', text: '#f4f6ff' },
@@ -74,7 +76,7 @@ const safeConfig = (value: unknown): StudioConfig => {
     background: /^#[0-9a-f]{6}$/i.test(x.background ?? '') ? x.background : undefined,
     radius: Number.isFinite(x.radius) ? Math.max(0, Math.min(32, x.radius!)) : 12,
     padding: Number.isFinite(x.padding) ? Math.max(0, Math.min(48, x.padding!)) : 16,
-    width: ['full','half','third'].includes(x.width ?? '') ? x.width : 'full', hidden: Boolean(x.hidden),
+    width: ['full','half','third'].includes(x.width ?? '') ? x.width : 'full', hidden: Boolean(x.hidden), dataBinding: isPageDataBindingKey(x.dataBinding) ? x.dataBinding : undefined,
   }));
   return { schemaVersion: 1, theme: ['nexora-dark','nexora-light','ocean'].includes(input.theme ?? '') ? input.theme! : 'nexora-dark', components };
 };
@@ -95,10 +97,12 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<StudioConfig[]>([]);
   const [, setFuture] = useState<StudioConfig[]>([]);
+  const [bindingValues, setBindingValues] = useState<Record<string, number | null>>({});
   const isAdmin = role === 'admin';
   const selectedBlock = config.components.find(block => block.id === selectedBlockId) ?? null;
   const dirty = useMemo(() => JSON.stringify(config) !== JSON.stringify(savedConfig), [config, savedConfig]);
   const theme = themes[config.theme];
+  const bindingKey = useMemo(() => [...new Set(config.components.map(block => block.dataBinding).filter((value): value is PageDataBindingKey => Boolean(value)))].sort().join('|'), [config.components]);
 
   const loadLayouts = useCallback(async () => {
     if (!supabase || !isAdmin) return;
@@ -125,6 +129,13 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
 
   useEffect(() => { void loadLayouts(); }, [loadLayouts]);
   useEffect(() => { if (selectedId) void loadVersions(selectedId); }, [selectedId, loadVersions]);
+  useEffect(() => {
+    let active = true;
+    const keys = bindingKey ? bindingKey.split('|') : [];
+    if (!keys.length) { setBindingValues({}); return () => { active = false; }; }
+    void loadPageDataBindings(keys).then(values => { if (active) setBindingValues(values); });
+    return () => { active = false; };
+  }, [bindingKey]);
 
   function selectLayout(row: LayoutRow) {
     if (dirty && !window.confirm('Abandonner les modifications non enregistrées ?')) return;
@@ -140,7 +151,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
     if (config.components.length >= 80) { setError('Limite de 80 composants atteinte.'); return; }
     const preset = presets.find(item => item.type === type)!;
     const id = `block-${Date.now().toString(36)}`;
-    changeConfig({ ...config, components: [...config.components, { id, type, title: preset.title, content: preset.content ?? '', url: preset.url, color: theme.text, background: theme.surface, radius: 12, padding: 16, width: 'full' }] });
+    changeConfig({ ...config, components: [...config.components, { id, type, title: preset.title, content: preset.content ?? '', url: preset.url, dataBinding: preset.dataBinding, color: theme.text, background: theme.surface, radius: 12, padding: 16, width: 'full' }] });
     setSelectedBlockId(id);
   }
   function moveBlock(from: string, to: string) {
@@ -243,12 +254,12 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
       <div className="visual-studio-canvas-wrap"><div className="visual-studio-canvas-tools"><div><button type="button" className={preview==='desktop'?'active':''} onClick={() => setPreview('desktop')} aria-label="Aperçu ordinateur"><Monitor size={15}/></button><button type="button" className={preview==='tablet'?'active':''} onClick={() => setPreview('tablet')} aria-label="Aperçu tablette"><Tablet size={15}/></button><button type="button" className={preview==='mobile'?'active':''} onClick={() => setPreview('mobile')} aria-label="Aperçu téléphone"><Smartphone size={15}/></button></div><div className="visual-studio-preview-modes"><button type="button" className={previewMode==='real'?'active':''} onClick={() => setPreviewMode('real')}>Page réelle</button><button type="button" className={previewMode==='draft'?'active':''} onClick={() => setPreviewMode('draft')}>Brouillon éditable</button></div><span><Eye size={14}/> {previewMode==='real'?'Aperçu de la page existante':'Aperçu du brouillon'}</span></div>
         {previewMode==='real' ? <div className={`visual-studio-real-preview frame-${preview}`}><iframe title={`Page réelle : ${scope}`} src={`${window.location.pathname}?studioPreview=${encodeURIComponent(scope.startsWith('custom:')||scope==='custom'?'dashboard':scope)}&embeddedPreview=1`} loading="lazy" referrerPolicy="same-origin" className="visual-studio-real-iframe" /></div> : <div className={`visual-studio-canvas frame-${preview}`} style={{ background:theme.background,color:theme.text }}>
           {displayed.map(block => <article key={block.id} draggable onDragStart={event => event.dataTransfer.setData('text/plain',block.id)} onDragOver={event => event.preventDefault()} onDrop={event => {event.preventDefault();moveBlock(event.dataTransfer.getData('text/plain'),block.id);}} onClick={() => setSelectedBlockId(block.id)} className={`visual-studio-block width-${block.width ?? 'full'} ${selectedBlockId===block.id?'selected':''}`} style={{ background:block.background ?? theme.surface,color:block.color ?? theme.text,borderRadius:block.radius ?? 12,padding:block.padding ?? 16 }}>
-            {block.type==='heading'?<h3>{block.title}</h3>:block.type==='divider'?<div className="visual-studio-divider"/>:block.type==='image'?<><strong>{block.title}</strong>{block.url&&<img src={block.url} alt={block.content||block.title} style={{width:'100%',maxHeight:320,objectFit:block.objectFit??'cover',borderRadius:8,marginTop:8}}/>}<p>{block.content}</p></>:block.type==='video'?<><strong>{block.title}</strong>{block.url&&<iframe src={block.url} title={block.title} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-presentation" allow="fullscreen; picture-in-picture" style={{width:'100%',aspectRatio:'16/9',border:0,borderRadius:8,marginTop:8}}/>}<p>{block.content}</p></>:<><strong>{block.title}</strong><p>{block.content}</p>{block.type==='stat'&&<small>Source de données à connecter</small>}{block.type==='action'&&<span className="visual-studio-fake-button">Action non connectée</span>}</>}
+            {block.type==='heading'?<h3>{block.title}</h3>:block.type==='divider'?<div className="visual-studio-divider"/>:block.type==='image'?<><strong>{block.title}</strong>{block.url&&<img src={block.url} alt={block.content||block.title} style={{width:'100%',maxHeight:320,objectFit:block.objectFit??'cover',borderRadius:8,marginTop:8}}/>}<p>{block.content}</p></>:block.type==='video'?<><strong>{block.title}</strong>{block.url&&<iframe src={block.url} title={block.title} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-presentation" allow="fullscreen; picture-in-picture" style={{width:'100%',aspectRatio:'16/9',border:0,borderRadius:8,marginTop:8}}/>}<p>{block.content}</p></>:<><strong>{block.title}</strong><p>{block.content}</p>{(block.type==='stat'||block.type==='card')&&block.dataBinding&&<div className="visual-studio-bound-value"><strong>{bindingValues[block.dataBinding] == null ? 'N/D' : bindingValues[block.dataBinding]!.toLocaleString('fr-FR')}</strong><small>{pageDataBindingLabel(block.dataBinding)} · valeur issue de la source</small></div>}{block.type==='stat'&&!block.dataBinding&&<small>Source non reliée : choisissez une source dans les propriétés.</small>}{block.type==='action'&&<span className="visual-studio-fake-button">Action non connectée</span>}</>}
           </article>)}
           {!displayed.length&&<p className="visual-studio-empty">Ajoutez un composant depuis la bibliothèque.</p>}
         </div>}
       </div>
-      <aside className="visual-studio-properties"><h3>Propriétés</h3>{selectedBlock?<><p className="visual-studio-help">Élément sélectionné : {selectedBlock.type}</p><label>Libellé<input value={selectedBlock.title} maxLength={120} onChange={event=>changeBlock({title:event.target.value})}/></label>{selectedBlock.type!=='divider'&&<label>{selectedBlock.type==='image'?'Texte alternatif / description':selectedBlock.type==='video'?'Description':'Contenu'}<textarea value={selectedBlock.content??''} maxLength={1000} rows={3} onChange={event=>changeBlock({content:event.target.value})}/></label>}<label>Largeur<select value={selectedBlock.width??'full'} onChange={event=>changeBlock({width:event.target.value as StudioBlock['width']})}><option value="full">Pleine largeur</option><option value="half">Moitié</option><option value="third">Un tiers</option></select></label><label>Couleur du texte<input type="color" value={selectedBlock.color??theme.text} onChange={event=>changeBlock({color:event.target.value})}/></label><label>Arrière-plan<input type="color" value={selectedBlock.background??theme.surface} onChange={event=>changeBlock({background:event.target.value})}/></label><label>Arrondi <input type="range" min="0" max="32" value={selectedBlock.radius??12} onChange={event=>changeBlock({radius:Number(event.target.value)})}/></label><label>Espacement intérieur <input type="range" min="0" max="48" value={selectedBlock.padding??16} onChange={event=>changeBlock({padding:Number(event.target.value)})}/></label><div className="visual-studio-property-actions"><button type="button" className="logout-button" onClick={()=>changeBlock({hidden:!selectedBlock.hidden})}>{selectedBlock.hidden?<Eye size={14}/>:<EyeOff size={14}/>} {selectedBlock.hidden?'Afficher':'Masquer'}</button><button type="button" className="logout-button" onClick={()=>{const copy={...selectedBlock,id:`block-${Date.now().toString(36)}`,title:`${selectedBlock.title} (copie)`};changeConfig({...config,components:[...config.components,copy]});setSelectedBlockId(copy.id);}}><Copy size={14}/> Dupliquer</button><button type="button" className="logout-button" onClick={()=>{changeConfig({...config,components:config.components.filter(item=>item.id!==selectedBlock.id)});setSelectedBlockId('');}}><Trash2 size={14}/> Supprimer</button><button type="button" className="logout-button" onClick={()=>moveBlock(selectedBlock.id,config.components[Math.max(0,config.components.findIndex(item=>item.id===selectedBlock.id)-1)]?.id)}><ArrowUp size={14}/> Monter</button><button type="button" className="logout-button" onClick={()=>moveBlock(selectedBlock.id,config.components[Math.min(config.components.length-1,config.components.findIndex(item=>item.id===selectedBlock.id)+1)]?.id)}><ArrowDown size={14}/> Descendre</button></div></>:<p className="visual-studio-help">Sélectionnez un bloc dans l’aperçu pour modifier ses propriétés.</p>}
+      <aside className="visual-studio-properties"><h3>Propriétés</h3>{selectedBlock?<><p className="visual-studio-help">Élément sélectionné : {selectedBlock.type}</p><label>Libellé<input value={selectedBlock.title} maxLength={120} onChange={event=>changeBlock({title:event.target.value})}/></label>{selectedBlock.type!=='divider'&&<label>{selectedBlock.type==='image'?'Texte alternatif / description':selectedBlock.type==='video'?'Description':'Contenu'}<textarea value={selectedBlock.content??''} maxLength={1000} rows={3} onChange={event=>changeBlock({content:event.target.value})}/></label>}{(selectedBlock.type==='stat'||selectedBlock.type==='card')&&<label>Source de données<select value={selectedBlock.dataBinding??'none'} onChange={event=>changeBlock({dataBinding:event.target.value==='none'?undefined:event.target.value as PageDataBindingKey})}><option value="none">Aucune · contenu statique</option>{Object.entries(PAGE_DATA_BINDINGS).map(([binding,meta])=><option key={binding} value={binding}>{meta.label} · {meta.source}</option>)}</select><small>La valeur est résolue depuis une requête de lecture filtrée par les règles Supabase.</small></label>}<label>Largeur<select value={selectedBlock.width??'full'} onChange={event=>changeBlock({width:event.target.value as StudioBlock['width']})}><option value="full">Pleine largeur</option><option value="half">Moitié</option><option value="third">Un tiers</option></select></label><label>Couleur du texte<input type="color" value={selectedBlock.color??theme.text} onChange={event=>changeBlock({color:event.target.value})}/></label><label>Arrière-plan<input type="color" value={selectedBlock.background??theme.surface} onChange={event=>changeBlock({background:event.target.value})}/></label><label>Arrondi <input type="range" min="0" max="32" value={selectedBlock.radius??12} onChange={event=>changeBlock({radius:Number(event.target.value)})}/></label><label>Espacement intérieur <input type="range" min="0" max="48" value={selectedBlock.padding??16} onChange={event=>changeBlock({padding:Number(event.target.value)})}/></label><div className="visual-studio-property-actions"><button type="button" className="logout-button" onClick={()=>changeBlock({hidden:!selectedBlock.hidden})}>{selectedBlock.hidden?<Eye size={14}/>:<EyeOff size={14}/>} {selectedBlock.hidden?'Afficher':'Masquer'}</button><button type="button" className="logout-button" onClick={()=>{const copy={...selectedBlock,id:`block-${Date.now().toString(36)}`,title:`${selectedBlock.title} (copie)`};changeConfig({...config,components:[...config.components,copy]});setSelectedBlockId(copy.id);}}><Copy size={14}/> Dupliquer</button><button type="button" className="logout-button" onClick={()=>{changeConfig({...config,components:config.components.filter(item=>item.id!==selectedBlock.id)});setSelectedBlockId('');}}><Trash2 size={14}/> Supprimer</button><button type="button" className="logout-button" onClick={()=>moveBlock(selectedBlock.id,config.components[Math.max(0,config.components.findIndex(item=>item.id===selectedBlock.id)-1)]?.id)}><ArrowUp size={14}/> Monter</button><button type="button" className="logout-button" onClick={()=>moveBlock(selectedBlock.id,config.components[Math.min(config.components.length-1,config.components.findIndex(item=>item.id===selectedBlock.id)+1)]?.id)}><ArrowDown size={14}/> Descendre</button></div></>:<p className="visual-studio-help">Sélectionnez un bloc dans l’aperçu pour modifier ses propriétés.</p>}
       </aside>
     </div>
     <div className="visual-studio-footer"><div className="visual-studio-history"><h3><Clock3 size={16}/> Historique des versions</h3>{versions.length?versions.map(version=><div className="visual-studio-version" key={version.id}><span>v{version.version} · {version.action}</span><time>{new Date(version.created_at).toLocaleString('fr-FR')}</time><button type="button" className="logout-button" onClick={()=>void restore(version)} disabled={busy}><Undo2 size={14}/> Restaurer en brouillon</button></div>):<p>Aucune version enregistrée pour le moment.</p>}</div><div className="visual-studio-publish"><p>{layouts.find(row=>row.id===selectedId)?.published_at?'Une version publiée existe.':'Aucune version publiée pour cette disposition.'}</p><button type="button" className="logout-button" onClick={()=>void setDefault()} disabled={busy||!selectedId}><Check size={14}/> Définir par défaut</button><button type="button" className="logout-button" onClick={()=>void saveDraft()} disabled={busy||!selectedId||!dirty}><Save size={14}/> {busy?'Enregistrement…':'Enregistrer le brouillon'}</button><button type="button" className="primary-button" onClick={()=>void publish()} disabled={busy||!selectedId||dirty}><Rocket size={15}/> Publier la version enregistrée</button></div></div>
