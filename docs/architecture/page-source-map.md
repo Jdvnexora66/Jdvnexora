@@ -51,7 +51,7 @@ Les blocs `text`, `card` et `stat` peuvent sélectionner une clé de cette liste
 
 ## Identifiants de navigation vérifiés
 
-Les destinations internes sont limitées à cette liste. Les liens publiés par le Studio Design et l'initialisation par URL réutilisent la même liste blanche pour éviter qu'un bouton pointe vers un identifiant non reconnu.
+Les identifiants internes sont centralisés dans `PAGE_ROUTE_IDS`. Les actions des mises en page publiées utilisent une liste distincte `PAGE_ACTION_TARGETS`, qui exclut les destinations réservées à l'administration. L'initialisation par URL accepte uniquement les identifiants de route connus.
 
 | Écran | Identifiant de navigation |
 |---|---|
@@ -73,7 +73,7 @@ Les destinations internes sont limitées à cette liste. Les liens publiés par 
 | Abonnement et facturation | `billing` |
 | Vitrine publique / inscription | `?view=public` / `?mode=signup` (parcours public séparé du workspace authentifié) |
 
-Les pages métier authentifiées sont les 16 identifiants internes ci-dessus. La vitrine publique est le 17e écran et utilise le parcours public de l'application, elle ne doit pas être exposée comme une destination interne arbitraire après connexion.
+Les pages métier authentifiées sont les 16 identifiants internes ci-dessus. La vitrine publique est le 17e écran et utilise le parcours public de l'application; elle ne doit pas être exposée comme une destination interne arbitraire après connexion. L'accès direct au Studio Design affiche un état de restriction si le compte n'a pas le rôle administrateur.
 
 ## Règles d'espacement et de débordement
 
