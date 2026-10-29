@@ -1,5 +1,5 @@
 /* Page vitrine publique JDV NEXORA AI STUDIO */
-.vitrine-page{--v-bg:#070b16;--v-panel:#10182b;--v-line:rgba(157,177,224,.17);--v-muted:#a4b1ca;--v-purple:#9a8cff;--v-cyan:#5ce1f3;max-width:1600px;margin:0 auto;padding:0 5.2%;overflow:hidden;background:radial-gradient(ellipse at 83% 10%,rgba(95,83,222,.14),transparent 32%),var(--v-bg);color:#f2f5ff;font-family:'DM Sans',system-ui,sans-serif}
+.vitrine-page{--v-bg:#0B0B0D;--v-panel:#202024;--v-line:rgba(214,182,110,.22);--v-muted:#C9C1B2;--v-purple:#D6B66E;--v-cyan:#D6B66E;max-width:1600px;margin:0 auto;padding:0 5.2%;overflow:hidden;background:radial-gradient(ellipse at 83% 10%,rgba(95,83,222,.14),transparent 32%),var(--v-bg);color:#f2f5ff;font-family:'DM Sans',system-ui,sans-serif}
 .vitrine-page *{box-sizing:border-box}.vitrine-page a{color:inherit;text-decoration:none}.vitrine-nav{position:sticky;z-index:30;top:0;display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:82px;border-bottom:1px solid var(--v-line);background:rgba(7,11,22,.88);backdrop-filter:blur(18px)}
 .vitrine-brand{display:inline-flex;align-items:center;gap:11px;flex-shrink:0}.vitrine-brand>span:last-child{display:grid;line-height:1.1}.vitrine-brand strong{font:800 1rem Manrope,sans-serif;letter-spacing:.01em}.vitrine-brand small{margin-top:5px;color:#9daac7;font-size:.61rem;letter-spacing:.24em}.vitrine-brand-mark{display:grid;width:43px;height:43px;place-items:center;border:1px solid rgba(154,140,255,.4);border-radius:14px;background:linear-gradient(135deg,rgba(154,140,255,.25),rgba(92,225,243,.1));color:#c7c0ff}
 .vitrine-links{display:flex;align-items:center;gap:clamp(14px,2.3vw,34px)}.vitrine-links a,.vitrine-footer a{color:#c1cbe0;font-size:.82rem;transition:color .2s}.vitrine-links a:hover,.vitrine-footer a:hover{color:#fff}.vitrine-login{display:inline-flex;align-items:center;gap:9px;padding:11px 15px;border:1px solid rgba(154,140,255,.48);border-radius:12px;background:rgba(154,140,255,.12);font-size:.84rem;font-weight:700;white-space:nowrap}
@@ -28,3 +28,106 @@
 .vitrine-showcase-card p,.vitrine-showcase-disclaimer{color:var(--v-muted);line-height:1.7}
 .vitrine-showcase-disclaimer{margin:18px 0 0;font-size:.82rem;text-align:center}
 @media(max-width:760px){.vitrine-showcase{padding:64px 0}.vitrine-showcase-grid{grid-template-columns:1fr;gap:16px}.vitrine-showcase-card.showcase-wide{grid-column:auto;display:block}.vitrine-showcase-card>div{padding:20px}.vitrine-showcase-card img{min-height:0}}
+
+/* JDV NEXORA — alignement sur l'identité visuelle maîtresse */
+.vitrine-page {
+  background: radial-gradient(ellipse at 83% 10%,rgba(214,182,110,.10),transparent 32%),#0B0B0D;
+  color: #F5F2EA;
+}
+.vitrine-page .vitrine-nav,
+.vitrine-page .vitrine-footer {
+  border-color: rgba(214,182,110,.22);
+  background: rgba(11,11,13,.96);
+}
+.vitrine-page .vitrine-brand strong,
+.vitrine-page .vitrine-section h2,
+.vitrine-page .vitrine-section h3,
+.vitrine-page .vitrine-feature-card h3,
+.vitrine-page .vitrine-showcase-card h3,
+.vitrine-page .vitrine-contact-card b { color: #F5F2EA; }
+.vitrine-page .vitrine-eyebrow,
+.vitrine-page .vitrine-links a:hover,
+.vitrine-page .vitrine-login,
+.vitrine-page .vitrine-contact-card em { color: #D6B66E; }
+.vitrine-page .vitrine-brand-mark,
+.vitrine-page .vitrine-feature-icon,
+.vitrine-page .vitrine-mini-icon,
+.vitrine-page .vitrine-proof-strip > div > svg {
+  color: #D6B66E;
+  border-color: rgba(214,182,110,.32);
+  background-color: rgba(214,182,110,.10);
+}
+.vitrine-page .vitrine-button.primary {
+  color: #0B0B0D;
+  border-color: #D6B66E;
+  background: linear-gradient(135deg,#D6B66E,#B89449);
+  box-shadow: 0 8px 22px rgba(214,182,110,.15);
+}
+.vitrine-page .vitrine-button.secondary {
+  color: #F5F2EA;
+  border-color: rgba(214,182,110,.55);
+  background: rgba(214,182,110,.045);
+}
+.vitrine-page .vitrine-button.secondary:hover {
+  border-color: #D6B66E;
+  background: rgba(214,182,110,.12);
+}
+.vitrine-page .vitrine-feature-card,
+.vitrine-page .vitrine-showcase-card,
+.vitrine-page .vitrine-contact-card,
+.vitrine-page .vitrine-feedback-form,
+.vitrine-page .vitrine-process,
+.vitrine-page .vitrine-feedback-note {
+  border-color: rgba(214,182,110,.20);
+  background-color: rgba(32,32,36,.78);
+}
+.vitrine-page .vitrine-feedback-form input,
+.vitrine-page .vitrine-feedback-form select,
+.vitrine-page .vitrine-feedback-form textarea {
+  border-color: rgba(214,182,110,.35);
+  background: #0B0B0D;
+  color: #F5F2EA;
+}
+.vitrine-page .vitrine-feedback-form input:focus,
+.vitrine-page .vitrine-feedback-form select:focus,
+.vitrine-page .vitrine-feedback-form textarea:focus {
+  outline: 2px solid #D6B66E;
+  outline-offset: 2px;
+}
+.vitrine-page .vitrine-hero,
+.vitrine-page .vitrine-proof-strip,
+.vitrine-page .vitrine-mission-band,
+.vitrine-page .vitrine-final-cta {
+  border-color: rgba(214,182,110,.18);
+}
+.vitrine-page .vitrine-visual-glow,
+.vitrine-page .vitrine-orbit { border-color: rgba(214,182,110,.20); }
+.vitrine-page .vitrine-core {
+  border-color: rgba(214,182,110,.42);
+  background: radial-gradient(circle at 50% 15%,rgba(214,182,110,.18),rgba(32,32,36,.90) 65%);
+  box-shadow: 0 0 48px rgba(214,182,110,.09);
+}
+.vitrine-page .purple,
+.vitrine-page .cyan { color: #D6B66E !important; background-color: rgba(214,182,110,.10) !important; }
+.vitrine-page .vitrine-page-muted,
+.vitrine-page .vitrine-showcase-disclaimer,
+.vitrine-page .vitrine-form-disclaimer { color: #C9C1B2; }
+.vitrine-page .vitrine-form-status { overflow-wrap: anywhere; }
+.vitrine-page h1,
+.vitrine-page h2,
+.vitrine-page h3,
+.vitrine-page p,
+.vitrine-page a,
+.vitrine-page button,
+.vitrine-page label,
+.vitrine-page small,
+.vitrine-page b,
+.vitrine-page strong { overflow-wrap: anywhere; }
+.vitrine-page .vitrine-nav,
+.vitrine-page .vitrine-hero-actions,
+.vitrine-page .vitrine-section-heading,
+.vitrine-page .vitrine-feedback-form,
+.vitrine-page .vitrine-contact-grid,
+.vitrine-page .vitrine-feature-grid,
+.vitrine-page .vitrine-showcase-grid { min-width: 0; }
+
