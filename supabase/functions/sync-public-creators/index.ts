@@ -13,11 +13,43 @@ const escape = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"
 async function syncChannel(admin: ReturnType<typeof createClient>, ownerId: string, channel: Record<string, unknown>) {
   const channelId = String(channel.channel_id ?? "");
   if (!/^UC[a-zA-Z0-9_-]{22}$/.test(channelId)) throw new Error("Identifiant de chaîne YouTube invalide.");
-  const response = await fetch("https://www.youtube.com/feeds/videos.xml?channel_id=" + encodeURIComponent(channelId), {
-    headers: { "User-Agent": "NEXORA-CreatorCatalog/1.0 (+https://www.youtube.com)" },
-  });
-  if (!response.ok) throw new Error("Le flux public YouTube est indisponible (HTTP " + response.status + ").");
+  const feedUrl = "https://www.youtube.com/feeds/videos.xml?channel_id=" + encodeURIComponent(channelId);
+  let response: Response | null = null;
+  // YouTube's public feed endpoint has intermittent 404/500 incidents even for valid channels.
+  // Retry transient failures instead of treating the first 404 as a missing/deleted channel.
+  const retryDelays = [700, 1600];
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      response = await fetch(feedUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; NEXORA-CreatorCatalog/1.0)",
+          "Accept": "application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
+        },
+        redirect: "follow",
+      });
+      if (response.ok) break;
+      const transient = response.status === 404 || response.status === 429 || response.status >= 500;
+      if (!transient) break;
+    } catch {
+      response = null;
+    }
+    if (attempt < retryDelays.length) {
+      await new Promise((resolve) => setTimeout(resolve, retryDelays[attempt]));
+    }
+  }
+  if (!response?.ok) {
+    if (response?.status === 404) {
+      throw new Error("YouTube a renvoyé HTTP 404 pour le flux public. Cette erreur peut être temporaire et ne signifie pas que la chaîne a été supprimée. Réessayez dans quelques minutes.");
+    }
+    if (response) {
+      throw new Error("Le flux public YouTube reste indisponible après plusieurs tentatives (HTTP " + response.status + "). Réessayez dans quelques minutes.");
+    }
+    throw new Error("Impossible de joindre le flux public YouTube après plusieurs tentatives. Vérifiez la connexion puis réessayez.");
+  }
   const xml = await response.text();
+  if (!/<feed(?:\s|>)/i.test(xml) || !/<(?:entry|title)(?:\s|>)/i.test(xml)) {
+    throw new Error("YouTube a renvoyé une réponse qui ne ressemble pas à un flux Atom valide. Réessayez dans quelques minutes.");
+  }
   const titleMatch = xml.match(/<title>([\s\S]*?)<\/title>/);
   const channelName = titleMatch ? text(titleMatch[1]).trim() : String(channel.channel_name || "Créateur YouTube");
   const entries = [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map((m) => m[1]);
