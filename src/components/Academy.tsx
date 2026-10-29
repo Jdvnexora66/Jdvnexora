@@ -90,7 +90,6 @@ export default function Academy({ userId }: { userId:string }) {
     <div className="section-heading"><div><p className="eyebrow">JDV NEXORA · ACADÉMIE</p><h2><BookOpen size={21}/> Apprendre en construisant</h2><p className="muted">Parcours pratiques et formations indépendantes, avec un tarif propre à chaque cours.</p></div><button className="icon-button" onClick={()=>void load()} disabled={loading} aria-label="Actualiser l’Académie"><RefreshCw size={16}/></button></div>
     <ModuleDataOverview sources={["nexora_learning_paths", "nexora_learning_modules", "nexora_learning_progress", "nexora_courses", "nexora_course_enrollments", "nexora_course_lessons"]} metrics={[{ label: "Formations disponibles", value: courses.length }, { label: "Parcours", value: paths.length }, { label: "Inscriptions gratuites", value: enrolledCourseIds.length }]} loading={loading} error={Boolean(error)} />
 
-    <ModuleDataOverview sources={["nexora_learning_paths", "nexora_learning_modules", "nexora_learning_progress", "nexora_courses", "nexora_course_enrollments", "nexora_course_lessons"]} metrics={[{ label: "Formations disponibles", value: courses.length }, { label: "Parcours", value: paths.length }, { label: "Inscriptions gratuites", value: enrolledCourseIds.length }]} loading={loading} error={Boolean(error)} />
 
     {loading?<p className="empty-state">Chargement du programme…</p>:<>
       <section aria-labelledby="paid-courses-heading" className="academy-courses-section">
