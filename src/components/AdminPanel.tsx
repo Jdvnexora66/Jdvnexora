@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Activity, RefreshCw, ShieldCheck, Users, GraduationCap, Plus, Save, Pencil, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import ModuleDataOverview from './ModuleDataOverview';
 import CourseLessonManager from './CourseLessonManager';
 
 type Profile = { id: string; display_name: string | null; preferred_language: string; role: 'user'|'admin'; created_at: string };
@@ -99,6 +100,8 @@ export default function AdminPanel({ userId, role }: { userId: string; role: str
 
   return <section id="administration" className="project-panel admin-panel">
     <div className="section-heading"><div><p className="eyebrow">CONTRÔLE DE LA PLATEFORME</p><h2><ShieldCheck size={21}/> Administration</h2><p className="muted">Gérez les rôles, les formations et consultez les événements d’audit.</p></div><button type="button" className="icon-button" onClick={() => void load()} disabled={loading} aria-label="Actualiser l’administration"><RefreshCw size={16}/></button></div>
+    <ModuleDataOverview sources={["profiles", "audit_logs", "nexora_courses"]} loading={loading} error={Boolean(error)} caption="Les nombres administratifs ci-dessous proviennent des requêtes autorisées à votre rôle." />
+
     {loading ? <p className="empty-state">Chargement des données d’administration…</p> : <>
       <div className="dashboard-stats"><article className="stat-card"><span className="stat-icon"><Users size={18}/></span><div><p>Comptes visibles</p><strong>{profiles.length}</strong><small>Maximum 200 comptes récents</small></div></article><article className="stat-card"><span className="stat-icon"><Activity size={18}/></span><div><p>Événements d’audit</p><strong>{logs.length}</strong><small>Maximum 50 événements récents</small></div></article><article className="stat-card"><span className="stat-icon"><GraduationCap size={18}/></span><div><p>Formations</p><strong>{courses.length}</strong><small>{courses.filter(c=>c.status==='published').length} publiées</small></div></article></div>
       <div className="admin-section"><h3><GraduationCap size={17}/> Gestion des formations et des tarifs</h3><p className="muted">Chaque cours a son propre prix en FCFA. Le prix zéro signifie gratuit. La publication rend la fiche visible dans l’Académie, mais ne déclenche pas de paiement.</p>
