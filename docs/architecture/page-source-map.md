@@ -82,3 +82,12 @@ Les pages métier authentifiées sont les 16 identifiants internes ci-dessus. La
 - Les noms de sources, statuts, titres et boutons longs doivent se couper ou revenir à la ligne au lieu de se chevaucher.
 - Le panneau de synthèse réduit ses colonnes sur petit écran et empile les sources en dessous des métriques.
 - Le tableau de bord référentiel reste exclu des nouvelles règles visuelles ciblant les pages métier.
+
+## Référence de conformité visuelle
+
+La règle commune de couleurs, composants, grilles et espacements est désormais formalisée dans [`visual-design-system.md`](./visual-design-system.md). Elle suit l'identité visuelle du cahier des charges maître : noir `#0B0B0D`, or `#D6B66E`, ivoire `#F5F2EA`, graphite `#202024`.
+
+La classe de thème `brand-theme` s'applique aux vues métier et à l'authentification ; elle est volontairement retirée du tableau de bord référentiel authentifié (`dashboard`) pour préserver son apparence approuvée. La vitrine publique suit la même palette via `src/vitrine.css`. Les règles adaptatives de cartes, sources, boutons et intégrations média sont maintenues dans les feuilles de style partagées.
+
+Le tableau est une formalisation de la cible de conception, pas une affirmation que les 17 écrans ont tous été parcourus manuellement dans tous leurs états. La validation pixel par pixel sur le site de production doit être confirmée après déploiement et tests authentifiés.
+
