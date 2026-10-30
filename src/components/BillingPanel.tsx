@@ -277,6 +277,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
     <div className="billing-current">
       <h3><BadgeCheck size={17}/> Votre abonnement</h3>
       {subscription ? <div className="project-item"><div className="project-type-icon"><CreditCard size={18}/></div><div className="project-info"><h3>{subscribedPlan?.name ?? 'Forfait non disponible'}</h3><p>{statusLabel[subscriptionStatus]}{subscription.ends_at ? ' · échéance ' + new Date(subscription.ends_at).toLocaleDateString('fr-FR') : ''}</p></div><span className="project-type-label">{subscribedPlan ? formatPrice({ price_minor: subscribedPlan.price_minor, currency: subscribedPlan.currency, billing_interval: subscribedPlan.billing_interval as Plan['billing_interval'] }) : subscription.status}</span></div> : <p className="muted">Aucun abonnement enregistré pour ce compte.</p>}
+      <p className="muted">Les forfaits mensuels et annuels sont renouvelés manuellement via KKIAPAY. Aucun prélèvement automatique récurrent n’est effectué.</p>
     </div>
     <div className="billing-plans">
       <div className="billing-plans-heading"><div><p className="eyebrow">CHOISISSEZ VOTRE FORMULE</p><h3>Des offres simples, des avantages clairs</h3><p className="muted">Comparez les formules, puis cliquez sur « Choisir cet abonnement » pour continuer vers le paiement.</p></div></div>

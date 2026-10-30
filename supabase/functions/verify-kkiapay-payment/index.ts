@@ -12,6 +12,23 @@ const corsHeaders = {
 const reply = (status: number, payload: Record<string, unknown>) =>
   new Response(JSON.stringify(payload), { status, headers: corsHeaders });
 
+function subscriptionEndDate(start: Date, interval: string): Date | null {
+  if (interval !== "month" && interval !== "year") return null;
+  const end = new Date(start.getTime());
+  const originalDay = end.getUTCDate();
+  const originalMonth = end.getUTCMonth();
+  end.setUTCDate(1);
+  if (interval === "month") {
+    end.setUTCMonth(originalMonth + 1);
+  } else {
+    end.setUTCFullYear(end.getUTCFullYear() + 1);
+    end.setUTCMonth(originalMonth);
+  }
+  const lastDay = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() + 1, 0)).getUTCDate();
+  end.setUTCDate(Math.min(originalDay, lastDay));
+  return end;
+}
+
 async function repairCourseEnrollment(admin: AdminClient, order: {
   id: string; course_id: string; user_id: string; enrollment_id: string;
 }, transactionId: string) {
@@ -248,7 +265,7 @@ async function verifySubscriptionOrder(
     }
 
     const now = new Date();
-    const end = plan.billing_interval === "month" ? new Date(new Date(now).setMonth(now.getMonth() + 1)) : plan.billing_interval === "year" ? new Date(new Date(now).setFullYear(now.getFullYear() + 1)) : null;
+    const end = subscriptionEndDate(now, plan.billing_interval);
     const { data: activated, error: activationError } = await admin.from("subscriptions")
       .update({ status: "active", provider_reference: transactionId, starts_at: now.toISOString(), ends_at: end?.toISOString() ?? null, updated_at: now.toISOString() })
       .eq("id", order.id).eq("user_id", userId).eq("status", "pending")
@@ -373,7 +390,7 @@ Deno.serve(async (req: Request) => {
   } else if (transactionId) return reply(400, { error: "Un forfait gratuit ne nécessite pas de transaction." });
 
   const now = new Date();
-  const end = plan.billing_interval === "month" ? new Date(new Date(now).setMonth(now.getMonth() + 1)) : plan.billing_interval === "year" ? new Date(new Date(now).setFullYear(now.getFullYear() + 1)) : null;
+  const end = subscriptionEndDate(now, plan.billing_interval);
   const { data: subscription, error: insertError } = await admin.from("subscriptions").insert({
     user_id: authData.user.id, plan_id: plan.id, status: "active", starts_at: now.toISOString(),
     ends_at: end?.toISOString() ?? null, provider, provider_reference: providerReference,
