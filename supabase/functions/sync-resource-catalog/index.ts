@@ -125,18 +125,13 @@ function atomLink(item: string): string {
     const attrs = match[1] ?? '';
     const rel = attrs.match(/\brel=["']([^"']+)["']/i)?.[1];
     const href = attrs.match(/\bhref=["']([^"']+)["']/i)?.[1];
- fix/resource-sync-url-validation
     if (href && (!rel || rel === 'alternate') && /^https:\/\//i.test(href)) return href;
-=======
-    if (href && (!rel || rel === 'alternate') && /^https?:\/\//i.test(href)) return href;
- main
   }
   return '';
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
- fix/resource-sync-url-validation
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
   const secret = Deno.env.get('RESOURCE_SYNC_SECRET');
@@ -147,42 +142,11 @@ Deno.serve(async (req) => {
   if (!supabaseUrl || !serviceKey) return json({ error: 'Server configuration missing' }, 500);
 
   const db = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
-=======
-  if (req.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: corsHeaders });
-
-  const secret = Deno.env.get('RESOURCE_SYNC_SECRET');
-  if (!secret || req.headers.get('x-sync-secret') !== secret) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
-  const url = Deno.env.get('SUPABASE_URL');
-  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  if (!url || !serviceKey) {
-    return new Response(JSON.stringify({ error: 'Server configuration missing' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
-  const db = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
- main
   const { data: sources, error } = await db.from('nexora_resource_sources')
     .select('id,name,source_type,feed_url,topic,language,website_url')
     .eq('is_active', true)
     .not('feed_url', 'is', null);
- fix/resource-sync-url-validation
   if (error) return json({ error: 'Impossible de charger les sources actives.' }, 500);
-=======
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
- main
 
   let processed = 0;
   let failed = 0;
@@ -190,20 +154,10 @@ Deno.serve(async (req) => {
 
   for (const source of sources ?? []) {
     try {
- fix/resource-sync-url-validation
       if (typeof source.feed_url !== 'string' || !source.feed_url.trim()) throw new Error('URL du flux absente.');
       const response = await fetchPublicFeed(source.feed_url);
       if (!response.ok) throw new Error('Flux HTTP ' + response.status);
       const xml = await readLimitedText(response);
-=======
-      const response = await fetch(source.feed_url, {
-        headers: { 'User-Agent': 'JDV-NEXORA-ResourceCatalog/1.0' },
-        signal: AbortSignal.timeout(12000),
-      });
-      if (!response.ok) throw new Error('Feed HTTP ' + response.status);
-
-      const xml = await response.text();
- main
       const items = [
         ...xml.matchAll(/<(?:[\w.-]+:)?item\b[^>]*>[\s\S]*?<\/(?:[\w.-]+:)?item\s*>/gi),
         ...xml.matchAll(/<(?:[\w.-]+:)?entry\b[^>]*>[\s\S]*?<\/(?:[\w.-]+:)?entry\s*>/gi),
@@ -212,13 +166,7 @@ Deno.serve(async (req) => {
         .slice(0, 30)
         .map(({ item }) => item);
 
- fix/resource-sync-url-validation
       if (items.length === 0) throw new Error('Aucun élément RSS <item> ou Atom <entry> détecté.');
-=======
-      if (items.length === 0) {
-        throw new Error('Flux récupéré mais aucun élément RSS <item> ou Atom <entry> détecté.');
-      }
- main
 
       let importedForSource = 0;
       for (const item of items) {
@@ -251,17 +199,7 @@ Deno.serve(async (req) => {
         processed++;
       }
 
- fix/resource-sync-url-validation
       if (importedForSource === 0) throw new Error('Éléments détectés, mais aucun élément ne possède un titre et un lien valides.');
-=======
-      if (importedForSource === 0) {
-        const sample = items[0] ?? '';
-        const sampleTitle = tag(sample, 'title').slice(0, 120) || '(titre vide)';
-        const sampleLink = tag(sample, 'link').slice(0, 180) || atomLink(sample) || '(lien vide)';
-        throw new Error('Éléments détectés (' + items.length + '), aucun import valide. Exemple titre=' + sampleTitle + '; lien extrait=' + sampleLink.slice(0, 180));
-      }
-
- main
       const { error: syncError } = await db.from('nexora_resource_sources')
         .update({ last_synced_at: new Date().toISOString() })
         .eq('id', source.id);
@@ -272,24 +210,13 @@ Deno.serve(async (req) => {
     }
   }
 
- fix/resource-sync-url-validation
   // Return HTTP 200 for a completed batch even when individual feeds fail.
   // Callers must inspect success/failed; a partial feed failure is not a function transport failure.
   return json({
-=======
-  return new Response(JSON.stringify({
- main
     success: failed === 0,
     sources: sources?.length ?? 0,
     processed,
     failed,
     issues,
- fix/resource-sync-url-validation
   }, 200);
-=======
-  }), {
-    status: failed === 0 ? 200 : 207,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
- main
 });
