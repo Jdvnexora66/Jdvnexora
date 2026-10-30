@@ -23,7 +23,9 @@ type StudioBlock = {
 type PageStyle = { density: 'comfortable' | 'compact'; textScale: 'small' | 'normal' | 'large'; radius: number; background: string; surface: string; text: string; accent: string };
 type NativeTarget = 'panel' | 'card' | 'form' | 'heading' | 'button';
 type NativeOverride = { background: string; color: string; radius: number; padding: number };
-type StudioConfig = { schemaVersion: 1; theme: 'nexora-dark' | 'nexora-light' | 'ocean'; pageStyle?: PageStyle; nativeStyles?: Partial<Record<NativeTarget, NativeOverride>>; components: StudioBlock[] };
+type NativeElementOverride = { tag: string; label: string; originalText?: string; text?: string; background?: string; color?: string; radius?: number; padding?: number; fontSize?: number; fontWeight?: 'normal'|'500'|'600'|'700'|'800' };
+type NativeElementSelection = { path: string; tag: string; label: string; originalText: string; canEditText: boolean };
+type StudioConfig = { schemaVersion: 1; theme: 'nexora-dark' | 'nexora-light' | 'ocean'; pageStyle?: PageStyle; nativeStyles?: Partial<Record<NativeTarget, NativeOverride>>; nativeElements?: Record<string, NativeElementOverride>; components: StudioBlock[] };
 type PageScope = string;
 type LayoutRow = { id: string; name: string; scope: PageScope; draft_config: StudioConfig; published_config: StudioConfig | null; version: number; is_default: boolean; updated_at: string; published_at: string | null };
 type VersionRow = { id: string; layout_id: string; version: number; snapshot: StudioConfig; action: string; created_at: string };
@@ -38,7 +40,7 @@ const presets: Array<{ type: StudioBlock['type']; title: string; content?: strin
   { type: 'image', title: 'Image', content: 'Description de l’image' },
   { type: 'video', title: 'Vidéo', content: 'Vidéo intégrée', url: 'https://www.youtube-nocookie.com/embed/ScMzIvxBSi4' },
 ];
-const starter: StudioConfig = { schemaVersion: 1, theme: 'nexora-dark', pageStyle: { density: 'comfortable', textScale: 'normal', radius: 14, background: '#0B0B0D', surface: '#202024', text: '#F5F2EA', accent: '#D6B66E' }, nativeStyles: {}, components: [
+const starter: StudioConfig = { schemaVersion: 1, theme: 'nexora-dark', pageStyle: { density: 'comfortable', textScale: 'normal', radius: 14, background: '#0B0B0D', surface: '#202024', text: '#F5F2EA', accent: '#D6B66E' }, nativeStyles: {}, nativeElements: {}, components: [
   { id: 'welcome-title', type: 'heading', title: 'Bienvenue dans votre espace', content: 'Configurez votre tableau de bord NEXORA', color: '#F5F2EA', width: 'full', padding: 16 },
   { id: 'welcome-text', type: 'text', title: 'Votre espace de travail', content: 'Ajoutez des blocs, personnalisez leur apparence et enregistrez votre brouillon.', color: '#C9C1B2', width: 'full', padding: 12 },
   { id: 'welcome-card', type: 'card', title: 'Vos projets', content: 'Nombre de projets enregistrés dans votre compte.', dataBinding: 'projects.total', background: '#202024', color: '#F5F2EA', radius: 16, padding: 20, width: 'half' },
@@ -102,8 +104,47 @@ const safeConfig = (value: unknown): StudioConfig => {
     const value = rawNative?.[target];
     if (value) nativeStyles[target] = { background: safeColor(value.background, palette.surface), color: safeColor(value.color, palette.text), radius: Number.isFinite(value.radius) ? Math.max(0, Math.min(32, Number(value.radius))) : 12, padding: Number.isFinite(value.padding) ? Math.max(0, Math.min(48, Number(value.padding))) : 12 };
   }
-  return { schemaVersion: 1, theme, pageStyle, nativeStyles, components };
+  const rawElements = input.nativeElements && typeof input.nativeElements === 'object' ? input.nativeElements as Record<string, Partial<NativeElementOverride>> : {};
+  const nativeElements: Record<string, NativeElementOverride> = {};
+  const safePath = (path: string) => path.length <= 1400 && /^body(?: > [a-z][a-z0-9-]*:nth-of-type\([1-9][0-9]*\))*$/.test(path);
+  for (const [path, value] of Object.entries(rawElements).slice(0, 120)) {
+    if (!safePath(path) || !value || typeof value !== 'object') continue;
+    const tag = typeof value.tag === 'string' && /^[a-z][a-z0-9-]{0,30}$/.test(value.tag) ? value.tag : 'div';
+    nativeElements[path] = {
+      tag,
+      label: typeof value.label === 'string' ? value.label.slice(0, 100) : tag,
+      originalText: typeof value.originalText === 'string' ? value.originalText.slice(0, 2000) : undefined,
+      text: typeof value.text === 'string' ? value.text.slice(0, 2000) : undefined,
+      background: typeof value.background === 'string' && /^#[0-9a-f]{6}$/i.test(value.background) ? value.background.toUpperCase() : undefined,
+      color: typeof value.color === 'string' && /^#[0-9a-f]{6}$/i.test(value.color) ? value.color.toUpperCase() : undefined,
+      radius: Number.isFinite(value.radius) ? Math.max(0, Math.min(32, Number(value.radius))) : undefined,
+      padding: Number.isFinite(value.padding) ? Math.max(0, Math.min(48, Number(value.padding))) : undefined,
+      fontSize: Number.isFinite(value.fontSize) ? Math.max(10, Math.min(48, Number(value.fontSize))) : undefined,
+      fontWeight: ['normal','500','600','700','800'].includes(value.fontWeight ?? '') ? value.fontWeight as NativeElementOverride['fontWeight'] : undefined,
+    };
+  }
+  return { schemaVersion: 1, theme, pageStyle, nativeStyles, nativeElements, components };
 };
+
+function isSafeNativeElementPath(path: string): boolean {
+  return path.length <= 1400 && /^body(?: > [a-z][a-z0-9-]*:nth-of-type\([1-9][0-9]*\))*$/.test(path);
+}
+function buildNativeElementPath(element: HTMLElement): string {
+  const parts: string[] = [];
+  let current: HTMLElement | null = element;
+  while (current && current.tagName.toLowerCase() !== 'body' && current.parentElement) {
+    const tag = current.tagName.toLowerCase();
+    const sameTag = Array.from(current.parentElement.children).filter(child => child.tagName.toLowerCase() === tag);
+    const position = sameTag.indexOf(current) + 1;
+    if (position < 1) break;
+    parts.unshift(`${tag}:nth-of-type(${position})`);
+    current = current.parentElement as HTMLElement;
+  }
+  return parts.length ? `body > ${parts.join(' > ')}` : '';
+}
+function isNativeTextEditable(element: HTMLElement): boolean {
+  return element.childElementCount === 0 && ['h1','h2','h3','h4','h5','p','span','strong','em','small','label','button','a','li'].includes(element.tagName.toLowerCase());
+}
 
 export default function VisualDesignStudio({ userId, role }: { userId: string; role: string }) {
   const [layouts, setLayouts] = useState<LayoutRow[]>([]);
@@ -125,7 +166,10 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
   const previewFrameRef = useRef<HTMLIFrameElement | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedNativeTarget, setSelectedNativeTarget] = useState<NativeTarget | null>(null);
+  const [selectedNativeElement, setSelectedNativeElement] = useState<NativeElementSelection | null>(null);
   const selectionModeRef = useRef(false);
+  const configRef = useRef(config);
+  configRef.current = config;
   const isAdmin = role === 'admin';
   const selectedBlock = config.components.find(block => block.id === selectedBlockId) ?? null;
   const dirty = useMemo(() => JSON.stringify(config) !== JSON.stringify(savedConfig), [config, savedConfig]);
@@ -145,21 +189,69 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
       'body[data-nexora-design-selection="true"] .project-panel,body[data-nexora-design-selection="true"] .project-item,body[data-nexora-design-selection="true"] .project-form,body[data-nexora-design-selection="true"] .section-heading,body[data-nexora-design-selection="true"] .primary-button{cursor:crosshair!important}body[data-nexora-design-selection="true"] .project-panel:hover,body[data-nexora-design-selection="true"] .project-item:hover,body[data-nexora-design-selection="true"] .project-form:hover,body[data-nexora-design-selection="true"] .section-heading:hover,body[data-nexora-design-selection="true"] .primary-button:hover{outline:2px dashed var(--nexora-page-accent)!important;outline-offset:2px}';
     const selectors: Record<NativeTarget, string> = { panel: '.project-panel', card: '.project-item', form: '.project-form', heading: '.section-heading', button: '.primary-button' };
     const nativeRules = Object.entries(config.nativeStyles ?? {}).map(([target, override]) => { const style = override as NativeOverride; return '.workspace-main[data-active-section="' + safeScope + '"] ' + selectors[target as NativeTarget] + '{background:' + style.background + '!important;color:' + style.color + '!important;border-radius:' + style.radius + 'px!important;padding:' + style.padding + 'px!important}'; }).join('');
-    style.textContent += nativeRules;
+    style.textContent += nativeRules +
+      'body[data-nexora-design-selection="true"] .workspace-main *{cursor:crosshair!important}body[data-nexora-design-selection="true"] .workspace-main *:hover{outline:2px dashed var(--nexora-page-accent)!important;outline-offset:2px}' +
+      '[data-nexora-editor-selected="true"]{outline:3px solid var(--nexora-page-accent)!important;outline-offset:3px!important}';
+    const root = previewDocument.querySelector<HTMLElement>('.workspace-main[data-active-section="' + safeScope + '"]');
+    previewDocument.querySelectorAll<HTMLElement>('[data-nexora-native-styled="true"]').forEach(element => {
+      const originalStyle = element.dataset.nexoraOriginalStyle;
+      if (originalStyle === '__none__') element.removeAttribute('style');
+      else if (typeof originalStyle === 'string') element.setAttribute('style', originalStyle);
+      if (element.dataset.nexoraOriginalText !== undefined && isNativeTextEditable(element)) element.textContent = element.dataset.nexoraOriginalText;
+      delete element.dataset.nexoraNativeStyled;
+      delete element.dataset.nexoraOriginalStyle;
+      delete element.dataset.nexoraOriginalText;
+    });
+    if (root) {
+      for (const [path, override] of Object.entries(config.nativeElements ?? {})) {
+        if (!isSafeNativeElementPath(path)) continue;
+        let element: HTMLElement | null = null;
+        try { element = previewDocument.querySelector<HTMLElement>(path); } catch { element = null; }
+        if (!element || !root.contains(element) || element.tagName.toLowerCase() !== override.tag) continue;
+        if (!element.dataset.nexoraNativeStyled) {
+          element.dataset.nexoraOriginalStyle = element.getAttribute('style') ?? '__none__';
+          if (isNativeTextEditable(element)) element.dataset.nexoraOriginalText = element.textContent ?? '';
+          element.dataset.nexoraNativeStyled = 'true';
+        }
+        if (override.background) element.style.setProperty('background', override.background, 'important');
+        if (override.color) element.style.setProperty('color', override.color, 'important');
+        if (Number.isFinite(override.radius)) element.style.setProperty('border-radius', Number(override.radius) + 'px', 'important');
+        if (Number.isFinite(override.padding)) element.style.setProperty('padding', Number(override.padding) + 'px', 'important');
+        if (Number.isFinite(override.fontSize)) element.style.setProperty('font-size', Number(override.fontSize) + 'px', 'important');
+        if (override.fontWeight) element.style.setProperty('font-weight', override.fontWeight, 'important');
+        if (override.text !== undefined && isNativeTextEditable(element)) element.textContent = override.text;
+      }
+    }
+    previewDocument.querySelectorAll<HTMLElement>('[data-nexora-editor-selected="true"]').forEach(element => { delete element.dataset.nexoraEditorSelected; });
+    if (selectedNativeElement && isSafeNativeElementPath(selectedNativeElement.path)) {
+      try {
+        const selectedElement = previewDocument.querySelector<HTMLElement>(selectedNativeElement.path);
+        if (selectedElement && root?.contains(selectedElement)) selectedElement.dataset.nexoraEditorSelected = 'true';
+      } catch { /* stale element path after page update */ }
+    }
     if (!previewDocument.body.dataset.nexoraNativePickerBound) {
       previewDocument.body.addEventListener('click', event => {
         if (!selectionModeRef.current) return;
         const clicked = event.target as HTMLElement | null;
         if (!clicked) return;
-        const candidates: Array<[NativeTarget, string]> = [['button','.primary-button'],['form','.project-form'],['card','.project-item'],['heading','.section-heading'],['panel','.project-panel']];
-        for (const [target, selector] of candidates) {
-          if (clicked.closest(selector)) { event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); setSelectedBlockId(''); setSelectedNativeTarget(target); return; }
-        }
+        const activeScope = scope.replace(/[^a-zA-Z0-9:_-]/g, '');
+        const pageRoot = previewDocument.querySelector<HTMLElement>('.workspace-main[data-active-section="' + activeScope + '"]');
+        const element = clicked.closest<HTMLElement>('h1,h2,h3,h4,h5,p,span,strong,em,small,label,button,a,article,section,div,form,li,img,input,textarea,select,svg,video,header,footer,nav');
+        if (!element || !pageRoot || !pageRoot.contains(element) || element === pageRoot) return;
+        const path = buildNativeElementPath(element);
+        if (!path || !isSafeNativeElementPath(path)) return;
+        event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
+        const savedOverride = configRef.current.nativeElements?.[path];
+        const originalText = savedOverride?.originalText ?? element.dataset.nexoraOriginalText ?? element.textContent ?? '';
+        const label = element.getAttribute('aria-label') || element.getAttribute('title') || (element.textContent ?? '').trim().replace(/\s+/g,' ').slice(0,70) || element.tagName.toLowerCase();
+        setSelectedBlockId('');
+        setSelectedNativeTarget(null);
+        setSelectedNativeElement({ path, tag: element.tagName.toLowerCase(), label, originalText, canEditText: isNativeTextEditable(element) });
       }, true);
       previewDocument.body.dataset.nexoraNativePickerBound = 'true';
     }
     previewDocument.body.dataset.nexoraDesignSelection = selectionModeRef.current ? 'true' : 'false';
-  }, [config, previewMode, scope, theme]);
+  }, [config, previewMode, scope, theme, selectedNativeElement]);
   useEffect(() => { if (previewMode === 'real') applyDraftPreview(); }, [applyDraftPreview, previewMode]);
   useEffect(() => {
     selectionModeRef.current = selectionMode;
@@ -204,12 +296,33 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
   function selectLayout(row: LayoutRow) {
     if (dirty && !window.confirm('Abandonner les modifications non enregistrées ?')) return;
     const next = safeConfig(row.draft_config);
-    setSelectedId(row.id); setName(row.name); setScope((row.scope || 'dashboard') as PageScope); setConfig(next); setSavedConfig(next); setSelectedBlockId(''); setHistory([]); setFuture([]);
+    setSelectedId(row.id); setName(row.name); setScope((row.scope || 'dashboard') as PageScope); setConfig(next); setSavedConfig(next); setSelectedBlockId(''); setSelectedNativeElement(null); setSelectedNativeTarget(null); setSelectionMode(false); setHistory([]); setFuture([]);
   }
   function changeConfig(next: StudioConfig) { setHistory(items => [...items.slice(-29), config]); setFuture([]); setConfig(safeConfig(next)); }
   function changeBlock(patch: Partial<StudioBlock>) {
     if (!selectedBlock) return;
     changeConfig({ ...config, components: config.components.map(block => block.id === selectedBlock.id ? { ...block, ...patch } : block) });
+  }
+  function changeNativeElementStyle(patch: Partial<NativeElementOverride>) {
+    if (!selectedNativeElement) return;
+    const current = config.nativeElements?.[selectedNativeElement.path] ?? {
+      tag: selectedNativeElement.tag,
+      label: selectedNativeElement.label,
+      originalText: selectedNativeElement.originalText,
+    };
+    changeConfig({
+      ...config,
+      nativeElements: {
+        ...config.nativeElements,
+        [selectedNativeElement.path]: { ...current, ...patch },
+      },
+    });
+  }
+  function resetNativeElementStyle() {
+    if (!selectedNativeElement) return;
+    const nativeElements = { ...config.nativeElements };
+    delete nativeElements[selectedNativeElement.path];
+    changeConfig({ ...config, nativeElements });
   }
   function changeNativeStyle(patch: Partial<NativeOverride>) {
     if (!selectedNativeTarget) return;
@@ -312,7 +425,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
         if (nextScope === scope) return;
         if (dirty && !window.confirm('Abandonner les modifications non enregistrées pour changer de page ?')) return;
         const existing = layouts.find(row => row.scope === nextScope);
-        setScope(nextScope); setSelectionMode(false); setSelectedNativeTarget(null);
+        setScope(nextScope); setSelectionMode(false); setSelectedNativeTarget(null); setSelectedNativeElement(null);
         setSelectedId(existing?.id ?? '');
         const nextName = existing?.name ?? (nextScope === 'custom' ? 'Ma nouvelle page' : ({studio:'Studio IA',projects:'Projets',organizations:'Espace entreprise',profile:'Profil et préférences',academy:'Académie',resources:'Bibliothèque de ressources',discover:'Découverte',media:'Médiathèque',timeline:'Planning',insights:'Analyses',library:'Bibliothèque de formation',roadmap:'Feuille de route',billing:'Abonnement et facturation',administration:'Administration'} as Record<string,string>)[nextScope] ?? 'Nouvelle page');
         setName(nextName);
@@ -326,7 +439,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
     </div>
     <div className="visual-studio-workbench">
       <aside className="visual-studio-library"><h3><LayoutDashboard size={16}/> Composants</h3><p>Blocs prédéfinis uniquement. Aucun script libre n’est exécuté.</p>{presets.map(item => <button key={item.type} type="button" className="visual-studio-preset" onClick={() => addBlock(item.type)}><Plus size={14}/><span>{item.title}</span></button>)}<div className="visual-studio-theme"><h3><Palette size={16}/> Thème de la page</h3><select aria-label="Thème global" value={config.theme} disabled={busy} onChange={event=>{const nextTheme=event.target.value as StudioConfig['theme'];const palette=themes[nextTheme];changeConfig({...config,theme:nextTheme,pageStyle:{density:config.pageStyle?.density??'comfortable',textScale:config.pageStyle?.textScale??'normal',radius:config.pageStyle?.radius??14,background:palette.background,surface:palette.surface,text:palette.text,accent:palette.accent}});}}><option value="nexora-dark">NEXORA — noir, or, ivoire et graphite</option><option value="nexora-light">Clair — bleu et blanc</option><option value="ocean">Océan — bleu profond et turquoise</option></select><div className="visual-studio-swatches">{Object.entries(themes[config.theme]).map(([key,value]) => <span key={key} title={key} style={{ background:value }} />)}</div><label>Densité de la page<select value={config.pageStyle?.density ?? 'comfortable'} disabled={busy} onChange={event=>changeConfig({...config,pageStyle:{...config.pageStyle!,density:event.target.value as PageStyle['density']}})}><option value="comfortable">Confortable</option><option value="compact">Compacte</option></select></label><label>Taille du texte<select value={config.pageStyle?.textScale ?? 'normal'} disabled={busy} onChange={event=>changeConfig({...config,pageStyle:{...config.pageStyle!,textScale:event.target.value as PageStyle['textScale']}})}><option value="small">Petite</option><option value="normal">Normale</option><option value="large">Grande</option></select></label><label>Arrondi des cartes <input type="range" min="4" max="28" value={config.pageStyle?.radius ?? 14} disabled={busy} onChange={event=>changeConfig({...config,pageStyle:{...config.pageStyle!,radius:Number(event.target.value)}})}/></label><label>Fond de page <input type="color" value={config.pageStyle?.background??themes[config.theme].background} disabled={busy} onChange={event=>changeConfig({...config,pageStyle:{...config.pageStyle!,background:event.target.value}})}/></label><label>Surface des cartes <input type="color" value={config.pageStyle?.surface??themes[config.theme].surface} disabled={busy} onChange={event=>changeConfig({...config,pageStyle:{...config.pageStyle!,surface:event.target.value}})}/></label><label>Couleur du texte <input type="color" value={config.pageStyle?.text??themes[config.theme].text} disabled={busy} onChange={event=>changeConfig({...config,pageStyle:{...config.pageStyle!,text:event.target.value}})}/></label><label>Couleur d’accentuation <input type="color" value={config.pageStyle?.accent??themes[config.theme].accent} disabled={busy} onChange={event=>changeConfig({...config,pageStyle:{...config.pageStyle!,accent:event.target.value}})}/></label><button type="button" className="logout-button" onClick={() => changeConfig(starter)}><RotateCcw size={14}/> Réinitialiser</button></div></aside>
-      <div className="visual-studio-canvas-wrap"><div className="visual-studio-canvas-tools"><div><button type="button" className={preview==='desktop'?'active':''} onClick={() => setPreview('desktop')} aria-label="Aperçu ordinateur"><Monitor size={15}/></button><button type="button" className={preview==='tablet'?'active':''} onClick={() => setPreview('tablet')} aria-label="Aperçu tablette"><Tablet size={15}/></button><button type="button" className={preview==='mobile'?'active':''} onClick={() => setPreview('mobile')} aria-label="Aperçu téléphone"><Smartphone size={15}/></button></div><div className="visual-studio-preview-modes"><button type="button" className={previewMode==='real'?'active':''} onClick={() => setPreviewMode('real')}>Page réelle</button><button type="button" className={previewMode==='draft'?'active':''} onClick={() => {setSelectionMode(false);setSelectedNativeTarget(null);setPreviewMode('draft');}}>Brouillon éditable</button>{previewMode==='real'&&scope!=='custom'&&!scope.startsWith('custom:')&&<button type="button" className={selectionMode?'active':''} onClick={()=>{setSelectionMode(current=>!current);setSelectedNativeTarget(null);}}>{selectionMode?'Quitter la sélection':'Sélectionner un composant'}</button>}</div><span><Eye size={14}/> {previewMode==='real'?'Aperçu de la page existante':'Aperçu du brouillon'}</span></div>
+      <div className="visual-studio-canvas-wrap"><div className="visual-studio-canvas-tools"><div><button type="button" className={preview==='desktop'?'active':''} onClick={() => setPreview('desktop')} aria-label="Aperçu ordinateur"><Monitor size={15}/></button><button type="button" className={preview==='tablet'?'active':''} onClick={() => setPreview('tablet')} aria-label="Aperçu tablette"><Tablet size={15}/></button><button type="button" className={preview==='mobile'?'active':''} onClick={() => setPreview('mobile')} aria-label="Aperçu téléphone"><Smartphone size={15}/></button></div><div className="visual-studio-preview-modes"><button type="button" className={previewMode==='real'?'active':''} onClick={() => setPreviewMode('real')}>Page réelle</button><button type="button" className={previewMode==='draft'?'active':''} onClick={() => {setSelectionMode(false);setSelectedNativeTarget(null);setSelectedNativeElement(null);setPreviewMode('draft');}}>Brouillon éditable</button>{previewMode==='real'&&scope!=='custom'&&!scope.startsWith('custom:')&&<button type="button" className={selectionMode?'active':''} onClick={()=>{setSelectionMode(current=>!current);setSelectedNativeTarget(null);setSelectedNativeElement(null);}}>{selectionMode?'Quitter la sélection':'Sélectionner un élément'}</button>}</div><span><Eye size={14}/> {previewMode==='real'?'Aperçu de la page existante':'Aperçu du brouillon'}</span></div>
         {previewMode==='real' ? <div className={`visual-studio-real-preview frame-${preview}`}><iframe title={`Page réelle : ${scope}`} src={`${window.location.pathname}?studioPreview=${encodeURIComponent(scope.startsWith('custom:')||scope==='custom'?'dashboard':scope)}&embeddedPreview=1`} loading="lazy" referrerPolicy="same-origin" ref={previewFrameRef} onLoad={applyDraftPreview} className="visual-studio-real-iframe" /></div> : <div className={`visual-studio-canvas frame-${preview}`} style={{ background:theme.background,color:theme.text }}>
           {displayed.map(block => <article key={block.id} draggable onDragStart={event => event.dataTransfer.setData('text/plain',block.id)} onDragOver={event => event.preventDefault()} onDrop={event => {event.preventDefault();moveBlock(event.dataTransfer.getData('text/plain'),block.id);}} onClick={() => setSelectedBlockId(block.id)} className={`visual-studio-block width-${block.width ?? 'full'} ${selectedBlockId===block.id?'selected':''}`} style={{ background:block.background ?? theme.surface,color:block.color ?? theme.text,borderRadius:block.radius ?? 12,padding:block.padding ?? 16 }}>
             {block.type==='heading'?<h3>{block.title}</h3>:block.type==='divider'?<div className="visual-studio-divider"/>:block.type==='image'?<><strong>{block.title}</strong>{block.url&&<img src={block.url} alt={block.content||block.title} style={{width:'100%',maxHeight:320,objectFit:block.objectFit??'cover',borderRadius:8,marginTop:8}}/>}<p>{block.content}</p></>:block.type==='video'?<><strong>{block.title}</strong>{block.url&&<iframe src={block.url} title={block.title} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-same-origin allow-presentation" allow="fullscreen; picture-in-picture" style={{width:'100%',aspectRatio:'16/9',border:0,borderRadius:8,marginTop:8}}/>}<p>{block.content}</p></>:<><strong>{block.title}</strong><p>{block.content}</p>{(block.type==='stat'||block.type==='card'||block.type==='text')&&block.dataBinding&&<div className="visual-studio-bound-value"><strong>{bindingValues[block.dataBinding] == null ? 'N/D' : bindingValues[block.dataBinding]!.toLocaleString('fr-FR')}</strong><small>{pageDataBindingLabel(block.dataBinding)} · valeur issue de la source</small></div>}{block.type==='stat'&&!block.dataBinding&&<small>Source non reliée : choisissez une source dans les propriétés.</small>}{block.type==='action'&&<span className="visual-studio-fake-button">Aperçu du bouton · {pageActionTargetLabel(block.actionTarget ?? 'projects')}</span>}</>}
@@ -334,7 +447,19 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
           {!displayed.length&&<p className="visual-studio-empty">Ajoutez un composant depuis la bibliothèque.</p>}
         </div>}
       </div>
-      <aside className="visual-studio-properties"><h3>Propriétés</h3>{selectionMode&&<p className="visual-studio-help">Mode sélection actif : cliquez directement sur une carte, un formulaire, un titre, un bouton ou une surface de la page affichée.</p>}{selectedNativeTarget&&<div className="visual-studio-native-inspector"><p className="visual-studio-help">Type de composant natif sélectionné : <strong>{{panel:'Surface de page',card:'Carte métier',form:'Formulaire',heading:'En-tête de section',button:'Bouton principal'}[selectedNativeTarget]}</strong></p><small>Les réglages s’appliquent à tous les éléments de cette famille sur la page sélectionnée.</small><label>Fond <input type="color" value={config.nativeStyles?.[selectedNativeTarget]?.background??(selectedNativeTarget==='panel'?(config.pageStyle?.surface??theme.surface):(config.pageStyle?.background??theme.background))} onChange={event=>changeNativeStyle({background:event.target.value})}/></label><label>Texte <input type="color" value={config.nativeStyles?.[selectedNativeTarget]?.color??(config.pageStyle?.text??theme.text)} onChange={event=>changeNativeStyle({color:event.target.value})}/></label><label>Arrondi <input type="range" min="0" max="32" value={config.nativeStyles?.[selectedNativeTarget]?.radius??12} onChange={event=>changeNativeStyle({radius:Number(event.target.value)})}/></label><label>Espacement intérieur <input type="range" min="0" max="48" value={config.nativeStyles?.[selectedNativeTarget]?.padding??12} onChange={event=>changeNativeStyle({padding:Number(event.target.value)})}/></label><button type="button" className="logout-button" onClick={resetNativeStyle}><RotateCcw size={14}/> Réinitialiser ce composant</button></div>}{selectedBlock?<><p className="visual-studio-help">Élément sélectionné : {selectedBlock.type}</p><label>Libellé<input value={selectedBlock.title} maxLength={120} onChange={event=>changeBlock({title:event.target.value})}/></label>{selectedBlock.type!=='divider'&&<label>{selectedBlock.type==='image'?'Texte alternatif / description':selectedBlock.type==='video'?'Description':'Contenu'}<textarea value={selectedBlock.content??''} maxLength={1000} rows={3} onChange={event=>changeBlock({content:event.target.value})}/></label>}{(selectedBlock.type==='stat'||selectedBlock.type==='card'||selectedBlock.type==='text')&&<label>Source de données<select value={selectedBlock.dataBinding??'none'} onChange={event=>changeBlock({dataBinding:event.target.value==='none'?undefined:event.target.value as PageDataBindingKey})}><option value="none">Aucune · contenu statique</option>{Object.entries(PAGE_DATA_BINDINGS).map(([binding,meta])=><option key={binding} value={binding}>{meta.label} · {meta.source}</option>)}</select><small>La valeur est résolue depuis une requête de lecture filtrée par les règles Supabase.</small></label>}{selectedBlock.type==='action'&&<label>Destination de l'action<select value={selectedBlock.actionTarget??'projects'} onChange={event=>changeBlock({actionTarget:event.target.value as PageActionTarget})}>{PAGE_ACTION_TARGETS.map(target=><option key={target.value} value={target.value}>{target.label}</option>)}</select><small>La version publiée ouvre un module existant de l'application. Aucun code libre n'est exécuté.</small></label>}<label>Largeur<select value={selectedBlock.width??'full'} onChange={event=>changeBlock({width:event.target.value as StudioBlock['width']})}><option value="full">Pleine largeur</option><option value="half">Moitié</option><option value="third">Un tiers</option></select></label><label>Couleur du texte<select value={normalizeTextColor(selectedBlock.color)} onChange={event=>changeBlock({color:event.target.value})}><option value="#F5F2EA">Ivoire</option><option value="#C9C1B2">Ivoire atténué</option><option value="#D6B66E">Or</option></select></label><label>Arrière-plan<select value={normalizeBackgroundColor(selectedBlock.background)} onChange={event=>changeBlock({background:event.target.value})}><option value="#202024">Graphite</option><option value="#0B0B0D">Noir</option></select></label><label>Arrondi <input type="range" min="0" max="32" value={selectedBlock.radius??12} onChange={event=>changeBlock({radius:Number(event.target.value)})}/></label><label>Espacement intérieur <input type="range" min="0" max="48" value={selectedBlock.padding??16} onChange={event=>changeBlock({padding:Number(event.target.value)})}/></label><div className="visual-studio-property-actions"><button type="button" className="logout-button" onClick={()=>changeBlock({hidden:!selectedBlock.hidden})}>{selectedBlock.hidden?<Eye size={14}/>:<EyeOff size={14}/>} {selectedBlock.hidden?'Afficher':'Masquer'}</button><button type="button" className="logout-button" onClick={()=>{const copy={...selectedBlock,id:`block-${Date.now().toString(36)}`,title:`${selectedBlock.title} (copie)`};changeConfig({...config,components:[...config.components,copy]});setSelectedBlockId(copy.id);}}><Copy size={14}/> Dupliquer</button><button type="button" className="logout-button" onClick={()=>{changeConfig({...config,components:config.components.filter(item=>item.id!==selectedBlock.id)});setSelectedBlockId('');}}><Trash2 size={14}/> Supprimer</button><button type="button" className="logout-button" onClick={()=>moveBlock(selectedBlock.id,config.components[Math.max(0,config.components.findIndex(item=>item.id===selectedBlock.id)-1)]?.id)}><ArrowUp size={14}/> Monter</button><button type="button" className="logout-button" onClick={()=>moveBlock(selectedBlock.id,config.components[Math.min(config.components.length-1,config.components.findIndex(item=>item.id===selectedBlock.id)+1)]?.id)}><ArrowDown size={14}/> Descendre</button></div></>:<p className="visual-studio-help">Sélectionnez un bloc dans l’aperçu pour modifier ses propriétés.</p>}
+      <aside className="visual-studio-properties"><h3>Propriétés</h3>{selectionMode&&<p className="visual-studio-help">Mode sélection actif : cliquez sur n’importe quel élément visible de la page pour le modifier individuellement.</p>}{selectedNativeElement&&<div className="visual-studio-native-inspector">
+          <p className="visual-studio-help">Élément natif sélectionné : <strong>{selectedNativeElement.label || selectedNativeElement.tag}</strong></p>
+          <small>Balise : {selectedNativeElement.tag} · modification limitée à cet élément précis.</small>
+          <label>Fond <input type="color" value={config.nativeElements?.[selectedNativeElement.path]?.background??theme.surface} onChange={event=>changeNativeElementStyle({background:event.target.value})}/></label>
+          <label>Texte <input type="color" value={config.nativeElements?.[selectedNativeElement.path]?.color??theme.text} onChange={event=>changeNativeElementStyle({color:event.target.value})}/></label>
+          <label>Arrondi <input type="range" min="0" max="32" value={config.nativeElements?.[selectedNativeElement.path]?.radius??12} onChange={event=>changeNativeElementStyle({radius:Number(event.target.value)})}/></label>
+          <label>Espacement intérieur <input type="range" min="0" max="48" value={config.nativeElements?.[selectedNativeElement.path]?.padding??12} onChange={event=>changeNativeElementStyle({padding:Number(event.target.value)})}/></label>
+          <label>Taille du texte <input type="range" min="10" max="48" value={config.nativeElements?.[selectedNativeElement.path]?.fontSize??16} onChange={event=>changeNativeElementStyle({fontSize:Number(event.target.value)})}/></label>
+          <label>Graisse du texte<select value={config.nativeElements?.[selectedNativeElement.path]?.fontWeight??'normal'} onChange={event=>changeNativeElementStyle({fontWeight:event.target.value as NativeElementOverride['fontWeight']})}><option value="normal">Normale</option><option value="500">Moyenne</option><option value="600">Semi-grasse</option><option value="700">Grasse</option><option value="800">Très grasse</option></select></label>
+          {selectedNativeElement.canEditText&&<label>Texte affiché<textarea rows={3} maxLength={2000} value={config.nativeElements?.[selectedNativeElement.path]?.text??selectedNativeElement.originalText} onChange={event=>changeNativeElementStyle({text:event.target.value,originalText:selectedNativeElement.originalText,tag:selectedNativeElement.tag,label:selectedNativeElement.label})}/></label>}
+          {!selectedNativeElement.canEditText&&<small>Le contenu de cet élément contient des sous-éléments. Son style peut être modifié, mais son texte n’est pas éditable pour préserver sa structure.</small>}
+          <button type="button" className="logout-button" onClick={resetNativeElementStyle}><RotateCcw size={14}/> Réinitialiser cet élément</button>
+        </div>}{selectedNativeTarget&&<div className="visual-studio-native-inspector"><p className="visual-studio-help">Type de composant natif sélectionné : <strong>{{panel:'Surface de page',card:'Carte métier',form:'Formulaire',heading:'En-tête de section',button:'Bouton principal'}[selectedNativeTarget]}</strong></p><small>Les réglages s’appliquent à tous les éléments de cette famille sur la page sélectionnée.</small><label>Fond <input type="color" value={config.nativeStyles?.[selectedNativeTarget]?.background??(selectedNativeTarget==='panel'?(config.pageStyle?.surface??theme.surface):(config.pageStyle?.background??theme.background))} onChange={event=>changeNativeStyle({background:event.target.value})}/></label><label>Texte <input type="color" value={config.nativeStyles?.[selectedNativeTarget]?.color??(config.pageStyle?.text??theme.text)} onChange={event=>changeNativeStyle({color:event.target.value})}/></label><label>Arrondi <input type="range" min="0" max="32" value={config.nativeStyles?.[selectedNativeTarget]?.radius??12} onChange={event=>changeNativeStyle({radius:Number(event.target.value)})}/></label><label>Espacement intérieur <input type="range" min="0" max="48" value={config.nativeStyles?.[selectedNativeTarget]?.padding??12} onChange={event=>changeNativeStyle({padding:Number(event.target.value)})}/></label><button type="button" className="logout-button" onClick={resetNativeStyle}><RotateCcw size={14}/> Réinitialiser ce composant</button></div>}{selectedBlock?<><p className="visual-studio-help">Élément sélectionné : {selectedBlock.type}</p><label>Libellé<input value={selectedBlock.title} maxLength={120} onChange={event=>changeBlock({title:event.target.value})}/></label>{selectedBlock.type!=='divider'&&<label>{selectedBlock.type==='image'?'Texte alternatif / description':selectedBlock.type==='video'?'Description':'Contenu'}<textarea value={selectedBlock.content??''} maxLength={1000} rows={3} onChange={event=>changeBlock({content:event.target.value})}/></label>}{(selectedBlock.type==='stat'||selectedBlock.type==='card'||selectedBlock.type==='text')&&<label>Source de données<select value={selectedBlock.dataBinding??'none'} onChange={event=>changeBlock({dataBinding:event.target.value==='none'?undefined:event.target.value as PageDataBindingKey})}><option value="none">Aucune · contenu statique</option>{Object.entries(PAGE_DATA_BINDINGS).map(([binding,meta])=><option key={binding} value={binding}>{meta.label} · {meta.source}</option>)}</select><small>La valeur est résolue depuis une requête de lecture filtrée par les règles Supabase.</small></label>}{selectedBlock.type==='action'&&<label>Destination de l'action<select value={selectedBlock.actionTarget??'projects'} onChange={event=>changeBlock({actionTarget:event.target.value as PageActionTarget})}>{PAGE_ACTION_TARGETS.map(target=><option key={target.value} value={target.value}>{target.label}</option>)}</select><small>La version publiée ouvre un module existant de l'application. Aucun code libre n'est exécuté.</small></label>}<label>Largeur<select value={selectedBlock.width??'full'} onChange={event=>changeBlock({width:event.target.value as StudioBlock['width']})}><option value="full">Pleine largeur</option><option value="half">Moitié</option><option value="third">Un tiers</option></select></label><label>Couleur du texte<select value={normalizeTextColor(selectedBlock.color)} onChange={event=>changeBlock({color:event.target.value})}><option value="#F5F2EA">Ivoire</option><option value="#C9C1B2">Ivoire atténué</option><option value="#D6B66E">Or</option></select></label><label>Arrière-plan<select value={normalizeBackgroundColor(selectedBlock.background)} onChange={event=>changeBlock({background:event.target.value})}><option value="#202024">Graphite</option><option value="#0B0B0D">Noir</option></select></label><label>Arrondi <input type="range" min="0" max="32" value={selectedBlock.radius??12} onChange={event=>changeBlock({radius:Number(event.target.value)})}/></label><label>Espacement intérieur <input type="range" min="0" max="48" value={selectedBlock.padding??16} onChange={event=>changeBlock({padding:Number(event.target.value)})}/></label><div className="visual-studio-property-actions"><button type="button" className="logout-button" onClick={()=>changeBlock({hidden:!selectedBlock.hidden})}>{selectedBlock.hidden?<Eye size={14}/>:<EyeOff size={14}/>} {selectedBlock.hidden?'Afficher':'Masquer'}</button><button type="button" className="logout-button" onClick={()=>{const copy={...selectedBlock,id:`block-${Date.now().toString(36)}`,title:`${selectedBlock.title} (copie)`};changeConfig({...config,components:[...config.components,copy]});setSelectedBlockId(copy.id);}}><Copy size={14}/> Dupliquer</button><button type="button" className="logout-button" onClick={()=>{changeConfig({...config,components:config.components.filter(item=>item.id!==selectedBlock.id)});setSelectedBlockId('');}}><Trash2 size={14}/> Supprimer</button><button type="button" className="logout-button" onClick={()=>moveBlock(selectedBlock.id,config.components[Math.max(0,config.components.findIndex(item=>item.id===selectedBlock.id)-1)]?.id)}><ArrowUp size={14}/> Monter</button><button type="button" className="logout-button" onClick={()=>moveBlock(selectedBlock.id,config.components[Math.min(config.components.length-1,config.components.findIndex(item=>item.id===selectedBlock.id)+1)]?.id)}><ArrowDown size={14}/> Descendre</button></div></>:<p className="visual-studio-help">Sélectionnez un bloc dans l’aperçu pour modifier ses propriétés.</p>}
       </aside>
     </div>
     <div className="visual-studio-footer"><div className="visual-studio-history"><h3><Clock3 size={16}/> Historique des versions</h3>{versions.length?versions.map(version=><div className="visual-studio-version" key={version.id}><span>v{version.version} · {version.action}</span><time>{new Date(version.created_at).toLocaleString('fr-FR')}</time><button type="button" className="logout-button" onClick={()=>void restore(version)} disabled={busy}><Undo2 size={14}/> Restaurer en brouillon</button></div>):<p>Aucune version enregistrée pour le moment.</p>}</div><div className="visual-studio-publish"><p>{layouts.find(row=>row.id===selectedId)?.published_at?'Une version publiée existe.':'Aucune version publiée pour cette disposition.'}</p><button type="button" className="logout-button" onClick={()=>void setDefault()} disabled={busy||!selectedId}><Check size={14}/> Définir par défaut</button><button type="button" className="logout-button" onClick={()=>void saveDraft()} disabled={busy||!selectedId||!dirty}><Save size={14}/> {busy?'Enregistrement…':'Enregistrer le brouillon'}</button><button type="button" className="primary-button" onClick={()=>void publish()} disabled={busy||!selectedId||dirty}><Rocket size={15}/> Publier la version enregistrée</button></div></div>

@@ -3,8 +3,9 @@ import { supabase } from '../lib/supabase';
 import { isPageActionTarget, isPageDataBindingKey, loadPageDataBindings, PAGE_DATA_BINDINGS, pageActionTargetLabel, pageDataBindingLabel, type PageActionTarget, type PageDataBindingKey } from '../lib/pageDataBindings';
 
 type Block = { id: string; type: string; title: string; content?: string; dataBinding?: PageDataBindingKey; actionTarget?: PageActionTarget; color?: string; background?: string; radius?: number; padding?: number; width?: string; hidden?: boolean; url?: string; objectFit?: 'cover' | 'contain' };
-type Config = { schemaVersion: 1; theme: string; pageStyle?: { density: 'comfortable' | 'compact'; textScale: 'small' | 'normal' | 'large'; radius: number; background: string; surface: string; text: string; accent: string }; nativeStyles?: Partial<Record<'panel' | 'card' | 'form' | 'heading' | 'button', { background: string; color: string; radius: number; padding: number }>>; components: Block[] };
-type Published = { name: string; config: Config; published_at: string };
+type NativeElementOverride = { tag: string; label: string; originalText?: string; text?: string; background?: string; color?: string; radius?: number; padding?: number; fontSize?: number; fontWeight?: 'normal'|'500'|'600'|'700'|'800' };
+type Config = { schemaVersion: 1; theme: string; pageStyle?: { density: 'comfortable' | 'compact'; textScale: 'small' | 'normal' | 'large'; radius: number; background: string; surface: string; text: string; accent: string }; nativeStyles?: Partial<Record<'panel' | 'card' | 'form' | 'heading' | 'button', { background: string; color: string; radius: number; padding: number }>>; nativeElements?: Record<string, NativeElementOverride>; components: Block[] };
+type Published = { scope: string; name: string; config: Config; published_at: string };
 const themes: Record<string,{background:string;surface:string;text:string;accent:string}> = {
   'nexora-dark': {background:'#0B0B0D',surface:'#202024',text:'#F5F2EA',accent:'#D6B66E'},
   'nexora-light': {background:'#F2F5FB',surface:'#FFFFFF',text:'#172039',accent:'#2457A6'},
@@ -38,6 +39,13 @@ function isAllowedVideoUrl(value: string): boolean {
   }
 }
 
+function isSafeNativeElementPath(path: string): boolean {
+  return path.length <= 1400 && /^body(?: > [a-z][a-z0-9-]*:nth-of-type\([1-9][0-9]*\))*$/.test(path);
+}
+function isNativeTextEditable(element: HTMLElement): boolean {
+  return element.childElementCount === 0 && ['h1','h2','h3','h4','h5','p','span','strong','em','small','label','button','a','li'].includes(element.tagName.toLowerCase());
+}
+
 function validate(value: unknown, enforceBrandPalette: boolean): Config | null {
   if (!value || typeof value !== 'object') return null;
   const config = value as Partial<Config>;
@@ -52,11 +60,67 @@ function validate(value: unknown, enforceBrandPalette: boolean): Config | null {
   const rawNative = config.nativeStyles as Partial<Record<'panel' | 'card' | 'form' | 'heading' | 'button', { background?: unknown; color?: unknown; radius?: unknown; padding?: unknown }>> | undefined;
   const nativeStyles: NonNullable<Config['nativeStyles']> = {};
   for (const target of ['panel','card','form','heading','button'] as const) { const value = rawNative?.[target]; if (value) nativeStyles[target] = { background: safeColor(value.background, palette.surface), color: safeColor(value.color, palette.text), radius: Number.isFinite(value.radius) ? Math.max(0, Math.min(32, Number(value.radius))) : 12, padding: Number.isFinite(value.padding) ? Math.max(0, Math.min(48, Number(value.padding))) : 12 }; }
-  return {schemaVersion:1,theme,pageStyle,nativeStyles,components};
+  const rawElements = config.nativeElements && typeof config.nativeElements === 'object' ? config.nativeElements as Record<string, Partial<NativeElementOverride>> : {};
+  const nativeElements: Record<string, NativeElementOverride> = {};
+  for (const [path, value] of Object.entries(rawElements).slice(0, 120)) {
+    if (!isSafeNativeElementPath(path) || !value || typeof value !== 'object') continue;
+    const tag = typeof value.tag === 'string' && /^[a-z][a-z0-9-]{0,30}$/.test(value.tag) ? value.tag : 'div';
+    nativeElements[path] = {
+      tag,
+      label: typeof value.label === 'string' ? value.label.slice(0, 100) : tag,
+      originalText: typeof value.originalText === 'string' ? value.originalText.slice(0, 2000) : undefined,
+      text: typeof value.text === 'string' ? value.text.slice(0, 2000) : undefined,
+      background: typeof value.background === 'string' && /^#[0-9a-f]{6}$/i.test(value.background) ? value.background.toUpperCase() : undefined,
+      color: typeof value.color === 'string' && /^#[0-9a-f]{6}$/i.test(value.color) ? value.color.toUpperCase() : undefined,
+      radius: Number.isFinite(value.radius) ? Math.max(0, Math.min(32, Number(value.radius))) : undefined,
+      padding: Number.isFinite(value.padding) ? Math.max(0, Math.min(48, Number(value.padding))) : undefined,
+      fontSize: Number.isFinite(value.fontSize) ? Math.max(10, Math.min(48, Number(value.fontSize))) : undefined,
+      fontWeight: ['normal','500','600','700','800'].includes(value.fontWeight ?? '') ? value.fontWeight as NativeElementOverride['fontWeight'] : undefined,
+    };
+  }
+  return {schemaVersion:1,theme,pageStyle,nativeStyles,nativeElements,components};
 }
 export default function PublishedVisualLayout({ scope }: { scope: string }) {
   const [published,setPublished] = useState<Published|null>(null);
   const [bindingValues,setBindingValues] = useState<Record<string, number | null>>({});
+  useEffect(() => {
+    if (!published || published.scope !== scope || scope === 'dashboard') return;
+    const safeScope = scope.replace(/[^a-zA-Z0-9:_-]/g, '');
+    const root = document.querySelector<HTMLElement>('.workspace-main[data-active-section="' + safeScope + '"]');
+    if (!root) return;
+    const originals = new Map<HTMLElement, { style: string | null; text?: string }>();
+    const applyOverrides = () => {
+      for (const [path, override] of Object.entries(published.config.nativeElements ?? {})) {
+        if (!isSafeNativeElementPath(path)) continue;
+        let element: HTMLElement | null = null;
+        try { element = document.querySelector<HTMLElement>(path); } catch { element = null; }
+        if (!element || !root.contains(element) || element.tagName.toLowerCase() !== override.tag) continue;
+        if (!originals.has(element)) originals.set(element, {
+          style: element.getAttribute('style'),
+          text: isNativeTextEditable(element) ? element.textContent ?? '' : undefined,
+        });
+        if (override.background) element.style.setProperty('background', override.background, 'important');
+        if (override.color) element.style.setProperty('color', override.color, 'important');
+        if (Number.isFinite(override.radius)) element.style.setProperty('border-radius', Number(override.radius) + 'px', 'important');
+        if (Number.isFinite(override.padding)) element.style.setProperty('padding', Number(override.padding) + 'px', 'important');
+        if (Number.isFinite(override.fontSize)) element.style.setProperty('font-size', Number(override.fontSize) + 'px', 'important');
+        if (override.fontWeight) element.style.setProperty('font-weight', override.fontWeight, 'important');
+        if (override.text !== undefined && isNativeTextEditable(element) && element.textContent !== override.text) element.textContent = override.text;
+      }
+    };
+    applyOverrides();
+    const observer = new MutationObserver(() => applyOverrides());
+    observer.observe(root, { childList: true, subtree: true });
+    return () => {
+      observer.disconnect();
+      originals.forEach(({ style, text }, element) => {
+        if (style === null) element.removeAttribute('style');
+        else element.setAttribute('style', style);
+        if (text !== undefined) element.textContent = text;
+      });
+    };
+  }, [published, scope]);
+
   useEffect(() => {
     let active = true;
     setPublished(null);
@@ -66,7 +130,7 @@ export default function PublishedVisualLayout({ scope }: { scope: string }) {
       if (!active || error || !data) return;
       const config = validate(data.config, scope !== 'dashboard');
       if (!config) return;
-      setPublished({name:data.name,config,published_at:data.published_at});
+      setPublished({scope,name:data.name,config,published_at:data.published_at});
       const keys = config.components.flatMap(block => block.dataBinding ? [block.dataBinding] : []);
       void loadPageDataBindings(keys).then(values => { if (active) setBindingValues(values); });
     });
