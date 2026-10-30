@@ -88,23 +88,32 @@ export default function PublishedVisualLayout({ scope }: { scope: string }) {
     const safeScope = scope.replace(/[^a-zA-Z0-9:_-]/g, '');
     const root = document.querySelector<HTMLElement>('.workspace-main[data-active-section="' + safeScope + '"]');
     if (!root) return;
-    const originals: Array<{ element: HTMLElement; style: string | null; text?: string }> = [];
-    for (const [path, override] of Object.entries(published.config.nativeElements ?? {})) {
-      if (!isSafeNativeElementPath(path)) continue;
-      let element: HTMLElement | null = null;
-      try { element = document.querySelector<HTMLElement>(path); } catch { element = null; }
-      if (!element || !root.contains(element)) continue;
-      originals.push({ element, style: element.getAttribute('style'), text: isNativeTextEditable(element) ? element.textContent ?? '' : undefined });
-      if (override.background) element.style.setProperty('background', override.background, 'important');
-      if (override.color) element.style.setProperty('color', override.color, 'important');
-      if (Number.isFinite(override.radius)) element.style.setProperty('border-radius', Number(override.radius) + 'px', 'important');
-      if (Number.isFinite(override.padding)) element.style.setProperty('padding', Number(override.padding) + 'px', 'important');
-      if (Number.isFinite(override.fontSize)) element.style.setProperty('font-size', Number(override.fontSize) + 'px', 'important');
-      if (override.fontWeight) element.style.setProperty('font-weight', override.fontWeight, 'important');
-      if (override.text !== undefined && isNativeTextEditable(element)) element.textContent = override.text;
-    }
+    const originals = new Map<HTMLElement, { style: string | null; text?: string }>();
+    const applyOverrides = () => {
+      for (const [path, override] of Object.entries(published.config.nativeElements ?? {})) {
+        if (!isSafeNativeElementPath(path)) continue;
+        let element: HTMLElement | null = null;
+        try { element = document.querySelector<HTMLElement>(path); } catch { element = null; }
+        if (!element || !root.contains(element)) continue;
+        if (!originals.has(element)) originals.set(element, {
+          style: element.getAttribute('style'),
+          text: isNativeTextEditable(element) ? element.textContent ?? '' : undefined,
+        });
+        if (override.background) element.style.setProperty('background', override.background, 'important');
+        if (override.color) element.style.setProperty('color', override.color, 'important');
+        if (Number.isFinite(override.radius)) element.style.setProperty('border-radius', Number(override.radius) + 'px', 'important');
+        if (Number.isFinite(override.padding)) element.style.setProperty('padding', Number(override.padding) + 'px', 'important');
+        if (Number.isFinite(override.fontSize)) element.style.setProperty('font-size', Number(override.fontSize) + 'px', 'important');
+        if (override.fontWeight) element.style.setProperty('font-weight', override.fontWeight, 'important');
+        if (override.text !== undefined && isNativeTextEditable(element) && element.textContent !== override.text) element.textContent = override.text;
+      }
+    };
+    applyOverrides();
+    const observer = new MutationObserver(() => applyOverrides());
+    observer.observe(root, { childList: true, subtree: true });
     return () => {
-      originals.forEach(({ element, style, text }) => {
+      observer.disconnect();
+      originals.forEach(({ style, text }, element) => {
         if (style === null) element.removeAttribute('style');
         else element.setAttribute('style', style);
         if (text !== undefined) element.textContent = text;
