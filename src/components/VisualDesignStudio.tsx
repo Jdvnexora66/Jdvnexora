@@ -23,7 +23,7 @@ type StudioBlock = {
 type PageStyle = { density: 'comfortable' | 'compact'; textScale: 'small' | 'normal' | 'large'; radius: number; background: string; surface: string; text: string; accent: string };
 type NativeTarget = 'panel' | 'card' | 'form' | 'heading' | 'button';
 type NativeOverride = { background: string; color: string; radius: number; padding: number };
-type NativeElementOverride = { tag: string; label: string; originalText?: string; text?: string; background?: string; color?: string; radius?: number; padding?: number };
+type NativeElementOverride = { tag: string; label: string; originalText?: string; text?: string; background?: string; color?: string; radius?: number; padding?: number; fontSize?: number; fontWeight?: 'normal'|'500'|'600'|'700'|'800' };
 type NativeElementSelection = { path: string; tag: string; label: string; originalText: string; canEditText: boolean };
 type StudioConfig = { schemaVersion: 1; theme: 'nexora-dark' | 'nexora-light' | 'ocean'; pageStyle?: PageStyle; nativeStyles?: Partial<Record<NativeTarget, NativeOverride>>; nativeElements?: Record<string, NativeElementOverride>; components: StudioBlock[] };
 type PageScope = string;
@@ -119,6 +119,8 @@ const safeConfig = (value: unknown): StudioConfig => {
       color: typeof value.color === 'string' && /^#[0-9a-f]{6}$/i.test(value.color) ? value.color.toUpperCase() : undefined,
       radius: Number.isFinite(value.radius) ? Math.max(0, Math.min(32, Number(value.radius))) : undefined,
       padding: Number.isFinite(value.padding) ? Math.max(0, Math.min(48, Number(value.padding))) : undefined,
+      fontSize: Number.isFinite(value.fontSize) ? Math.max(10, Math.min(48, Number(value.fontSize))) : undefined,
+      fontWeight: ['normal','500','600','700','800'].includes(value.fontWeight ?? '') ? value.fontWeight as NativeElementOverride['fontWeight'] : undefined,
     };
   }
   return { schemaVersion: 1, theme, pageStyle, nativeStyles, nativeElements, components };
@@ -215,6 +217,8 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
         if (override.color) element.style.setProperty('color', override.color, 'important');
         if (Number.isFinite(override.radius)) element.style.setProperty('border-radius', Number(override.radius) + 'px', 'important');
         if (Number.isFinite(override.padding)) element.style.setProperty('padding', Number(override.padding) + 'px', 'important');
+        if (Number.isFinite(override.fontSize)) element.style.setProperty('font-size', Number(override.fontSize) + 'px', 'important');
+        if (override.fontWeight) element.style.setProperty('font-weight', override.fontWeight, 'important');
         if (override.text !== undefined && isNativeTextEditable(element)) element.textContent = override.text;
       }
     }
@@ -450,6 +454,8 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
           <label>Texte <input type="color" value={config.nativeElements?.[selectedNativeElement.path]?.color??theme.text} onChange={event=>changeNativeElementStyle({color:event.target.value})}/></label>
           <label>Arrondi <input type="range" min="0" max="32" value={config.nativeElements?.[selectedNativeElement.path]?.radius??12} onChange={event=>changeNativeElementStyle({radius:Number(event.target.value)})}/></label>
           <label>Espacement intérieur <input type="range" min="0" max="48" value={config.nativeElements?.[selectedNativeElement.path]?.padding??12} onChange={event=>changeNativeElementStyle({padding:Number(event.target.value)})}/></label>
+          <label>Taille du texte <input type="range" min="10" max="48" value={config.nativeElements?.[selectedNativeElement.path]?.fontSize??16} onChange={event=>changeNativeElementStyle({fontSize:Number(event.target.value)})}/></label>
+          <label>Graisse du texte<select value={config.nativeElements?.[selectedNativeElement.path]?.fontWeight??'normal'} onChange={event=>changeNativeElementStyle({fontWeight:event.target.value as NativeElementOverride['fontWeight']})}><option value="normal">Normale</option><option value="500">Moyenne</option><option value="600">Semi-grasse</option><option value="700">Grasse</option><option value="800">Très grasse</option></select></label>
           {selectedNativeElement.canEditText&&<label>Texte affiché<textarea rows={3} maxLength={2000} value={config.nativeElements?.[selectedNativeElement.path]?.text??selectedNativeElement.originalText} onChange={event=>changeNativeElementStyle({text:event.target.value,originalText:selectedNativeElement.originalText,tag:selectedNativeElement.tag,label:selectedNativeElement.label})}/></label>}
           {!selectedNativeElement.canEditText&&<small>Le contenu de cet élément contient des sous-éléments. Son style peut être modifié, mais son texte n’est pas éditable pour préserver sa structure.</small>}
           <button type="button" className="logout-button" onClick={resetNativeElementStyle}><RotateCcw size={14}/> Réinitialiser cet élément</button>
