@@ -52,7 +52,7 @@ export default function Timeline({ userId }: { userId: string }) {
     event.preventDefault();
     if (!supabase || saving || !ownedProfiles.some(profile => profile.id === draft.entrepreneur_id)) return;
     setSaving(true); setError(''); setNotice('');
-    const payload = { entrepreneur_id: draft.entrepreneur_id, event_date: draft.event_date || null, title: draft.title.trim(), description: draft.description.trim() || null, category: draft.category, confidence: draft.confidence };
+    const payload = { entrepreneur_id: draft.entrepreneur_id, event_date: draft.event_date || null, title: draft.title.trim(), description: draft.description.trim() || null, category: draft.category, confidence: editingId ? draft.confidence : 'unverified' };
     try {
       const result = editingId ? await supabase.from('timeline_events').update(payload).eq('id', editingId).select('id').single() : await supabase.from('timeline_events').insert(payload).select('id').single();
       if (result.error) throw result.error;
@@ -79,7 +79,7 @@ export default function Timeline({ userId }: { userId: string }) {
       <label>Titre de l’événement<input required maxLength={180} value={draft.title} onChange={e=>setDraft(current=>({...current,title:e.target.value}))} placeholder="Ex. Lancement de l’entreprise"/></label>
       <label>Date (facultative)<input type="date" value={draft.event_date} onChange={e=>setDraft(current=>({...current,event_date:e.target.value}))}/></label>
       <label>Description<textarea rows={3} maxLength={1800} value={draft.description} onChange={e=>setDraft(current=>({...current,description:e.target.value}))} placeholder="Contexte et importance de cette étape…"/></label>
-      <div className="timeline-form-row"><label>Catégorie<select value={draft.category} onChange={e=>setDraft(current=>({...current,category:e.target.value}))}><option value="milestone">Étape clé</option><option value="foundation">Création</option><option value="funding">Financement</option><option value="launch">Lancement</option><option value="growth">Croissance</option><option value="partnership">Partenariat</option><option value="other">Autre</option></select></label><label>Niveau de documentation<select value={draft.confidence} onChange={e=>setDraft(current=>({...current,confidence:e.target.value}))}><option value="unverified">À vérifier</option><option value="source_supported">Source associée</option><option value="multiple_sources">Sources multiples</option></select></label></div>
+      <div className="timeline-form-row"><label>Catégorie<select value={draft.category} onChange={e=>setDraft(current=>({...current,category:e.target.value}))}><option value="milestone">Étape clé</option><option value="foundation">Création</option><option value="funding">Financement</option><option value="launch">Lancement</option><option value="growth">Croissance</option><option value="partnership">Partenariat</option><option value="other">Autre</option></select></label></div>
       <div className="profile-footer"><button type="button" className="logout-button" onClick={()=>setShowForm(false)}>Annuler</button><button type="submit" className="primary-button" disabled={saving||!draft.title.trim()||!draft.entrepreneur_id}>{saving?'Enregistrement…':editingId?'Enregistrer les modifications':'Ajouter à la chronologie'} <Save size={15}/></button></div>
     </form>}
     <input className="timeline-search" aria-label="Rechercher dans la chronologie" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Rechercher un événement ou un entrepreneur…"/>
