@@ -66,14 +66,14 @@ async function verifyCourseOrder(
   }
 
   if (order.status === "verification_required" && order.provider_reference && order.provider_reference !== transactionId) {
-    return reply(409, { error: "Cette commande attend déjà la vérification d'une autre transaction." });
+    return reply(200, { verified: false, final: true, error: "Cette commande attend déjà la vérification d'une autre transaction. Relancez un nouveau paiement si nécessaire." });
   }
   const { data: verificationLock, error: lockError } = await admin.from("nexora_course_payment_orders")
     .update({ status: "verification_required", provider_reference: transactionId, updated_at: new Date().toISOString() })
     .eq("id", order.id).eq("user_id", userId).in("status", ["pending", "verification_required"])
     .select("id").maybeSingle();
   if (lockError) {
-    if (lockError.code === "23505") return reply(409, { error: "Cette transaction est déjà utilisée." });
+    if (lockError.code === "23505") return reply(200, { verified: false, final: true, error: "Cette transaction est déjà utilisée pour un autre paiement." });
     return reply(500, { error: "Impossible d'enregistrer la vérification du paiement." });
   }
   if (!verificationLock) return reply(409, { error: "La commande a changé pendant la vérification. Actualisez puis réessayez." });
@@ -90,16 +90,19 @@ async function verifyCourseOrder(
     const txStatus = String(txRecord?.status ?? "").toUpperCase();
     const txCurrency = String(txRecord?.currency ?? txRecord?.currency_code ?? "XOF").toUpperCase();
     if (txStatus !== "SUCCESS") {
-      if (["FAILED", "CANCELLED", "CANCELED", "EXPIRED"].includes(txStatus)) {
+      if (["FAILED", "CANCELLED", "CANCELED", "EXPIRED", "TRANSACTION_NOT_FOUND"].includes(txStatus)) {
         await admin.from("nexora_course_payment_orders").update({ status: "failed", provider_reference: null, updated_at: new Date().toISOString() })
           .eq("id", order.id).eq("status", "verification_required");
+        return reply(200, { verified: false, final: true, error: "La transaction KKIAPAY a échoué ou a été annulée. Vous pouvez relancer un nouveau paiement." });
       }
-      return reply(402, { error: "La transaction KKIAPAY n'est pas encore confirmée." });
+      return reply(200, { verified: false, pending: true, error: "La transaction KKIAPAY est encore en attente. Réessayez la vérification sans refaire le paiement." });
     }
     if (String(txRecord?.type ?? "").toUpperCase() !== "DEBIT"
         || Number(txRecord?.amount) !== Number(order.amount_xof)
         || txCurrency !== "XOF") {
-      return reply(402, { error: "La transaction n'est pas confirmée pour le montant exact de cette formation en FCFA." });
+      await admin.from("nexora_course_payment_orders").update({ status: "failed", provider_reference: null, updated_at: new Date().toISOString() })
+        .eq("id", order.id).eq("status", "verification_required");
+      return reply(200, { verified: false, final: true, error: "Le montant ou le type de transaction ne correspond pas à cette formation. Aucun accès n'a été activé ; contactez le support si votre compte a été débité." });
     }
 
     const [{ data: usedSubscription, error: subscriptionCheckError }, { data: usedOrder, error: orderCheckError }] = await Promise.all([
@@ -110,7 +113,7 @@ async function verifyCourseOrder(
     if (usedSubscription || (usedOrder && usedOrder.id !== order.id)) {
       await admin.from("nexora_course_payment_orders").update({ status: "pending", provider_reference: null, updated_at: new Date().toISOString() })
         .eq("id", order.id).eq("status", "verification_required");
-      return reply(409, { error: usedSubscription ? "Cette transaction est déjà utilisée pour un abonnement." : "Cette transaction est déjà associée à une autre formation." });
+      return reply(200, { verified: false, final: true, error: usedSubscription ? "Cette transaction est déjà utilisée pour un abonnement." : "Cette transaction est déjà associée à une autre formation." });
     }
 
     const now = new Date().toISOString();
