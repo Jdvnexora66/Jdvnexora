@@ -23,7 +23,7 @@ Le tableau de bord référentiel reste la référence visuelle et fonctionnelle.
 | 8 | Académie | `nexora_learning_paths`, `nexora_learning_modules`, `nexora_learning_progress`, `nexora_courses`, `nexora_course_enrollments`, `nexora_course_lessons` | Catalogue publié, inscription, progression, accès aux leçons et états vides | À tester en runtime |
 | 9 | Bibliothèque de formation | `user_learning_items`, `entrepreneurs`, `content_items` | Favoris/notes/progression persistants; données privées limitées à l'utilisateur | À tester en runtime |
 | 10 | Ressources numériques | `nexora_resources`, `nexora_resource_progress` | Catalogue, liens/ressources disponibles, progression persistante | À tester en runtime |
-| 11 | Découvrir | `entrepreneurs`, `content_sources`, `followed_entrepreneurs` | Recherche, filtre pays, paniers, suivi, résultats vides et rendu responsive | CSS ciblé ajouté; test runtime requis |
+| 11 | Découvrir | `entrepreneurs`, `content_sources`, `followed_entrepreneurs`, `social_accounts` | Recherche, filtre pays, paniers, suivi, sources et réseaux sociaux officiels, liens externes HTTP(S) uniquement | Réseaux sociaux raccordés à la lecture; tests runtime et RLS requis |
 | 12 | Vidéothèque et catalogue des créateurs | `media_library_items`; Storage `nexora-media`; Edge Functions `media-integrations`, `sync-public-creators` (v9), `sync-public-creators-cron` (v6) | Flux RSS avec reprise, playlist uploads en secours, YouTube Data API via OAuth, imports idempotents, isolation par propriétaire; galerie compacte de miniatures cliquables (grille dense responsive, cadres 16:9 sans débordement), lecteur dédié fermable avec Échap et téléchargement forcé via URL signée Supabase réservé au propriétaire du fichier | Synchronisation runtime confirmée le 30/10/2026; refonte galerie commitée le 30/10/2026; test visuel navigateur et build à effectuer |
 | 13 | Roadmap | `roadmap_tasks` | Création, modification, suppression, statuts, dates, filtrage propriétaire | À tester en runtime |
 | 14 | Timeline / chronologie | `timeline_events`, `entrepreneurs`, `content_sources` | Sources de dates, ordre, recherche, données manquantes et états vides | À tester en runtime |
@@ -101,3 +101,17 @@ Cette revue est une inspection statique du code et des configurations disponible
 - Aperçu Netlify de la demande de fusion : déploiement `ready` pour le commit ci-dessus.
 - La consultation automatisée du site d'aperçu depuis l'environnement de contrôle n'a pas permis de récupérer le rendu des pages. Le contrôle visuel par navigateur connecté et les tests avec session réelle restent donc nécessaires.
 - Aucune donnée utilisateur, aucun abonnement ni aucune politique RLS n'a été supprimé ou affaibli dans cette passe.
+
+
+## Correctifs de stabilisation UI et enrichissement Discover — 2026-10-30
+
+- `src/styles.css` : suppression des fragments de fusion non résolus dans le bloc mobile final. La section a été reconstruite avec des règles responsives consolidées pour 760 px et 420 px, les tableaux défilants, les formulaires tactiles et les panneaux métier. Le tableau de bord référentiel n'a pas été reconstruit.
+- `src/components/Discover.tsx` : chargement groupé des comptes sociaux associés aux profils depuis `social_accounts`. Les liens des sites et réseaux sont limités aux protocoles HTTP/HTTPS avant rendu; les réseaux officiels sont identifiés et les handles sont inclus dans la recherche de chaque panier.
+- `src/styles.css` : ajout de pastilles de liens sociaux qui se replient sur plusieurs lignes sur petits écrans.
+- `src/components/CreatorCatalog.tsx` : clarification du texte d'aide pour refléter la synchronisation planifiée toutes les six heures déjà configurée dans le projet.
+
+### Contrôles encore nécessaires
+
+- Le contrôle de statut CI doit être relu sur le commit final après les derniers changements.
+- Le build TypeScript/Vite et le parcours navigateur authentifié n'ont pas été exécutés dans cette passe. Les nouvelles lectures `social_accounts` dépendent des politiques RLS existantes et doivent être validées avec un compte utilisateur.
+- Les liens externes ont une validation de protocole côté interface, mais l'exactitude et le caractère officiel des comptes restent une responsabilité de vérification éditoriale.
