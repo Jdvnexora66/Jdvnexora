@@ -11,6 +11,9 @@ const app = read('src/App.tsx');
 const design = read('src/components/VisualDesignStudio.tsx');
 const billing = read('src/components/BillingPanel.tsx');
 const academy = read('src/components/Academy.tsx');
+const subscriptionOrder = read('supabase/functions/create-subscription-payment-order/index.ts');
+const paymentVerification = read('supabase/functions/verify-kkiapay-payment/index.ts');
+const subscriptionSnapshotMigration = read('supabase/migrations/20261030080350_subscription_payment_order_snapshot.sql');
 const sourceMap = read('docs/architecture/page-source-map.md');
 
 const expectedRoutes = [
@@ -102,4 +105,18 @@ for (const [file, source, functions] of [
   }
 }
 
-console.log('NEXORA workspace checks passed: 16 routes authentifiées rendues et navigables + vitrine publique, composants transversaux, sources, Studio Design natif, sélection multi-pages, contrôles de précision et paiements vérifiés côté serveur.');
+const subscriptionVerification = paymentVerification.slice(
+  paymentVerification.indexOf('async function verifySubscriptionOrder'),
+  paymentVerification.indexOf('Deno.serve(async (req: Request)', paymentVerification.indexOf('async function verifySubscriptionOrder')),
+);
+for (const token of ['amount_minor: Number(plan.price_minor)', 'currency: plan.currency', 'billing_interval: plan.billing_interval']) {
+  assert.ok(subscriptionOrder.includes(token), `La commande d’abonnement doit figer ${token}.`);
+}
+for (const token of ['amount_minor,currency,billing_interval', 'Number(order.amount_minor)', 'txCurrency !== order.currency', 'subscriptionEndDate(now, order.billing_interval)']) {
+  assert.ok(subscriptionVerification.includes(token), `La vérification doit utiliser l’instantané ${token}.`);
+}
+for (const token of ['add column if not exists amount_minor', 'add column if not exists currency', 'add column if not exists billing_interval', 'alter column amount_minor set not null']) {
+  assert.ok(subscriptionSnapshotMigration.includes(token), `Migration d’instantané incomplète : ${token}.`);
+}
+
+console.log('NEXORA checks passed: 16 routes authentifiées + vitrine, Studio Design natif, paiements serveur et instantané immuable des commandes d’abonnement.');
