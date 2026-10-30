@@ -1,0 +1,38 @@
+name: Supabase payment functions
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "supabase/functions/create-course-payment-order/**"
+      - "supabase/functions/create-subscription-payment-order/**"
+      - "supabase/functions/verify-kkiapay-payment/**"
+      - ".github/workflows/supabase-payment-functions.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/functions/create-course-payment-order/**"
+      - "supabase/functions/create-subscription-payment-order/**"
+      - "supabase/functions/verify-kkiapay-payment/**"
+      - ".github/workflows/supabase-payment-functions.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    name: Type-check payment Edge Functions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Check course payment preparation
+        run: deno check supabase/functions/create-course-payment-order/index.ts
+      - name: Check subscription payment preparation
+        run: deno check supabase/functions/create-subscription-payment-order/index.ts
+      - name: Check KKIAPAY verification
+        run: deno check supabase/functions/verify-kkiapay-payment/index.ts
