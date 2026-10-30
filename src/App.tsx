@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Building2, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette, BookOpen, Menu } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, ShieldCheck, Sparkles, FolderKanban, Building2, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette, BookOpen, Menu } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from './lib/supabase';
 import { isPageRouteId } from './lib/pageDataBindings';
 import Discover from './components/Discover';
@@ -51,6 +51,8 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRecoveryPassword, setShowRecoveryPassword] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileName, setProfileName] = useState('');
@@ -658,7 +660,7 @@ export default function App() {
             <p className="muted">Choisissez au moins 8 caractères et gardez ce mot de passe confidentiel.</p>
             <form onSubmit={updatePassword}>
               <label htmlFor="new-password">Nouveau mot de passe</label>
-              <input id="new-password" type="password" autoComplete="new-password" minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} required />
+              <div className="password-field"><input id="new-password" type={showRecoveryPassword ? "text" : "password"} autoComplete="new-password" minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} required /><button type="button" className="password-visibility" onClick={() => setShowRecoveryPassword((visible) => !visible)} aria-label={showRecoveryPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"} aria-pressed={showRecoveryPassword}>{showRecoveryPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
               <button className="primary-button" type="submit" disabled={busy || password.length < 8}>{busy ? 'Mise à jour…' : 'Enregistrer le nouveau mot de passe'} <ShieldCheck size={17} /></button>
             </form>
             {error && <p className="feedback error" role="alert">{error}</p>}
@@ -875,7 +877,7 @@ export default function App() {
             <button type="button" className="vitrine-auth-link" onClick={() => setShowVitrine(true)}>Découvrir la vitrine publique <ArrowRight size={16}/></button>
           </div>
           <section className="auth-card" aria-labelledby="auth-title">
-            <p className="eyebrow">BIENVENUE CHEZ JDV NEXORA</p>
+            <img className="auth-brand-logo" src="/nexora-brand.svg" alt="NEXORA AI STUDIO" /><p className="eyebrow">BIENVENUE CHEZ JDV NEXORA</p>
             <h2 id="auth-title">{mode === 'signin' ? 'Connectez-vous' : 'Créer un compte'}</h2>
             <p className="muted">{mode === 'signin' ? 'Retrouvez votre espace de travail.' : 'Commencez par créer votre compte personnel.'}</p>
             <div className="mode-switch" role="tablist" aria-label="Type d’accès">
@@ -886,7 +888,7 @@ export default function App() {
               <label htmlFor="email">Adresse e-mail</label>
               <input id="email" type="email" autoComplete="email" placeholder="vous@exemple.com" value={email} onChange={(event) => setEmail(event.target.value)} required />
               <label htmlFor="password">Mot de passe</label>
-              <input id="password" type="password" autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} placeholder="8 caractères minimum conseillé" minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} required />
+              <div className="password-field"><input id="password" type={showPassword ? "text" : "password"} autoComplete={mode === 'signin' ? 'current-password' : 'new-password'} placeholder="8 caractères minimum conseillé" minLength={6} value={password} onChange={(event) => setPassword(event.target.value)} required /><button type="button" className="password-visibility" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"} aria-pressed={showPassword}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
               {mode === 'signin' && <button className="text-button forgot" type="button" onClick={resetPassword} disabled={busy}>Mot de passe oublié ?</button>}
               <button className="primary-button" type="submit" disabled={busy}>{busy ? 'Veuillez patienter…' : mode === 'signin' ? 'Se connecter' : 'Créer mon compte'} <ArrowRight size={17} /></button>
             </form>
