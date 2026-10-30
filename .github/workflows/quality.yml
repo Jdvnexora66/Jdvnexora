@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   web-build:
-    name: TypeScript and Vite production build
+    name: Workspace checks, TypeScript and Vite production build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,6 +23,8 @@ jobs:
           node-version: 22
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Validate workspace routes and critical flows
+        run: npm test
       - name: Build web client
         run: npm run build
       - name: Upload web distribution
