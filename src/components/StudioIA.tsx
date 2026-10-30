@@ -8,7 +8,7 @@ type StoredMessage = Message & { id: string; conversation_id: string; created_at
 type UsageSummary = { quota: number; used: number; remaining: number; plan: string };
 
 export default function StudioIA() {
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(() => new URLSearchParams(window.location.search).get('prompt')?.slice(0, 8000) ?? '');
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -71,6 +71,9 @@ export default function StudioIA() {
     event.preventDefault();
     const question = prompt.trim();
     if (!question || busy) return;
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.delete('prompt');
+    window.history.replaceState({}, '', currentUrl.toString());
     if (!supabase) { setError('Supabase n’est pas configuré.'); return; }
     if (!userId || !conversationId || !historyReady) {
       setError('Votre session ou votre historique n’est pas prêt. Réessayez dans un instant.');
