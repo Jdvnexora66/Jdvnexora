@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Building2, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette, BookOpen, Menu } from 'lucide-react';
-import { isSupabaseConfigured, supabase } from './lib/supabase';
+import { getClientRedirectUrl, isSupabaseConfigured, supabase } from './lib/supabase';
 import { isPageRouteId } from './lib/pageDataBindings';
 import Discover from './components/Discover';
 import MediaLibrary from './components/MediaLibrary';
@@ -483,7 +483,7 @@ export default function App() {
     if (!email.trim()) return setError('Saisissez votre adresse e-mail pour recevoir le lien de réinitialisation.');
     setBusy(true);
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: getClientRedirectUrl('/reset-password'),
     });
     setBusy(false);
     if (resetError) setError(resetError.message);
