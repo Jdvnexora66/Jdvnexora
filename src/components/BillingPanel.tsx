@@ -6,7 +6,7 @@ import ModuleDataOverview from './ModuleDataOverview';
 
 type Plan = { id: string; code: string; name: string; description: string | null; active: boolean; features: Record<string, unknown>; price_minor: number; currency: string; billing_interval: 'month'|'year'|'one_time'; trial_days: number; created_at: string };
 type PlanBrief = { name: string; code: string; price_minor: number; currency: string; billing_interval: string };
-type Subscription = { id: string; status: 'pending'|'active'|'trialing'|'past_due'|'canceled'|'expired'; starts_at: string | null; ends_at: string | null; provider: string | null; plan: PlanBrief[] | PlanBrief | null };
+type Subscription = { id: string; status: 'pending'|'active'|'trialing'|'past_due'|'canceled'|'expired'; starts_at: string | null; ends_at: string | null; provider: string | null; amount_minor: number; currency: string; billing_interval: Plan['billing_interval']; plan: PlanBrief[] | PlanBrief | null };
 type PaymentMethod = 'mobile_money' | 'card';
 export default function BillingPanel({ userId, role }: { userId: string; role: string }) {
   useEffect(() => () => clearKkiapayCallbacks(), []);
@@ -37,7 +37,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
     try {
       const [planResult, subscriptionResult] = await Promise.all([
         supabase.from('plans').select('id,code,name,description,active,features,price_minor,currency,billing_interval,trial_days,created_at').order('created_at', { ascending: false }),
-        supabase.from('subscriptions').select('id,status,starts_at,ends_at,provider,plan:plans(name,code,price_minor,currency,billing_interval)').eq('user_id', userId).order('created_at', { ascending: false }).limit(1),
+        supabase.from('subscriptions').select('id,status,starts_at,ends_at,provider,amount_minor,currency,billing_interval,plan:plans(name,code,price_minor,currency,billing_interval)').eq('user_id', userId).order('created_at', { ascending: false }).limit(1),
       ]);
       if (planResult.error) setError('Chargement des forfaits impossible : ' + planResult.error.message);
       else setPlans((planResult.data ?? []) as Plan[]);
@@ -276,7 +276,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
 
     <div className="billing-current">
       <h3><BadgeCheck size={17}/> Votre abonnement</h3>
-      {subscription ? <div className="project-item"><div className="project-type-icon"><CreditCard size={18}/></div><div className="project-info"><h3>{subscribedPlan?.name ?? 'Forfait non disponible'}</h3><p>{statusLabel[subscriptionStatus]}{subscription.ends_at ? ' · échéance ' + new Date(subscription.ends_at).toLocaleDateString('fr-FR') : ''}</p></div><span className="project-type-label">{subscribedPlan ? formatPrice({ price_minor: subscribedPlan.price_minor, currency: subscribedPlan.currency, billing_interval: subscribedPlan.billing_interval as Plan['billing_interval'] }) : subscription.status}</span></div> : <p className="muted">Aucun abonnement enregistré pour ce compte.</p>}
+      {subscription ? <div className="project-item"><div className="project-type-icon"><CreditCard size={18}/></div><div className="project-info"><h3>{subscribedPlan?.name ?? 'Forfait non disponible'}</h3><p>{statusLabel[subscriptionStatus]}{subscription.ends_at ? ' · échéance ' + new Date(subscription.ends_at).toLocaleDateString('fr-FR') : ''}</p></div><span className="project-type-label">{subscription.amount_minor === 0 ? 'Gratuit' : formatPrice({ price_minor: subscription.amount_minor, currency: subscription.currency, billing_interval: subscription.billing_interval })}</span></div> : <p className="muted">Aucun abonnement enregistré pour ce compte.</p>}
       <p className="muted">Les forfaits mensuels et annuels sont renouvelés manuellement via KKIAPAY. Aucun prélèvement automatique récurrent n’est effectué.</p>
     </div>
     <div className="billing-plans">
