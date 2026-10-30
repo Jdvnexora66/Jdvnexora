@@ -49,7 +49,7 @@ JDV NEXORA
 - Sortie web native configurée sur `dist`.
 - L'application native ouvre directement l'interface d'authentification NEXORA; la vitrine publique reste l'entrée par défaut du Web.
 - Les sessions Supabase natives utilisent `@aparajita/capacitor-secure-storage` : Keychain iOS et Android Keystore/AES-GCM; le navigateur Web conserve le stockage Auth standard du navigateur. Un marqueur non sensible efface les anciens secrets Keychain lors d'une réinstallation iOS.
-- PWA : enregistrement du service worker en production, manifeste enrichi, cache prudent de la coque et écran hors connexion.
+- PWA : enregistrement du service worker en production, manifeste enrichi avec icônes vectorielles 192/512, cache prudent de la coque et écran hors connexion.
 - Viewport iOS configuré avec `viewport-fit=cover`.
 - CSS adapté aux zones de sécurité iOS, à la navigation tactile, aux orientations paysage courtes et aux tablettes de 761 à 1024 px.
 - Navigation mobile existante conservée : barre rapide inférieure et menu complet « Plus ».
