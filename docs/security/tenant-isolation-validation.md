@@ -4,7 +4,7 @@
 
 Migration: `supabase/migrations/20261028103000_tenant_isolation_studio_projects.sql`
 
-The migration adds nullable `studio_projects.organization_id`. Existing projects remain personal when this value is NULL. It replaces the existing permissive project/asset/member policies with policies that check the parent project and active organization membership.
+The migration adds nullable `studio_projects.organization_id`. Existing projects remain personal when this value is NULL. It replaces the existing permissive project/asset/member policies with policies that check the parent project and active organization membership. The production audit identified two legacy SELECT policy names (`projects_select_owner_admin_or_member` and `assets_select_owner_admin_or_project_member`) that differed from the names originally dropped by the migration. The migration now drops those exact names as well; PostgreSQL combines permissive policies with OR, so this cleanup is a required isolation control.
 
 ## Deployment gate
 

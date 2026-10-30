@@ -13,8 +13,24 @@ const billing = read('src/components/BillingPanel.tsx');
 const academy = read('src/components/Academy.tsx');
 const subscriptionOrder = read('supabase/functions/create-subscription-payment-order/index.ts');
 const paymentVerification = read('supabase/functions/verify-kkiapay-payment/index.ts');
+const kkiapayWebhook = read('supabase/functions/kkiapay-webhook/index.ts');
+const studioAiFunction = read('supabase/functions/studio-ai/index.ts');
+const paymentAttemptsIndexMigration = read('supabase/migrations/20261030220000_index_payment_attempts_plan_id.sql');
 const subscriptionSnapshotMigration = read('supabase/migrations/20261030080350_subscription_payment_order_snapshot.sql');
 const sourceMap = read('docs/architecture/page-source-map.md');
+const netlifyConfig = read('netlify.toml');
+const referenceDashboard = read('src/components/ReferenceDashboard.tsx');
+const organizationPanel = read('src/components/OrganizationPanel.tsx');
+const adminPanel = read('src/components/AdminPanel.tsx');
+const learningLibrary = read('src/components/LearningLibrary.tsx');
+const resourceLibrary = read('src/components/ResourceLibrary.tsx');
+const discoverPage = read('src/components/Discover.tsx');
+const mediaLibrary = read('src/components/MediaLibrary.tsx');
+const roadmapPage = read('src/components/Roadmap.tsx');
+const timelinePage = read('src/components/Timeline.tsx');
+const insightsPage = read('src/components/Insights.tsx');
+const publicVitrine = read('src/components/PublicVitrine.tsx');
+const tenantIsolationMigration = read('supabase/migrations/20261028103000_tenant_isolation_studio_projects.sql');
 
 const expectedRoutes = [
   'dashboard', 'studio', 'design', 'projects', 'organizations', 'profile',
@@ -86,6 +102,67 @@ for (const name of requiredAppBindings) {
 }
 assert.ok(app.includes('<PublicVitrine'), 'Le 17e écran public doit rester accessible.');
 assert.ok(sourceMap.includes('17. Vitrine + connexion'), 'La carte des sources doit documenter le 17e écran.');
+const pageSourceContracts = {
+  'Tableau de bord': [app, ['<ReferenceDashboard', 'projectCount=', 'inProgressCount=']],
+  'Studio IA': [studioAiFunction, ['authClient.auth.getUser()', 'nexora_reserve_ai_usage', 'OPENAI_API_KEY']],
+  'Mes projets': [app, [".from('studio_projects')", ".from('studio_project_members')"]],
+  'Studio Design': [design, [".from('visual_studio_layouts')", ".from('visual_studio_versions')", 'Sélectionner un élément']],
+  'Entreprise / équipe': [organizationPanel, [".from('organizations')", 'invite-organization-member', 'accept-organization-invitation']],
+  'Profil': [app, [".from('profiles')", 'saveProfile']],
+  'Administration': [adminPanel, [".from('audit_logs')", ".from('nexora_courses')"]],
+  'Académie': [academy, [".from('nexora_courses')", 'create-course-payment-order']],
+  'Bibliothèque': [learningLibrary, [".from('user_learning_items')", ".from('content_items')"]],
+  'Ressources': [resourceLibrary, [".from('nexora_resources')", ".from('nexora_resource_progress')"]],
+  'Découvrir': [discoverPage, [".from('entrepreneurs')", ".from('followed_entrepreneurs')"]],
+  'Médias / créateurs': [mediaLibrary, [".from('media_library_items')", 'media-integrations']],
+  'Roadmap': [roadmapPage, [".from('roadmap_tasks')"]],
+  'Timeline': [timelinePage, [".from('timeline_events')"]],
+  'Insights': [insightsPage, [".from('content_items')"]],
+  'Facturation': [billing, [".from('subscriptions')", 'create-subscription-payment-order']],
+  'Vitrine publique': [publicVitrine, ['mailto:', 'JDV NEXORA']],
+};
+for (const [page, [source, tokens]] of Object.entries(pageSourceContracts)) {
+  for (const token of tokens) assert.ok(source.includes(token), `La page ${page} doit rester raccordée à sa fonctionnalité/source : ${token}`);
+}
+assert.ok(referenceDashboard.includes('projectCount') && referenceDashboard.includes('onOpenStudio'), 'Le tableau de bord référentiel doit exposer ses données et raccourcis métier.');
+assert.ok(netlifyConfig.includes('NODE_VERSION = "22"') && netlifyConfig.includes('publish = "dist"'), 'Netlify doit compiler avec Node 22 et publier le dossier Vite dist.');
+for (const token of [
+  "supabase.auth.signUp",
+  "options: { emailRedirectTo: getClientRedirectUrl('/') }",
+  "supabase.auth.signInWithPassword",
+  "supabase.auth.resetPasswordForEmail",
+  "event === 'PASSWORD_RECOVERY'",
+  "supabase.auth.updateUser({ password })",
+]) {
+  assert.ok(app.includes(token), `Le parcours Auth doit conserver ${token}.`);
+}
+for (const token of [
+  'https://jdvnexora.netlify.app',
+  'await sha256Hex(suppliedSecret)',
+  'KKIAPAY_WEBHOOK_SECRET_HASH',
+  'subscription_activated: false',
+]) {
+  assert.ok(kkiapayWebhook.includes(token), `Le webhook Kkiapay doit conserver la validation sécurisée : ${token}.`);
+}
+assert.ok(!kkiapayWebhook.includes('hilarious-cheesecake-2520ca.netlify.app'), 'Le webhook ne doit plus autoriser un ancien domaine Netlify.');
+for (const token of [
+  'authClient.auth.getUser()',
+  'nexora_reserve_ai_usage',
+  'Deno.env.get("OPENAI_API_KEY")',
+  'nexora_finalize_ai_usage',
+]) {
+  assert.ok(studioAiFunction.includes(token), `Studio IA doit authentifier et comptabiliser côté serveur : ${token}.`);
+}
+assert.ok(paymentAttemptsIndexMigration.includes('on public.payment_attempts (plan_id)'), 'La clé étrangère payment_attempts.plan_id doit être indexée.');
+for (const token of [
+  'drop policy if exists projects_select_owner_admin_or_member on public.studio_projects',
+  'drop policy if exists assets_select_owner_admin_or_project_member on public.studio_assets',
+  'create policy studio_projects_select_tenant',
+  'create policy studio_assets_select_project_access',
+  'private.can_access_studio_project(project_id, (select auth.uid()))',
+]) {
+  assert.ok(tenantIsolationMigration.includes(token), `La migration multi-tenant doit neutraliser les anciennes politiques permissives : ${token}`);
+}
 
 const actionTargets = routesFile.match(/export const PAGE_ACTION_TARGETS = \[([\s\S]*?)\] as const;/);
 assert.ok(actionTargets, 'Les destinations d’action doivent rester centralisées.');

@@ -170,6 +170,9 @@ for each row execute function private.validate_studio_project_tenant();
 -- Replace permissive policies: PostgreSQL ORs permissive policies together.
 drop policy if exists projects_owner_or_admin_access on public.studio_projects;
 drop policy if exists projects_select_owner_or_member on public.studio_projects;
+-- Exact legacy policy name currently present in production. PostgreSQL ORs permissive
+-- policies, so leaving this policy would bypass the tenant-aware SELECT predicate.
+drop policy if exists projects_select_owner_admin_or_member on public.studio_projects;
 drop policy if exists projects_insert_owner_basic_free on public.studio_projects;
 drop policy if exists projects_update_owner_basic_free on public.studio_projects;
 drop policy if exists projects_delete_owner_or_admin on public.studio_projects;
@@ -215,6 +218,8 @@ drop policy if exists assets_delete_owner_or_admin on public.studio_assets;
 drop policy if exists assets_insert_owner_project on public.studio_assets;
 drop policy if exists assets_owner_or_admin_access on public.studio_assets;
 drop policy if exists assets_select_owner_or_project_member on public.studio_assets;
+-- Exact legacy policy name currently present in production.
+drop policy if exists assets_select_owner_admin_or_project_member on public.studio_assets;
 drop policy if exists assets_update_owner_project on public.studio_assets;
 
 create policy studio_assets_select_project_access

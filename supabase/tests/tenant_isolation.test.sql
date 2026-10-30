@@ -1,5 +1,5 @@
 begin;
-select plan(15);
+select plan(17);
 
 select has_column('public', 'studio_projects', 'organization_id',
   'studio projects support nullable organization ownership');
@@ -17,6 +17,16 @@ select ok(
 select ok(
   exists(select 1 from pg_policies where schemaname='public' and tablename='studio_projects' and policyname='studio_projects_select_tenant'),
   'tenant-aware project SELECT policy exists');
+
+select ok(
+  not exists(select 1 from pg_policies where schemaname='public' and tablename='studio_projects' and policyname='projects_select_owner_admin_or_member'),
+  'legacy permissive project SELECT policy is removed'
+);
+
+select ok(
+  not exists(select 1 from pg_policies where schemaname='public' and tablename='studio_assets' and policyname='assets_select_owner_admin_or_project_member'),
+  'legacy permissive asset SELECT policy is removed'
+);
 
 select ok(
   exists(select 1 from pg_policies where schemaname='public' and tablename='studio_projects' and policyname='studio_projects_insert_tenant'),

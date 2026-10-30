@@ -463,7 +463,7 @@ export default function App() {
     setBusy(true);
     try {
       if (mode === 'signup') {
-        const { data, error: authError } = await supabase.auth.signUp({ email: email.trim(), password });
+        const { data, error: authError } = await supabase.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: getClientRedirectUrl('/') } });
         if (authError) throw authError;
         setMessage(data.session ? 'Compte créé et connecté.' : 'Compte créé. Vérifiez votre boîte e-mail pour confirmer votre inscription.');
       } else {
