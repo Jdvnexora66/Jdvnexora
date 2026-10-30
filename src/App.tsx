@@ -759,7 +759,7 @@ export default function App() {
           {!activeProject && activeSection === 'discover' && <Discover userId={session.user.id} />}
           {!activeProject && activeSection === 'media' && <MediaLibrary userId={session.user.id} />}
 
-          {!activeProject && activeSection === 'timeline' && <Timeline />}
+          {!activeProject && activeSection === 'timeline' && <Timeline userId={session.user.id} />}
 
           {!activeProject && activeSection === 'insights' && <Insights />}
 
