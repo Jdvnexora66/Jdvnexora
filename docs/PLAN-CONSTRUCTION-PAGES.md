@@ -47,14 +47,14 @@ Les améliorations suivantes sont présentes dans les branches de travail, mais 
 
 Aucune des 17 pages ne doit être déclarée « validée en production » uniquement parce que son composant existe ou que le build passe. Les contrôles réels des comptes, des données, des rôles, du responsive et du déploiement doivent être exécutés avant clôture. Le tableau de bord référentiel reste inchangé.
 
-## État de livraison après les PR #120, #122 et #121 et le travail du PR #123
+## État de livraison après les PR #120, #122, #121 et #123
 
 | Nº | Page | Fonctions maintenant présentes dans le code | Reste avant clôture fonctionnelle |
 |---:|---|---|---|
 | 1 | Tableau de bord référentiel | Référence visuelle et navigation vers les modules | Contrôle de non-régression uniquement; aucune refonte prévue |
 | 2 | Studio IA | Historique, quota, génération, export, nouvelle conversation et contexte transmis par Insights | Test du fournisseur IA, du quota, des erreurs et de la persistance avec un compte de recette |
 | 3 | Mes projets | Création, recherche, filtres, édition des métadonnées et chapitres, sauvegarde et accès aux projets partagés | Vérifier les scénarios multi-comptes; l'édition collaborative avancée dépendra des permissions de la phase sécurité |
-| 4 | Studio Design | Brouillon, blocs, sources de données autorisées, versions, publication, aperçu réel et sélection directe d'un élément natif précis; styles et texte des éléments textuels simples | PR #123 ajoute l'édition par élément; attendre les contrôles CI et vérifier sauvegarde/publication/rechargement sur les 16 vues métier; les composants complexes avec enfants ne sont pas réécrits arbitrairement |
+| 4 | Studio Design | Brouillon, blocs, sources de données autorisées, versions, publication, aperçu réel et sélection directe d'un élément natif précis; styles et texte des éléments textuels simples | PR #123 fusionnée; Build NEXORA, CI, qualité Web, Android debug et iOS simulateur réussis; reste la recette visuelle page par page avec sauvegarde/publication/rechargement; les composants complexes avec enfants ne sont pas réécrits arbitrairement |
 | 5 | Entreprise et équipe | Organisations, membres, invitations et acceptation par fonctions serveur | Gestion complète des rôles, révocation et isolation stricte à finaliser dans la phase sécurité |
 | 6 | Profil et préférences | Modification du nom, de la langue et du fuseau horaire | Test de sauvegarde et de récupération sur compte de recette |
 | 7 | Administration | Gestion des rôles, cours, leçons et consultation des journaux autorisés | Tests des rôles et des actions serveur; les permissions restent dans le lot sécurité |
