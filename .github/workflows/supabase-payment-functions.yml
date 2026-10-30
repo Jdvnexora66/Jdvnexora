@@ -6,6 +6,7 @@ on:
       - "supabase/functions/create-course-payment-order/**"
       - "supabase/functions/create-subscription-payment-order/**"
       - "supabase/functions/verify-kkiapay-payment/**"
+      - "supabase/functions/kkiapay-webhook/**"
       - ".github/workflows/supabase-payment-functions.yml"
   push:
     branches: [main]
@@ -13,6 +14,7 @@ on:
       - "supabase/functions/create-course-payment-order/**"
       - "supabase/functions/create-subscription-payment-order/**"
       - "supabase/functions/verify-kkiapay-payment/**"
+      - "supabase/functions/kkiapay-webhook/**"
       - ".github/workflows/supabase-payment-functions.yml"
   workflow_dispatch:
 
@@ -42,3 +44,5 @@ jobs:
         run: deno check supabase/functions/create-subscription-payment-order/index.ts
       - name: Check KKIAPAY verification
         run: deno check supabase/functions/verify-kkiapay-payment/index.ts
+      - name: Check KKIAPAY webhook
+        run: deno check supabase/functions/kkiapay-webhook/index.ts
