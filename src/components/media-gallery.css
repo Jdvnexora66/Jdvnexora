@@ -188,13 +188,13 @@
   .media-library-panel .media-grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
 }
 @media (max-width: 760px) {
-  .media-library-panel .media-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important; gap: 9px 7px; }
+  .page-shell.brand-theme .workspace-main .media-library-panel .media-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important; gap: 9px 7px; }
   .media-library-panel .media-card { padding: 5px; }
   .media-viewer-backdrop { padding: 8px; }
   .media-viewer { width: 100%; max-height: 94vh; border-radius: 12px; }
   .media-viewer-stage { min-height: 190px; }
 }
 @media (max-width: 420px) {
-  .media-library-panel .media-grid { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+  .page-shell.brand-theme .workspace-main .media-library-panel .media-grid { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
   .media-library-panel .media-card-actions .media-remove-button { font-size: 7px; }
 }
