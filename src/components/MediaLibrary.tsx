@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Film, Headphones, Play, Plus, Search, Trash2, Youtube, Video, RefreshCw, Globe2, LockKeyhole, Link2, Unplug, ExternalLink } from 'lucide-react';
+import { Film, Headphones, Play, Plus, Search, Trash2, Youtube, Video, RefreshCw, Globe2, LockKeyhole, Link2, Unplug, ExternalLink, X, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ModuleDataOverview from './ModuleDataOverview';
 import './media-provider.css';
@@ -102,6 +102,7 @@ function mediaKindLabel(kind: MediaKind) {
 export default function MediaLibrary({ userId }: Props) {
   const oauthPopupRef = useRef<Window | null>(null);
   const [items, setItems] = useState<MediaItem[]>([]);
+  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const [query, setQuery] = useState('');
   const [sourceUrl, setSourceUrl] = useState('');
   const [title, setTitle] = useState('');
@@ -460,29 +461,52 @@ export default function MediaLibrary({ userId }: Props) {
       <div className="empty-icon"><Play size={24} /></div>
       <h3>{items.length ? 'Aucun média correspondant' : 'Votre vidéothèque est prête'}</h3>
       <p>{items.length ? 'Essayez un autre titre ou une autre plateforme.' : 'Ajoutez un lien public compatible. Les médias enregistrés seront conservés et disponibles après votre reconnexion.'}</p>
-    </div> : <div className="media-grid">
-      {filtered.map((item) => <article className="media-card" key={item.id}>
-        <div className={'media-player-wrap ' + (item.content_type === 'podcast' || item.content_type === 'audio' ? 'media-audio' : '')}>
-          {item.storage_path ? (item.playback_url ? (item.content_type === 'audio' || item.content_type === 'podcast'
-            ? <audio className="media-native-audio" controls preload="metadata" src={item.playback_url}>Votre navigateur ne prend pas en charge la lecture audio.</audio>
-            : <video className="media-native-video" controls playsInline preload="metadata" poster={item.thumbnail_url ?? undefined} src={item.playback_url}>Votre navigateur ne prend pas en charge la lecture vidéo.</video>)
+    </div> : <div className="media-grid" aria-label="Galerie des médias">
+      {filtered.map((item) => {
+        const youtubeId = item.embed_url.match(/youtube(?:-nocookie)?\.com\/embed\/([\w-]+)/)?.[1];
+        const thumbnail = item.thumbnail_url || (youtubeId ? 'https://img.youtube.com/vi/' + youtubeId + '/hqdefault.jpg' : null);
+        return <article className="media-card" key={item.id}>
+          <button type="button" className="media-thumb-button" onClick={() => setSelectedMedia(item)} aria-label={'Lire ' + item.title}>
+            <span className="media-thumb-frame">
+              {thumbnail ? <img className="media-thumb-image" src={thumbnail} alt="" loading="lazy" /> : <span className="media-thumb-placeholder"><Film size={25} /></span>}
+              <span className="media-thumb-play"><Play size={19} fill="currentColor" /></span>
+              <span className="media-thumb-platform">{platformIcon(item.platform)}</span>
+              {item.content_type === 'short' && <span className="media-thumb-kind">SHORT</span>}
+            </span>
+          </button>
+          <div className="media-card-details">
+            <div className="media-card-title"><span>{platformIcon(item.platform)}</span><h3 title={item.title}>{item.title}</h3></div>
+            {item.creator_name && <p className="media-creator-name">{item.creator_name}</p>}
+            <div className="media-card-meta"><span>{platformLabel(item.platform)}</span><span>{item.visibility === 'public' ? 'Public' : 'Privé'}</span></div>
+            {item.owner_id === userId && <div className="media-card-actions">
+              <button type="button" className="media-remove-button" onClick={() => void toggleVisibility(item)} disabled={busyId === item.id}>{item.visibility === 'public' ? <LockKeyhole size={13} /> : <Globe2 size={13} />}{item.visibility === 'public' ? 'Privé' : 'Partager'}</button>
+              <button type="button" className="media-remove-button" onClick={() => void removeMedia(item)} disabled={busyId === item.id}><Trash2 size={13} /> Retirer</button>
+            </div>}
+          </div>
+        </article>;
+      })}
+    </div>}
+
+    {selectedMedia && <div className="media-viewer-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedMedia(null); }}>
+      <section className="media-viewer" role="dialog" aria-modal="true" aria-label={'Lecture : ' + selectedMedia.title}>
+        <header className="media-viewer-header">
+          <div><strong>{selectedMedia.title}</strong><span>{selectedMedia.creator_name || platformLabel(selectedMedia.platform)}</span></div>
+          <button type="button" className="icon-button" onClick={() => setSelectedMedia(null)} aria-label="Fermer le lecteur"><X size={18} /></button>
+        </header>
+        <div className="media-viewer-stage">
+          {selectedMedia.storage_path ? (selectedMedia.playback_url ? (selectedMedia.content_type === 'audio' || selectedMedia.content_type === 'podcast'
+            ? <audio className="media-native-audio" controls autoPlay src={selectedMedia.playback_url}>Votre navigateur ne prend pas en charge la lecture audio.</audio>
+            : <video className="media-native-video" controls autoPlay playsInline preload="metadata" poster={selectedMedia.thumbnail_url ?? undefined} src={selectedMedia.playback_url}>Votre navigateur ne prend pas en charge la lecture vidéo.</video>)
             : <p className="media-playback-error">Le fichier n’est pas accessible. Actualisez la vidéothèque.</p>)
-            : item.platform === 'other' ? <div className="media-external-link"><ExternalLink size={28} /><p>Ce contenu est hébergé sur Higgsfield.</p><a href={item.source_url} target="_blank" rel="noopener noreferrer">Ouvrir le projet sur Higgsfield</a></div>
-            : <iframe src={item.embed_url} title={item.title} loading="lazy"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />}
+            : selectedMedia.platform === 'other' ? <div className="media-external-link"><ExternalLink size={28} /><p>Ce contenu est hébergé sur une plateforme externe.</p><a href={selectedMedia.source_url} target="_blank" rel="noopener noreferrer">Ouvrir le projet</a></div>
+            : <iframe src={selectedMedia.embed_url} title={selectedMedia.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />}
         </div>
-        <div className="media-card-details">
-          <div className="media-card-title"><span>{platformIcon(item.platform)}</span><h3>{item.title}</h3></div>
-          {item.creator_name && <p className="media-creator-name">{item.creator_name}</p>}
-          {item.description && <p className="media-description">{item.description}</p>}
-          <div className="media-card-meta"><span>{platformLabel(item.platform)}</span><span>{mediaKindLabel(item.content_type)}</span><span>{item.visibility === 'public' ? 'Public' : 'Privé'}</span></div>
-          {item.owner_id === userId && <div className="media-card-actions">
-            <button type="button" className="media-remove-button" onClick={() => void toggleVisibility(item)} disabled={busyId === item.id}>{item.visibility === 'public' ? <LockKeyhole size={14} /> : <Globe2 size={14} />}{item.visibility === 'public' ? 'Rendre privé' : 'Partager au public'}</button>
-            <button type="button" className="media-remove-button" onClick={() => void removeMedia(item)} disabled={busyId === item.id}><Trash2 size={14} /> Retirer</button>
-          </div>}
-        </div>
-      </article>)}
+        <footer className="media-viewer-footer">
+          <span>{platformLabel(selectedMedia.platform)} · {mediaKindLabel(selectedMedia.content_type)}</span>
+          {selectedMedia.storage_path && selectedMedia.playback_url && <a className="primary-button media-download-button" href={selectedMedia.playback_url} download><Download size={15} /> Télécharger mon fichier</a>}
+          {!selectedMedia.storage_path && <span className="media-download-note">Téléchargement soumis aux options et aux droits de la plateforme d’origine.</span>}
+        </footer>
+      </section>
     </div>}
 
     <p className="workspace-footnote">La bibliothèque est persistante dans Supabase. Les fichiers dont vous détenez les droits peuvent être hébergés et lus directement dans NEXORA ; les autres plateformes utilisent leur lecteur officiel. La synchronisation automatique de comptes YouTube, TikTok et Instagram nécessite encore les identifiants API/OAuth, les autorisations de chaque plateforme et la validation de leurs applications. Les contenus privés ou non intégrables resteront indisponibles sans autorisation explicite.</p>
