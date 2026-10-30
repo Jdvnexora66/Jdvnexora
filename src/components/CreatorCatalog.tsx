@@ -94,6 +94,6 @@ export default function CreatorCatalog() {
         <div className="creator-channel-actions"><a href={channel.channel_url} target="_blank" rel="noreferrer"><ExternalLink size={14} /> Ouvrir</a><button type="button" className="media-remove-button" onClick={() => void sync(channel)} disabled={busy !== null}><RefreshCw size={14} /> {busy === channel.id ? 'Synchronisation…' : 'Synchroniser'}</button><button type="button" className="media-remove-button" onClick={() => void remove(channel)} disabled={busy !== null}><Trash2 size={14} /> Retirer</button></div>
       </article>)}
     </div>}
-    <p className="workspace-footnote">La synchronisation utilise le flux public YouTube, sans demander au créateur de connecter son compte. Les publications récentes exposées par ce flux sont importées dans votre vidéothèque privée. La synchronisation manuelle est disponible à tout moment. Une synchronisation automatique toutes les six heures nécessite une tâche planifiée Supabase active ; son activation doit être vérifiée dans le projet déployé.</p>
+    <p className="workspace-footnote">La synchronisation utilise les sources publiques YouTube disponibles, sans demander au créateur de connecter son compte. Les vidéos importées restent dans votre vidéothèque privée. La synchronisation manuelle est disponible à tout moment ; une tâche planifiée du projet relance également la synchronisation toutes les six heures. En cas d’indisponibilité temporaire d’un flux public, réessayez plus tard.</p>
   </section>;
 }
