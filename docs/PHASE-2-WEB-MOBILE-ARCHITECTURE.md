@@ -48,6 +48,7 @@ JDV NEXORA
 - Identifiant d'application natif : `com.jdvglobalcenter.nexora`.
 - Sortie web native configurée sur `dist`.
 - L'application native ouvre directement l'interface d'authentification NEXORA; la vitrine publique reste l'entrée par défaut du Web.
+- Les sessions Supabase natives utilisent `@aparajita/capacitor-secure-storage` : Keychain iOS et Android Keystore/AES-GCM; le navigateur Web conserve le stockage Auth standard du navigateur. Un marqueur non sensible efface les anciens secrets Keychain lors d'une réinstallation iOS.
 - PWA : enregistrement du service worker en production, manifeste enrichi, cache prudent de la coque et écran hors connexion.
 - Viewport iOS configuré avec `viewport-fit=cover`.
 - CSS adapté aux zones de sécurité iOS, à la navigation tactile, aux orientations paysage courtes et aux tablettes de 761 à 1024 px.
@@ -89,7 +90,7 @@ PWA, configuration Capacitor, compatibilité responsive, zones de sécurité, co
 Optimiser chaque page pour le tactile : Studio IA, projets, vidéothèque, catalogue créateurs, bibliothèque, Académie, collaboration, organisation, facturation et administration. Prévoir des états de chargement, d'erreur et de connexion faible.
 
 ### Lot 3 — fonctions natives
-Brancher progressivement caméra, sélecteur de fichiers, partage natif, notifications push et liens profonds, uniquement avec permissions explicites et plugins maintenus.
+Finaliser les liens profonds pour la récupération de compte et les retours OAuth (les liens de réinitialisation et d'invitation utilisent déjà le domaine Web depuis l'application native). Brancher progressivement caméra, sélecteur de fichiers, partage natif, notifications push et liens profonds, uniquement avec permissions explicites et plugins maintenus.
 
 ### Lot 4 — validation appareils
 Tester Android petit écran, Android grand écran, iPhone compact, iPhone grand écran, iPad portrait/paysage et tablette Android. Contrôler connexion, session restaurée, navigation, upload, lecture, téléchargement autorisé, reprise après perte réseau et déconnexion.
@@ -100,6 +101,7 @@ Produire APK/AAB Android, archive iOS signée, fiches Play Store / App Store, po
 ## Critères de validation avant publication
 
 - Le même utilisateur se connecte sur Web, Android et iOS.
+- Les jetons de session natifs sont stockés dans le coffre-fort du système; aucune session n'est enregistrée en clair dans le stockage WebView natif.
 - Un projet créé sur Web apparaît sur mobile et inversement.
 - RLS bloque toute lecture/écriture inter-utilisateurs non autorisée.
 - Aucun secret serveur dans les bundles Web ou mobiles.
