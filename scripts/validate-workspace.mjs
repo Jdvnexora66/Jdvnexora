@@ -126,6 +126,7 @@ for (const [page, [source, tokens]] of Object.entries(pageSourceContracts)) {
 assert.ok(referenceDashboard.includes('projectCount') && referenceDashboard.includes('onOpenStudio'), 'Le tableau de bord référentiel doit exposer ses données et raccourcis métier.');
 for (const token of [
   "supabase.auth.signUp",
+  "emailRedirectTo: getClientRedirectUrl('/')",
   "supabase.auth.signInWithPassword",
   "supabase.auth.resetPasswordForEmail",
   "event === 'PASSWORD_RECOVERY'",
