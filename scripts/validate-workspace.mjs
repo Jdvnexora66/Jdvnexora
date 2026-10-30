@@ -119,4 +119,7 @@ for (const token of ['add column if not exists amount_minor', 'add column if not
   assert.ok(subscriptionSnapshotMigration.includes(token), `Migration d’instantané incomplète : ${token}.`);
 }
 
-console.log('NEXORA checks passed: 16 routes authentifiées + vitrine, Studio Design natif, paiements serveur et instantané immuable des commandes d’abonnement.');
+for (const token of ['amount_minor,currency,billing_interval,plan:plans', 'subscription.amount_minor === 0', 'price_minor: subscription.amount_minor']) {
+  assert.ok(billing.includes(token), `La facturation doit afficher le prix figé de l’abonnement : ${token}.`);
+}
+console.log('NEXORA checks passed: 16 routes authentifiées + vitrine, Studio Design natif, paiements serveur et prix d’abonnement figé.');
