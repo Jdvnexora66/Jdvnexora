@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BookOpen, CheckCircle2, Circle, LoaderCircle, RefreshCw, Sparkles, GraduationCap, Clock3 } from 'lucide-react';
+import { BookOpen, CheckCircle2, Circle, LoaderCircle, RefreshCw, Sparkles, GraduationCap, Clock3, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ModuleDataOverview from './ModuleDataOverview';
 
@@ -24,6 +24,8 @@ export default function Academy({ userId }: { userId:string }) {
   const [saving,setSaving]=useState('');
   const [error,setError]=useState('');
   const [message,setMessage]=useState('');
+  const [courseSearch,setCourseSearch]=useState('');
+  const [courseFilter,setCourseFilter]=useState<'all'|'free'|'paid'|'enrolled'>('all');
 
   const load=useCallback(async()=>{
     if(!supabase){setLoading(false);setError('Supabase n’est pas configuré.');return;}
@@ -53,6 +55,13 @@ export default function Academy({ userId }: { userId:string }) {
     }
   },[userId]);
   useEffect(()=>{void load();},[load]);
+
+  const filteredCourses = courses.filter(course => {
+    const text = (course.title + ' ' + course.short_description + ' ' + course.description + ' ' + (course.instructor_name ?? '')).toLocaleLowerCase('fr');
+    const matchesSearch = text.includes(courseSearch.trim().toLocaleLowerCase('fr'));
+    const matchesFilter = courseFilter === 'all' || (courseFilter === 'free' && (course.is_free || Number(course.price_xof) === 0)) || (courseFilter === 'paid' && !course.is_free && Number(course.price_xof) > 0) || (courseFilter === 'enrolled' && enrolledCourseIds.includes(course.id));
+    return matchesSearch && matchesFilter;
+  });
 
   async function enrollFreeCourse(course:CourseRow){
     if(!supabase)return;
@@ -94,9 +103,13 @@ export default function Academy({ userId }: { userId:string }) {
     {loading?<p className="empty-state">Chargement du programme…</p>:<>
       <section aria-labelledby="paid-courses-heading" className="academy-courses-section">
         <div className="section-heading"><div><h3 id="paid-courses-heading"><GraduationCap size={19}/> Formations et cours</h3><p className="muted">Chaque formation possède son propre prix. Les montants sont définis formation par formation.</p></div></div>
-        {courses.length===0?<p className="empty-state">Aucune formation publiée pour le moment. Les formations ajoutées et publiées par l’équipe apparaîtront ici avec leur tarif.</p>:
+        <div className="academy-course-filters">
+          <label className="search-field"><Search size={16}/><input value={courseSearch} onChange={e=>setCourseSearch(e.target.value)} placeholder="Rechercher une formation, un formateur…" aria-label="Rechercher une formation"/></label>
+          <select value={courseFilter} onChange={e=>setCourseFilter(e.target.value as typeof courseFilter)} aria-label="Filtrer les formations"><option value="all">Toutes les formations</option><option value="free">Gratuites</option><option value="paid">Payantes</option><option value="enrolled">Mes inscriptions</option></select>
+        </div>
+        {filteredCourses.length===0?<p className="empty-state">{courses.length===0?'Aucune formation publiée pour le moment. Les formations ajoutées et publiées par l’équipe apparaîtront ici avec leur tarif.':'Aucune formation ne correspond à votre recherche ou à ce filtre.'}</p>:
           <div className="feature-list academy-course-grid">
-            {courses.map(course=><article key={course.id} className="project-item academy-course-card">
+            {filteredCourses.map(course=><article key={course.id} className="project-item academy-course-card">
               {course.cover_image_url&&<img src={course.cover_image_url} alt="" loading="lazy" className="academy-course-cover"/>}
               <div className="project-info"><p className="eyebrow">{course.level}</p><h3>{course.title}</h3><p>{course.short_description||course.description}</p>
                 {course.instructor_name&&<small>Formateur : {course.instructor_name}</small>}

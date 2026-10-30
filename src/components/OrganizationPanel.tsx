@@ -4,10 +4,12 @@ import { getClientRedirectUrl, supabase } from '../lib/supabase';
 import ModuleDataOverview from './ModuleDataOverview';
 
 type Organization = { id: string; name: string; slug: string; status: string; created_at: string };
+type OrganizationMember = { id: string; user_id: string; role: string; status: string; joined_at: string };
 type InvitationResult = { invitation?: { id?: string; email: string; role: string; expires_at: string }; token?: string; invitation_url?: string | null; delivery?: string; message?: string };
 
 export default function OrganizationPanel({ userId, activeOrganizationId, onActiveOrganizationChange }: { userId: string; activeOrganizationId: string; onActiveOrganizationChange: (organizationId: string) => void }) {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [organizationName, setOrganizationName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('member');
@@ -36,6 +38,20 @@ export default function OrganizationPanel({ userId, activeOrganizationId, onActi
   }
 
   useEffect(() => { void loadOrganizations(); }, [userId]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadMembers() {
+      if (!supabase || !activeOrganizationId) { setMembers([]); return; }
+      const { data, error: membersError } = await supabase.from('organization_members')
+        .select('id,user_id,role,status,joined_at').eq('organization_id', activeOrganizationId).order('joined_at', { ascending: true });
+      if (!active) return;
+      if (membersError) { setMembers([]); setError('Impossible de charger les membres de cette organisation.'); return; }
+      setMembers((data ?? []) as OrganizationMember[]);
+    }
+    void loadMembers();
+    return () => { active = false; };
+  }, [activeOrganizationId]);
 
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get('token');
@@ -122,10 +138,19 @@ export default function OrganizationPanel({ userId, activeOrganizationId, onActi
       <input id="invite-email" type="email" autoComplete="off" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="collaborateur@exemple.com" required />
       <label htmlFor="invite-role">Rôle à attribuer</label>
       <select id="invite-role" value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
-        <option value="admin">Administrateur (réservé au propriétaire)</option><option value="manager">Gestionnaire</option><option value="member">Membre</option><option value="viewer">Lecteur</option>
+        <option value="manager">Gestionnaire</option><option value="member">Membre</option><option value="viewer">Lecteur</option>
       </select>
       <button className="primary-button" type="submit" disabled={busy || !activeOrganizationId || !inviteEmail.trim()}><UserPlus size={16} /> {busy ? 'Traitement…' : 'Créer une invitation'}</button>
     </form>
+    {activeOrganizationId && <div className="admin-section organization-members-section">
+      <div className="section-heading"><div><h3>Équipe de l’organisation</h3><p className="muted">Membres ayant accepté leur invitation et rôle attribué.</p></div><span className="status-badge">{members.length} membre{members.length>1?'s':''}</span></div>
+      {members.length===0 ? <p className="empty-state">Aucun membre actif n’est encore enregistré dans cet espace.</p> : <div className="project-list">{members.map(member=><article className="project-item" key={member.id}>
+        <div className="project-type-icon"><UserPlus size={17}/></div>
+        <div className="project-info"><h4>{member.user_id===userId?'Vous': 'Membre de l’organisation'}</h4><p className="organization-member-id">{member.user_id}</p><small>Rejoint le {new Date(member.joined_at).toLocaleDateString('fr-FR')}</small></div>
+        <span className={member.role==='owner'||member.role==='admin'?'status-badge status-completed':'status-badge'}>{member.role==='owner'?'Propriétaire':member.role==='admin'?'Administrateur':member.role==='manager'?'Gestionnaire':member.role==='viewer'?'Lecteur':'Membre'}</span>
+        <span className="status-badge">{member.status==='active'?'Actif':member.status}</span>
+      </article>)}</div>}
+    </div>}
     {invitationUrl && <div className="feedback success organization-invitation-result"><p><strong>Lien d’invitation (valable 7 jours)</strong></p><input aria-label="Lien d’invitation" readOnly value={invitationUrl} onFocus={e => e.currentTarget.select()} /><button className="logout-button" type="button" onClick={() => void copyInvitation()}><Copy size={15} /> Copier le lien</button></div>}
     {error && <p className="feedback error" role="alert">{error}</p>}
     {message && <p className="feedback success" role="status"><ShieldCheck size={15} /> {message}</p>}
