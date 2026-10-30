@@ -181,47 +181,74 @@ export default function Discover({ userId }: Props) {
     event.preventDefault();
     if (!supabase || !userId || !name.trim()) return;
     const normalizedSocialUrl = safeExternalUrl(socialUrl.trim());
-    if (socialUrl.trim() && !normalizedSocialUrl) {
-      setError('Le lien du réseau social doit être une URL HTTP ou HTTPS valide.');
-      return;
-    }
-    setSaving(true); setError(''); setMessage('');
+    const normalizedWebsite = safeExternalUrl(website.trim());
+    if (socialUrl.trim() && !normalizedSocialUrl) { setError('Le lien du réseau social doit être une URL HTTP ou HTTPS valide.'); return; }
+    if (website.trim() && !normalizedWebsite) { setError('Le site web doit être une URL HTTP ou HTTPS valide.'); return; }
+    setSaving(true);setError('');setMessage('');
+    const warnings:string[]=[];
     try {
-      const slug = name.trim().toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Math.random().toString(36).slice(2, 7);
-      const { data: createdProfile, error: insertError } = await supabase.from('entrepreneurs').insert({
-        name: name.trim(), slug, summary: summary.trim() || null,
-        country: newCountry.trim() || null, industry: newIndustry.trim() || null,
-        website_url: website.trim() || null, created_by: userId, visibility: 'public',
-      }).select('id,name,website_url').single();
-      if (insertError || !createdProfile) {
-        setError(insertError?.message.includes('entrepreneurs') ? 'La table Discover n’est pas encore disponible. Appliquez la migration Supabase.' : insertError?.message || 'Le profil n’a pas pu être créé.');
-        return;
+      if(editingProfileId) {
+        const {error:updateError}=await supabase.from('entrepreneurs').update({
+          name:name.trim(),summary:summary.trim()||null,country:newCountry.trim()||null,
+          industry:newIndustry.trim()||null,website_url:normalizedWebsite,
+        }).eq('id',editingProfileId).eq('created_by',userId);
+        if(updateError){setError('Impossible de modifier ce profil. Vérifiez vos droits puis réessayez.');return;}
+        const currentSources=sourcesByProfile[editingProfileId]??[];
+        const websiteSource=currentSources.find(source=>source.source_type==='website');
+        if(normalizedWebsite&&websiteSource) {
+          const {error:sourceError}=await supabase.from('content_sources').update({
+            title:name.trim()+' — site de référence',source_url:normalizedWebsite,publisher:name.trim(),
+            credibility_note:'Lien mis à jour par le propriétaire du profil. Vérifier les faits et la date de consultation avant validation.',
+          }).eq('id',websiteSource.id);
+          if(sourceError)warnings.push('La source du site n’a pas pu être mise à jour.');
+        } else if(normalizedWebsite&&!websiteSource) {
+          const {error:sourceError}=await supabase.from('content_sources').insert({
+            entrepreneur_id:editingProfileId,title:name.trim()+' — site de référence',source_url:normalizedWebsite,
+            source_type:'website',publisher:name.trim(),created_by:userId,
+            credibility_note:'Lien ajouté par le propriétaire du profil. Vérifier les faits avant validation.',
+          });
+          if(sourceError)warnings.push('La source du site n’a pas pu être créée.');
+        }
+        const currentSocial=(socialsByProfile[editingProfileId]??[])[0];
+        if(normalizedSocialUrl&&currentSocial) {
+          const {error:socialError}=await supabase.from('social_accounts').update({
+            platform:socialPlatform,profile_url:normalizedSocialUrl,is_official:false,
+          }).eq('id',currentSocial.id);
+          if(socialError)warnings.push('Le lien social n’a pas pu être mis à jour.');
+        } else if(normalizedSocialUrl&&!currentSocial) {
+          const {error:socialError}=await supabase.from('social_accounts').insert({
+            entrepreneur_id:editingProfileId,platform:socialPlatform,profile_url:normalizedSocialUrl,is_official:false,
+          });
+          if(socialError)warnings.push('Le lien social n’a pas pu être créé.');
+        }
+        setMessage('Profil mis à jour. Les sources restent à vérifier.'+(warnings.length?' '+warnings.join(' '):''));
+      } else {
+        const slug=name.trim().toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'-'+Math.random().toString(36).slice(2,7);
+        const {data:createdProfile,error:insertError}=await supabase.from('entrepreneurs').insert({
+          name:name.trim(),slug,summary:summary.trim()||null,country:newCountry.trim()||null,
+          industry:newIndustry.trim()||null,website_url:normalizedWebsite,created_by:userId,visibility:'public',
+        }).select('id,name,website_url').single();
+        if(insertError||!createdProfile){setError(insertError?.message.includes('entrepreneurs')?'La table Discover n’est pas encore disponible. Appliquez la migration Supabase.':insertError?.message||'Le profil n’a pas pu être créé.');return;}
+        if(createdProfile.website_url) {
+          const {error:sourceError}=await supabase.from('content_sources').insert({
+            entrepreneur_id:createdProfile.id,title:createdProfile.name+' — site de référence',
+            source_url:createdProfile.website_url,source_type:'website',publisher:createdProfile.name,
+            credibility_note:'Lien ajouté lors de la création du profil. Vérifier les faits et la date de consultation avant validation.',created_by:userId,
+          });
+          if(sourceError)warnings.push('Le site officiel n’a pas pu être enregistré comme source.');
+        }
+        if(normalizedSocialUrl) {
+          const {error:socialError}=await supabase.from('social_accounts').insert({
+            entrepreneur_id:createdProfile.id,platform:socialPlatform,profile_url:normalizedSocialUrl,is_official:false,
+          });
+          if(socialError)warnings.push('Le lien social n’a pas pu être enregistré.');
+        }
+        setMessage('Créateur ajouté. Le profil et ses liens restent à vérifier.'+(warnings.length?' '+warnings.join(' '):''));
       }
-
-      const warnings: string[] = [];
-      if (createdProfile.website_url) {
-        const { error: sourceError } = await supabase.from('content_sources').insert({
-          entrepreneur_id: createdProfile.id, title: createdProfile.name + ' — site de référence',
-          source_url: createdProfile.website_url, source_type: 'website', publisher: createdProfile.name,
-          credibility_note: 'Lien ajouté lors de la création du profil. Vérifier les faits et la date de consultation avant validation.', created_by: userId,
-        });
-        if (sourceError) warnings.push('Le site officiel n’a pas pu être enregistré comme source.');
-      }
-      if (normalizedSocialUrl) {
-        const { error: socialError } = await supabase.from('social_accounts').insert({
-          entrepreneur_id: createdProfile.id, platform: socialPlatform,
-          profile_url: normalizedSocialUrl, is_official: false,
-        });
-        if (socialError) warnings.push('Le lien social n’a pas pu être enregistré.');
-      }
-
-      setName(''); setSummary(''); setWebsite(''); setNewCountry(''); setNewIndustry('');
-      setSocialUrl(''); setSocialPlatform('youtube'); setShowForm(false);
-      const category = baskets.find(basket => basket.id === formBasket)?.title || 'le catalogue';
-      setMessage('Créateur ajouté au panier « ' + category + ' ». Le profil et ses liens restent à vérifier.' + (warnings.length ? ' ' + warnings.join(' ') : ''));
+      closeProfileForm();
       await load();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Impossible de créer ce profil.');
+    } catch(cause) {
+      setError(cause instanceof Error?cause.message:'Impossible d’enregistrer ce profil.');
     } finally {
       setSaving(false);
     }
