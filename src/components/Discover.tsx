@@ -169,10 +169,10 @@ export default function Discover({ userId }: Props) {
   async function setProfileVisibility(item:Entrepreneur, visibility:'public'|'private') {
     if(!supabase||item.created_by!==userId||saving)return;
     setSaving(true);setError('');setMessage('');
-    const {error:updateError}=await supabase.from('entrepreneurs').update({visibility})
-      .eq('id',item.id).eq('created_by',userId);
+    const {data:updated,error:updateError}=await supabase.from('entrepreneurs').update({visibility})
+      .eq('id',item.id).eq('created_by',userId).select('id').maybeSingle();
     setSaving(false);
-    if(updateError){setError('Impossible de modifier la visibilité de ce profil. Vérifiez vos droits puis réessayez.');return;}
+    if(updateError||!updated){setError('Impossible de modifier la visibilité de ce profil. Vérifiez vos droits puis réessayez.');return;}
     setItems(current=>current.map(row=>row.id===item.id?{...row,visibility}:row));
     setMessage(visibility==='public'?'Profil rendu public.':'Profil retiré du catalogue public.');
   }
@@ -188,11 +188,11 @@ export default function Discover({ userId }: Props) {
     const warnings:string[]=[];
     try {
       if(editingProfileId) {
-        const {error:updateError}=await supabase.from('entrepreneurs').update({
+        const {data:updatedProfile,error:updateError}=await supabase.from('entrepreneurs').update({
           name:name.trim(),summary:summary.trim()||null,country:newCountry.trim()||null,
           industry:newIndustry.trim()||null,website_url:normalizedWebsite,
-        }).eq('id',editingProfileId).eq('created_by',userId);
-        if(updateError){setError('Impossible de modifier ce profil. Vérifiez vos droits puis réessayez.');return;}
+        }).eq('id',editingProfileId).eq('created_by',userId).select('id').maybeSingle();
+        if(updateError||!updatedProfile){setError('Impossible de modifier ce profil. Vérifiez vos droits puis réessayez.');return;}
         const currentSources=sourcesByProfile[editingProfileId]??[];
         const websiteSource=currentSources.find(source=>source.source_type==='website');
         if(!normalizedWebsite&&websiteSource) {
