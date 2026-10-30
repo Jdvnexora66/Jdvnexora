@@ -37,6 +37,8 @@ export default function Discover({ userId }: Props) {
   const [name, setName] = useState('');
   const [summary, setSummary] = useState('');
   const [website, setWebsite] = useState('');
+  const [socialPlatform, setSocialPlatform] = useState<'youtube' | 'instagram' | 'tiktok' | 'linkedin' | 'facebook' | 'x' | 'other'>('youtube');
+  const [socialUrl, setSocialUrl] = useState('');
   const [newCountry, setNewCountry] = useState('');
   const [newIndustry, setNewIndustry] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -148,27 +150,52 @@ export default function Discover({ userId }: Props) {
   }
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!supabase) return;
-    if (!name.trim()) return;
-    setSaving(true); setError(''); setMessage('');
-    const slug = name.trim().toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Math.random().toString(36).slice(2, 7);
-    const { data: createdProfile, error: insertError } = await supabase.from('entrepreneurs').insert({
-      name: name.trim(), slug, summary: summary.trim() || null,
-      country: newCountry.trim() || null, industry: newIndustry.trim() || null,
-      website_url: website.trim() || null, created_by: userId, visibility: 'public',
-    }).select('id,name,website_url').single();
-    setSaving(false);
-    if (insertError) { setError(insertError.message.includes('entrepreneurs') ? 'La table Discover n’est pas encore disponible. Appliquez la migration Supabase.' : insertError.message); return; }
-    if (createdProfile?.website_url) {
-      const { error: sourceError } = await supabase.from('content_sources').insert({
-        entrepreneur_id: createdProfile.id, title: createdProfile.name + ' — site de référence',
-        source_url: createdProfile.website_url, source_type: 'website', publisher: createdProfile.name,
-        credibility_note: 'Lien ajouté lors de la création du profil. Vérifier les faits et la date de consultation avant validation.', created_by: userId,
-      });
-      if (sourceError) setMessage('Profil ajouté. Le lien officiel n’a pas pu être enregistré comme source : ' + sourceError.message);
+    if (!supabase || !userId || !name.trim()) return;
+    const normalizedSocialUrl = safeExternalUrl(socialUrl.trim());
+    if (socialUrl.trim() && !normalizedSocialUrl) {
+      setError('Le lien du réseau social doit être une URL HTTP ou HTTPS valide.');
+      return;
     }
-    setName(''); setSummary(''); setWebsite(''); setNewCountry(''); setNewIndustry(''); setShowForm(false);
-    setMessage('Créateur ajouté au panier « ' + baskets.find(basket => basket.id === formBasket)?.title + ' ». Le profil reste à vérifier.'); await load();
+    setSaving(true); setError(''); setMessage('');
+    try {
+      const slug = name.trim().toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Math.random().toString(36).slice(2, 7);
+      const { data: createdProfile, error: insertError } = await supabase.from('entrepreneurs').insert({
+        name: name.trim(), slug, summary: summary.trim() || null,
+        country: newCountry.trim() || null, industry: newIndustry.trim() || null,
+        website_url: website.trim() || null, created_by: userId, visibility: 'public',
+      }).select('id,name,website_url').single();
+      if (insertError || !createdProfile) {
+        setError(insertError?.message.includes('entrepreneurs') ? 'La table Discover n’est pas encore disponible. Appliquez la migration Supabase.' : insertError?.message || 'Le profil n’a pas pu être créé.');
+        return;
+      }
+
+      const warnings: string[] = [];
+      if (createdProfile.website_url) {
+        const { error: sourceError } = await supabase.from('content_sources').insert({
+          entrepreneur_id: createdProfile.id, title: createdProfile.name + ' — site de référence',
+          source_url: createdProfile.website_url, source_type: 'website', publisher: createdProfile.name,
+          credibility_note: 'Lien ajouté lors de la création du profil. Vérifier les faits et la date de consultation avant validation.', created_by: userId,
+        });
+        if (sourceError) warnings.push('Le site officiel n’a pas pu être enregistré comme source.');
+      }
+      if (normalizedSocialUrl) {
+        const { error: socialError } = await supabase.from('social_accounts').insert({
+          entrepreneur_id: createdProfile.id, platform: socialPlatform,
+          profile_url: normalizedSocialUrl, is_official: false,
+        });
+        if (socialError) warnings.push('Le lien social n’a pas pu être enregistré.');
+      }
+
+      setName(''); setSummary(''); setWebsite(''); setNewCountry(''); setNewIndustry('');
+      setSocialUrl(''); setSocialPlatform('youtube'); setShowForm(false);
+      const category = baskets.find(basket => basket.id === formBasket)?.title || 'le catalogue';
+      setMessage('Créateur ajouté au panier « ' + category + ' ». Le profil et ses liens restent à vérifier.' + (warnings.length ? ' ' + warnings.join(' ') : ''));
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible de créer ce profil.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return <section id="discover" className="project-panel discover-panel">
@@ -189,6 +216,8 @@ export default function Discover({ userId }: Props) {
         <label>Pays<input value={newCountry} onChange={e => setNewCountry(e.target.value)} maxLength={100} placeholder="Ex. Bénin"/></label>
         <label>Panier<select value={formBasket} onChange={e => { const id = e.target.value as 'content' | 'saas' | 'digital'; setFormBasket(id); setNewIndustry(({ content: 'Création de contenu', saas: 'SaaS · Technologie', digital: 'Produits numériques' })[id]); }}><option value="content">Créateurs de contenu</option><option value="saas">Créateurs de SaaS et startups</option><option value="digital">Produits numériques</option></select></label><label>Secteur / spécialité<input value={newIndustry} onChange={e => setNewIndustry(e.target.value)} maxLength={120} required placeholder="Ex. SaaS · Éducation"/></label>
         <label>Site officiel<input type="url" value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://…" /></label>
+        <label>Réseau principal<select value={socialPlatform} onChange={e => setSocialPlatform(e.target.value as typeof socialPlatform)}><option value="youtube">YouTube</option><option value="instagram">Instagram</option><option value="tiktok">TikTok</option><option value="linkedin">LinkedIn</option><option value="facebook">Facebook</option><option value="x">X</option><option value="other">Autre</option></select></label>
+        <label>URL du profil social<input type="url" value={socialUrl} onChange={e => setSocialUrl(e.target.value)} placeholder="https://…" /></label>
         <label className="discover-summary-field">Résumé<textarea value={summary} onChange={e => setSummary(e.target.value)} maxLength={1200} rows={3} placeholder="Résumé factuel, à vérifier avec des sources."/></label>
       </div>
       <div className="discover-form-actions"><button type="button" className="logout-button" onClick={() => setShowForm(false)}>Annuler</button><button type="submit" className="primary-button" disabled={saving || !name.trim()}>{saving ? 'Enregistrement…' : 'Enregistrer le profil'}</button></div>
