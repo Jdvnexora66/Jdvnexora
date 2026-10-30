@@ -122,6 +122,15 @@ export default function MediaLibrary({ userId }: Props) {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadingFile, setUploadingFile] = useState(false);
 
+  useEffect(() => {
+    if (!selectedMedia) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelectedMedia(null);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [selectedMedia]);
+
   const load = useCallback(async () => {
     if (!supabase) {
       setError('Supabase n’est pas configuré. La vidéothèque ne peut pas enregistrer les médias.');
@@ -373,6 +382,24 @@ export default function MediaLibrary({ userId }: Props) {
     }
   }
 
+  async function downloadMedia(item: MediaItem) {
+    if (!supabase || !item.storage_path || item.owner_id !== userId) return;
+    setBusyId(item.id);
+    setError('');
+    try {
+      const { data, error: downloadError } = await supabase.storage
+        .from('nexora-media')
+        .createSignedUrl(item.storage_path, 60, { download: true });
+      if (downloadError) throw downloadError;
+      if (!data?.signedUrl) throw new Error('Le lien de téléchargement n’a pas pu être créé.');
+      window.location.assign(data.signedUrl);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible de télécharger ce fichier.');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function toggleVisibility(item: MediaItem) {
     if (!supabase || item.owner_id !== userId) return;
     const nextVisibility: Visibility = item.visibility === 'public' ? 'private' : 'public';
@@ -504,8 +531,9 @@ export default function MediaLibrary({ userId }: Props) {
         </div>
         <footer className="media-viewer-footer">
           <span>{platformLabel(selectedMedia.platform)} · {mediaKindLabel(selectedMedia.content_type)}</span>
-          {selectedMedia.storage_path && selectedMedia.playback_url && <a className="primary-button media-download-button" href={selectedMedia.playback_url} download><Download size={15} /> Télécharger mon fichier</a>}
+          {selectedMedia.storage_path && selectedMedia.owner_id === userId && <button type="button" className="primary-button media-download-button" onClick={() => void downloadMedia(selectedMedia)} disabled={busyId === selectedMedia.id}><Download size={15} /> {busyId === selectedMedia.id ? 'Préparation…' : 'Télécharger mon fichier'}</button>}
           {!selectedMedia.storage_path && <span className="media-download-note">Téléchargement soumis aux options et aux droits de la plateforme d’origine.</span>}
+          {selectedMedia.storage_path && selectedMedia.owner_id !== userId && <span className="media-download-note">Téléchargement réservé au propriétaire du fichier.</span>}
         </footer>
       </section>
     </div>}
