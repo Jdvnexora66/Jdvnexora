@@ -139,7 +139,7 @@ export default function Academy({ userId }: { userId:string }) {
         position: 'center',
         theme: '#D6B66E',
         sandbox: data.provider_mode === 'sandbox',
-        paymentmethod: 'momo',
+        paymentmethod: ['momo','card'],
         countries: ['BJ'],
         partnerId: `nexora-course-${data.order_id}`,
         data: JSON.stringify({ course_order_id: data.order_id, course_id: course.id }),
