@@ -41,6 +41,12 @@ Deno.serve(async (req: Request) => {
     .eq("id", body.plan_id).maybeSingle();
   if (planError || !plan) return reply(404, { error: "Forfait introuvable." });
   if (!plan.active) return reply(409, { error: "Ce forfait n'est plus disponible." });
+  const { data: activeSubscription, error: activeSubscriptionError } = await userClient.from("subscriptions")
+    .select("id,status").eq("user_id", authData.user.id).eq("plan_id", plan.id)
+    .in("status", ["active", "trialing"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (activeSubscriptionError) return reply(500, { error: "Impossible de vérifier votre abonnement actuel." });
+  if (activeSubscription) return reply(200, { already_active: true, plan_id: plan.id, subscription_id: activeSubscription.id });
+
   if (plan.features?.billing_mode === "quote") return reply(400, { error: "Cette offre nécessite un devis." });
   if (plan.features?.billing_mode === "free" || Number(plan.price_minor) === 0) {
     return reply(400, { error: "Ce forfait est gratuit ; utilisez l'activation gratuite." });
