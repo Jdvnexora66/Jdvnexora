@@ -60,13 +60,58 @@ Deno.serve(async (req: Request) => {
     return reply(503, { error: "Le paiement KKIAPAY n'est pas configuré côté serveur. Aucun paiement ne sera lancé." });
   }
 
+  const admin = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
+  const providerMode = Deno.env.get("KKIAPAY_SANDBOX") === "true" ? "sandbox" : "live";
+  const { data: pendingOrder, error: pendingOrderError } = await admin.from("subscriptions")
+    .select("id,provider_reference").eq("user_id", authData.user.id).eq("plan_id", plan.id)
+    .eq("provider", "kkiapay").eq("status", "pending")
+    .order("created_at", { ascending: false }).limit(1).maybeSingle();
+  if (pendingOrderError) return reply(500, { error: "Impossible de reprendre une commande d'abonnement existante." });
+
+  if (pendingOrder?.provider_reference) {
+    const parts = String(pendingOrder.provider_reference).split(":");
+    const previousMode = parts[0];
+    const previousTransactionId = parts.length >= 3 ? parts.slice(2).join(":") : "";
+    if (previousTransactionId) {
+      return reply(200, { verification_required: true, order_id: pendingOrder.id, transaction_id: previousTransactionId, provider_mode: previousMode });
+    }
+    if (previousMode === providerMode) {
+      return reply(200, {
+        order_id: pendingOrder.id,
+        plan_id: plan.id,
+        amount_xof: Number(plan.price_minor),
+        currency: plan.currency,
+        provider_mode: providerMode,
+        public_key: publicKey,
+        billing_interval: plan.billing_interval,
+      });
+    }
+    const { error: cancelError } = await admin.from("subscriptions").update({
+      status: "canceled", provider_reference: null, updated_at: new Date().toISOString(),
+    }).eq("id", pendingOrder.id).eq("user_id", authData.user.id).eq("status", "pending");
+    if (cancelError) return reply(500, { error: "Impossible de renouveler une commande créée dans un autre mode KKIAPAY." });
+  }
+
+  const orderToken = providerMode + ":" + crypto.randomUUID();
+  const { data: createdOrder, error: createOrderError } = await admin.from("subscriptions").insert({
+    user_id: authData.user.id,
+    plan_id: plan.id,
+    status: "pending",
+    provider: "kkiapay",
+    provider_reference: orderToken,
+  }).select("id").single();
+  if (createOrderError || !createdOrder) {
+    console.error("Subscription payment order creation failed", createOrderError);
+    return reply(500, { error: "Impossible de créer la commande d'abonnement. Réessayez." });
+  }
+
   return reply(200, {
+    order_id: createdOrder.id,
     plan_id: plan.id,
     amount_xof: Number(plan.price_minor),
     currency: plan.currency,
-    provider_mode: Deno.env.get("KKIAPAY_SANDBOX") === "true" ? "sandbox" : "live",
+    provider_mode: providerMode,
     public_key: publicKey,
     billing_interval: plan.billing_interval,
-    trial_days: plan.trial_days,
   });
 });
