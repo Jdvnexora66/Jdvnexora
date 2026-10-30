@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { isPageActionTarget, isPageDataBindingKey, loadPageDataBindings, PAGE_DATA_BINDINGS, pageActionTargetLabel, pageDataBindingLabel, type PageActionTarget, type PageDataBindingKey } from '../lib/pageDataBindings';
 
 type Block = { id: string; type: string; title: string; content?: string; dataBinding?: PageDataBindingKey; actionTarget?: PageActionTarget; color?: string; background?: string; radius?: number; padding?: number; width?: string; hidden?: boolean; url?: string; objectFit?: 'cover' | 'contain' };
-type NativeElementOverride = { tag: string; label: string; originalText?: string; text?: string; background?: string; color?: string; radius?: number; padding?: number };
+type NativeElementOverride = { tag: string; label: string; originalText?: string; text?: string; background?: string; color?: string; radius?: number; padding?: number; fontSize?: number; fontWeight?: 'normal'|'500'|'600'|'700'|'800' };
 type Config = { schemaVersion: 1; theme: string; pageStyle?: { density: 'comfortable' | 'compact'; textScale: 'small' | 'normal' | 'large'; radius: number; background: string; surface: string; text: string; accent: string }; nativeStyles?: Partial<Record<'panel' | 'card' | 'form' | 'heading' | 'button', { background: string; color: string; radius: number; padding: number }>>; nativeElements?: Record<string, NativeElementOverride>; components: Block[] };
 type Published = { name: string; config: Config; published_at: string };
 const themes: Record<string,{background:string;surface:string;text:string;accent:string}> = {
@@ -74,6 +74,8 @@ function validate(value: unknown, enforceBrandPalette: boolean): Config | null {
       color: typeof value.color === 'string' && /^#[0-9a-f]{6}$/i.test(value.color) ? value.color.toUpperCase() : undefined,
       radius: Number.isFinite(value.radius) ? Math.max(0, Math.min(32, Number(value.radius))) : undefined,
       padding: Number.isFinite(value.padding) ? Math.max(0, Math.min(48, Number(value.padding))) : undefined,
+      fontSize: Number.isFinite(value.fontSize) ? Math.max(10, Math.min(48, Number(value.fontSize))) : undefined,
+      fontWeight: ['normal','500','600','700','800'].includes(value.fontWeight ?? '') ? value.fontWeight as NativeElementOverride['fontWeight'] : undefined,
     };
   }
   return {schemaVersion:1,theme,pageStyle,nativeStyles,nativeElements,components};
@@ -97,6 +99,8 @@ export default function PublishedVisualLayout({ scope }: { scope: string }) {
       if (override.color) element.style.setProperty('color', override.color, 'important');
       if (Number.isFinite(override.radius)) element.style.setProperty('border-radius', Number(override.radius) + 'px', 'important');
       if (Number.isFinite(override.padding)) element.style.setProperty('padding', Number(override.padding) + 'px', 'important');
+      if (Number.isFinite(override.fontSize)) element.style.setProperty('font-size', Number(override.fontSize) + 'px', 'important');
+      if (override.fontWeight) element.style.setProperty('font-weight', override.fontWeight, 'important');
       if (override.text !== undefined && isNativeTextEditable(element)) element.textContent = override.text;
     }
     return () => {
