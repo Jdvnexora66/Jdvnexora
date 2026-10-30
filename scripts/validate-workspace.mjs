@@ -18,6 +18,7 @@ const studioAiFunction = read('supabase/functions/studio-ai/index.ts');
 const paymentAttemptsIndexMigration = read('supabase/migrations/20261030220000_index_payment_attempts_plan_id.sql');
 const subscriptionSnapshotMigration = read('supabase/migrations/20261030080350_subscription_payment_order_snapshot.sql');
 const sourceMap = read('docs/architecture/page-source-map.md');
+const netlifyConfig = read('netlify.toml');
 const referenceDashboard = read('src/components/ReferenceDashboard.tsx');
 const organizationPanel = read('src/components/OrganizationPanel.tsx');
 const adminPanel = read('src/components/AdminPanel.tsx');
@@ -124,6 +125,7 @@ for (const [page, [source, tokens]] of Object.entries(pageSourceContracts)) {
   for (const token of tokens) assert.ok(source.includes(token), `La page ${page} doit rester raccordée à sa fonctionnalité/source : ${token}`);
 }
 assert.ok(referenceDashboard.includes('projectCount') && referenceDashboard.includes('onOpenStudio'), 'Le tableau de bord référentiel doit exposer ses données et raccourcis métier.');
+assert.ok(netlifyConfig.includes('NODE_VERSION = "22"') && netlifyConfig.includes('publish = "dist"'), 'Netlify doit compiler avec Node 22 et publier le dossier Vite dist.');
 for (const token of [
   "supabase.auth.signUp",
   "emailRedirectTo: getClientRedirectUrl('/')",
