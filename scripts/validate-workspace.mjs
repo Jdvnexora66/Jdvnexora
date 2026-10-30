@@ -128,7 +128,7 @@ assert.ok(referenceDashboard.includes('projectCount') && referenceDashboard.incl
 assert.ok(netlifyConfig.includes('NODE_VERSION = "22"') && netlifyConfig.includes('publish = "dist"'), 'Netlify doit compiler avec Node 22 et publier le dossier Vite dist.');
 for (const token of [
   "supabase.auth.signUp",
-  "emailRedirectTo: getClientRedirectUrl('/')",
+  "options: { emailRedirectTo: getClientRedirectUrl('/') }",
   "supabase.auth.signInWithPassword",
   "supabase.auth.resetPasswordForEmail",
   "event === 'PASSWORD_RECOVERY'",
