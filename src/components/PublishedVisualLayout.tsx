@@ -94,7 +94,7 @@ export default function PublishedVisualLayout({ scope }: { scope: string }) {
         if (!isSafeNativeElementPath(path)) continue;
         let element: HTMLElement | null = null;
         try { element = document.querySelector<HTMLElement>(path); } catch { element = null; }
-        if (!element || !root.contains(element)) continue;
+        if (!element || !root.contains(element) || element.tagName.toLowerCase() !== override.tag) continue;
         if (!originals.has(element)) originals.set(element, {
           style: element.getAttribute('style'),
           text: isNativeTextEditable(element) ? element.textContent ?? '' : undefined,
