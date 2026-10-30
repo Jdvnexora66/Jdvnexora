@@ -58,7 +58,7 @@ assert.ok(actionTargets, 'Les destinations d’action doivent rester centralisé
 assert.ok(!/value:\s*'design'/.test(actionTargets[1]), 'Le Studio Design administrateur ne doit pas devenir une destination d’action publiée.');
 
 assert.ok(design.includes("row.scope !== 'dashboard'"), 'Le tableau de bord référentiel doit rester exclu du Studio Design.');
-for (const token of ['selectedNativeElement', 'changeNativeElementStyle', 'nativeElements', "previewMode==='real'"]) {
+for (const token of ['selectedNativeElement', 'changeNativeElementStyle', 'nativeElements', "previewMode==='real'", 'scopeRef.current.replace', 'textAlign', 'marginTop', 'marginBottom', 'Masquer cet élément']) {
   assert.ok(design.includes(token), `Fonction d’édition native absente : ${token}`);
 }
 
@@ -71,4 +71,4 @@ for (const [file, source, functions] of [
   }
 }
 
-console.log('NEXORA workspace checks passed: 16 routes authentifiées + vitrine publique, sources, Studio Design protégé et paiements vérifiés côté serveur.');
+console.log('NEXORA workspace checks passed: 16 routes authentifiées + vitrine publique, sources, Studio Design natif, sélection multi-pages, contrôles de précision et paiements vérifiés côté serveur.');
