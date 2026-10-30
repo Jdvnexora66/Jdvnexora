@@ -62,7 +62,7 @@ jobs:
       - name: Build web assets
         run: npm run build
       - name: Generate iOS project
-        run: npx cap add ios
+        run: npx cap add ios --packagemanager SPM
       - name: Sync native project
         run: npx cap sync ios
       - name: Build iOS simulator app
