@@ -137,5 +137,6 @@ Cette revue est une inspection statique du code et des configurations disponible
 
 - Le formulaire de création de profil permet désormais de renseigner un réseau social principal (YouTube, Instagram, TikTok, LinkedIn, Facebook, X ou autre) et son URL. Le compte est créé comme non vérifié; seul un administrateur peut ensuite confirmer son caractère officiel.
 - Les erreurs d'enregistrement des liens sont conservées comme avertissements au lieu d'être écrasées par le message de succès du profil. L'état d'enregistrement reste actif jusqu'à la fin de la création et du rechargement.
+- Test SQL positif exécuté avec un contexte `authenticated` : création d'un profil privé et ajout/lecture de son lien YouTube dans `social_accounts` réussis selon les politiques RLS; les données temporaires ont été supprimées (zéro ligne résiduelle).
 - Le tableau de synthèse inclut maintenant `social_accounts`; les recherches par panier tiennent compte des plateformes et handles. Les liens des sources documentaires sont également filtrés pour n'autoriser que HTTP/HTTPS.
 - Après consolidation des politiques RLS, l'advisor performance ne signale plus de doublon de politiques `INSERT`/`UPDATE` sur `entrepreneurs`; les alertes multiples restantes concernent d'autres tables et modules.
