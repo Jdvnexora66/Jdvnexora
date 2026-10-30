@@ -3069,3 +3069,44 @@ button.logout-button) {
   .mobile-bottom-nav button { font-size: .6rem; }
   .mobile-bottom-nav button svg { width: 18px; height: 18px; }
 }
+
+/* DISCOVER — réseaux sociaux reliés aux profils créateurs */
+.page-shell.brand-theme .discover-item-main { min-width: 0; }
+.page-shell.brand-theme .discover-socials {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+}
+.page-shell.brand-theme .discover-socials a {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 6px 9px;
+  border: 1px solid rgba(214,182,110,.22);
+  border-radius: 999px;
+  background: rgba(214,182,110,.06);
+  color: #E7D8B6;
+  font-size: 11px;
+  line-height: 1.35;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.page-shell.brand-theme .discover-socials a:hover {
+  border-color: rgba(214,182,110,.55);
+  background: rgba(214,182,110,.12);
+}
+.page-shell.brand-theme .discover-socials small { color: #BEB5A5; }
+.page-shell.brand-theme .discover-social-official {
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: rgba(92,170,128,.14);
+  color: #A9D8B8;
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .02em;
+}
