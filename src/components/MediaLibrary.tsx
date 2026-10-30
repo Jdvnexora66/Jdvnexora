@@ -3,6 +3,7 @@ import { Film, Headphones, Play, Plus, Search, Trash2, Youtube, Video, RefreshCw
 import { supabase } from '../lib/supabase';
 import ModuleDataOverview from './ModuleDataOverview';
 import './media-provider.css';
+import './media-gallery.css';
 import CreatorCatalog from './CreatorCatalog';
 import './creator-catalog.css';
 
