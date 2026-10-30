@@ -91,6 +91,10 @@ Deno.serve(async (req: Request) => {
     return reply(500, { error: "Impossible de préparer le paiement. Réessayez." });
   }
 
+  if (order.status === "verification_required" && order.provider_reference) {
+    return reply(200, { verification_required: true, order_id: order.id, course_id: order.course_id, enrollment_id: order.enrollment_id, amount_xof: Number(order.amount_xof), currency: order.currency, provider_mode: order.provider_mode, transaction_id: order.provider_reference });
+  }
+
   return reply(200, {
     order_id: order.id,
     course_id: order.course_id,
