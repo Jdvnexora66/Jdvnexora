@@ -196,7 +196,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
         position:'center',
         theme:'#D6B66E',
         sandbox:order.provider_mode==='sandbox',
-        paymentmethod:paymentMethod==='mobile_money'?'momo':'card',
+        paymentmethod:[paymentMethod==='mobile_money'?'momo':'card'],
         countries:['BJ'],
         partnerId:`nexora-subscription-${userId}-${planToPay.id}`,
         data:JSON.stringify({subscription_order_id:order.order_id,plan_id:planToPay.id})
