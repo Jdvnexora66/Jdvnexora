@@ -100,10 +100,21 @@ Les PR suivantes ont été fusionnées après l'audit initial :
 - Artéfacts Android debug et iOS simulateur générés. L'iOS est une compilation simulateur non signée; aucun IPA App Store ou AAB Play Store signé n'est produit.
 - Les fonctions Supabase de paiement sont actives avec JWT obligatoire :
   - `create-course-payment-order` v1
-  - `create-subscription-payment-order` v1
-  - `verify-kkiapay-payment` v2
+  - `create-subscription-payment-order` v2
+  - `verify-kkiapay-payment` v3
 - Les commandes de formation ont une contrainte unique par inscription et par référence fournisseur; les transactions ne sont pas réutilisables pour plusieurs commandes.
 - L'état détaillé des pages est suivi dans `docs/PLAN-CONSTRUCTION-PAGES.md`.
+
+### Cycle d'abonnement — correctif complémentaire
+
+La PR #126 a ajouté l'expiration automatique des abonnements à échéance :
+- migration `20261030073544_subscription_expiry_cron` appliquée et enregistrée ;
+- index partiel sur `subscriptions(status, ends_at)` ;
+- job pg_cron ID 6, actif toutes les 15 minutes ;
+- la commande d'abonnement et l'activation gratuite réconcilient aussi les échéances du compte avant d'autoriser une nouvelle activation ;
+- Facturation affiche « Expiré » dès que la date de fin est dépassée.
+
+Contrôle après migration : aucun abonnement `active` ou `trialing` déjà arrivé à échéance. Le job global est actif; la recette d'un cas d'expiration réel reste à effectuer avec un compte de test dédié. Le renouvellement est manuel, sans débit récurrent automatique.
 
 ### Risques et travaux qui restent réellement ouverts
 
