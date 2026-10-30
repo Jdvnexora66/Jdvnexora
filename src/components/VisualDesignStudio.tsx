@@ -23,7 +23,7 @@ type StudioBlock = {
 type PageStyle = { density: 'comfortable' | 'compact'; textScale: 'small' | 'normal' | 'large'; radius: number; background: string; surface: string; text: string; accent: string };
 type NativeTarget = 'panel' | 'card' | 'form' | 'heading' | 'button';
 type NativeOverride = { background: string; color: string; radius: number; padding: number };
-type NativeElementOverride = { tag: string; label: string; originalText?: string; text?: string; background?: string; color?: string; radius?: number; padding?: number; fontSize?: number; fontWeight?: 'normal'|'500'|'600'|'700'|'800' };
+type NativeElementOverride = { tag: string; label: string; originalText?: string; text?: string; background?: string; color?: string; radius?: number; padding?: number; fontSize?: number; fontWeight?: 'normal'|'500'|'600'|'700'|'800'; width?: 'auto'|'full'|'three-quarter'|'half'; textAlign?: 'left'|'center'|'right'|'justify'; marginTop?: number; marginBottom?: number; hidden?: boolean };
 type NativeElementSelection = { path: string; tag: string; label: string; originalText: string; canEditText: boolean };
 type StudioConfig = { schemaVersion: 1; theme: 'nexora-dark' | 'nexora-light' | 'ocean'; pageStyle?: PageStyle; nativeStyles?: Partial<Record<NativeTarget, NativeOverride>>; nativeElements?: Record<string, NativeElementOverride>; components: StudioBlock[] };
 type PageScope = string;
@@ -121,6 +121,11 @@ const safeConfig = (value: unknown): StudioConfig => {
       padding: Number.isFinite(value.padding) ? Math.max(0, Math.min(48, Number(value.padding))) : undefined,
       fontSize: Number.isFinite(value.fontSize) ? Math.max(10, Math.min(48, Number(value.fontSize))) : undefined,
       fontWeight: ['normal','500','600','700','800'].includes(value.fontWeight ?? '') ? value.fontWeight as NativeElementOverride['fontWeight'] : undefined,
+      width: ['auto','full','three-quarter','half'].includes(value.width ?? '') ? value.width as NativeElementOverride['width'] : undefined,
+      textAlign: ['left','center','right','justify'].includes(value.textAlign ?? '') ? value.textAlign as NativeElementOverride['textAlign'] : undefined,
+      marginTop: Number.isFinite(value.marginTop) ? Math.max(0, Math.min(64, Number(value.marginTop))) : undefined,
+      marginBottom: Number.isFinite(value.marginBottom) ? Math.max(0, Math.min(64, Number(value.marginBottom))) : undefined,
+      hidden: Boolean(value.hidden),
     };
   }
   return { schemaVersion: 1, theme, pageStyle, nativeStyles, nativeElements, components };
@@ -170,6 +175,8 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
   const selectionModeRef = useRef(false);
   const configRef = useRef(config);
   configRef.current = config;
+  const scopeRef = useRef(scope);
+  scopeRef.current = scope;
   const isAdmin = role === 'admin';
   const selectedBlock = config.components.find(block => block.id === selectedBlockId) ?? null;
   const dirty = useMemo(() => JSON.stringify(config) !== JSON.stringify(savedConfig), [config, savedConfig]);
@@ -219,6 +226,17 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
         if (Number.isFinite(override.padding)) element.style.setProperty('padding', Number(override.padding) + 'px', 'important');
         if (Number.isFinite(override.fontSize)) element.style.setProperty('font-size', Number(override.fontSize) + 'px', 'important');
         if (override.fontWeight) element.style.setProperty('font-weight', override.fontWeight, 'important');
+        if (override.width && override.width !== 'auto') {
+          const width = override.width === 'full' ? '100%' : override.width === 'three-quarter' ? '75%' : '50%';
+          element.style.setProperty('display', 'block', 'important');
+          element.style.setProperty('width', width, 'important');
+          element.style.setProperty('max-width', '100%', 'important');
+          element.style.setProperty('box-sizing', 'border-box', 'important');
+        }
+        if (override.textAlign) element.style.setProperty('text-align', override.textAlign, 'important');
+        if (Number.isFinite(override.marginTop)) element.style.setProperty('margin-top', Number(override.marginTop) + 'px', 'important');
+        if (Number.isFinite(override.marginBottom)) element.style.setProperty('margin-bottom', Number(override.marginBottom) + 'px', 'important');
+        if (override.hidden) element.style.setProperty('display', 'none', 'important');
         if (override.text !== undefined && isNativeTextEditable(element)) element.textContent = override.text;
       }
     }
@@ -234,7 +252,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
         if (!selectionModeRef.current) return;
         const clicked = event.target as HTMLElement | null;
         if (!clicked) return;
-        const activeScope = scope.replace(/[^a-zA-Z0-9:_-]/g, '');
+        const activeScope = scopeRef.current.replace(/[^a-zA-Z0-9:_-]/g, '');
         const pageRoot = previewDocument.querySelector<HTMLElement>('.workspace-main[data-active-section="' + activeScope + '"]');
         const element = clicked.closest<HTMLElement>('h1,h2,h3,h4,h5,p,span,strong,em,small,label,button,a,article,section,div,form,li,img,input,textarea,select,svg,video,header,footer,nav');
         if (!element || !pageRoot || !pageRoot.contains(element) || element === pageRoot) return;
@@ -456,6 +474,11 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
           <label>Espacement intérieur <input type="range" min="0" max="48" value={config.nativeElements?.[selectedNativeElement.path]?.padding??12} onChange={event=>changeNativeElementStyle({padding:Number(event.target.value)})}/></label>
           <label>Taille du texte <input type="range" min="10" max="48" value={config.nativeElements?.[selectedNativeElement.path]?.fontSize??16} onChange={event=>changeNativeElementStyle({fontSize:Number(event.target.value)})}/></label>
           <label>Graisse du texte<select value={config.nativeElements?.[selectedNativeElement.path]?.fontWeight??'normal'} onChange={event=>changeNativeElementStyle({fontWeight:event.target.value as NativeElementOverride['fontWeight']})}><option value="normal">Normale</option><option value="500">Moyenne</option><option value="600">Semi-grasse</option><option value="700">Grasse</option><option value="800">Très grasse</option></select></label>
+          <label>Largeur<select value={config.nativeElements?.[selectedNativeElement.path]?.width??'auto'} onChange={event=>changeNativeElementStyle({width:event.target.value as NativeElementOverride['width']})}><option value="auto">Naturelle</option><option value="full">Pleine largeur (100 %)</option><option value="three-quarter">Large (75 %)</option><option value="half">Moitié (50 %)</option></select></label>
+          <label>Alignement du contenu<select value={config.nativeElements?.[selectedNativeElement.path]?.textAlign??'left'} onChange={event=>changeNativeElementStyle({textAlign:event.target.value as NativeElementOverride['textAlign']})}><option value="left">Gauche</option><option value="center">Centré</option><option value="right">Droite</option><option value="justify">Justifié</option></select></label>
+          <label>Marge supérieure <input type="range" min="0" max="64" value={config.nativeElements?.[selectedNativeElement.path]?.marginTop??0} onChange={event=>changeNativeElementStyle({marginTop:Number(event.target.value)})}/></label>
+          <label>Marge inférieure <input type="range" min="0" max="64" value={config.nativeElements?.[selectedNativeElement.path]?.marginBottom??0} onChange={event=>changeNativeElementStyle({marginBottom:Number(event.target.value)})}/></label>
+          <label>Visibilité<select value={config.nativeElements?.[selectedNativeElement.path]?.hidden?'hidden':'visible'} onChange={event=>changeNativeElementStyle({hidden:event.target.value==='hidden'})}><option value="visible">Visible</option><option value="hidden">Masquer cet élément</option></select></label>
           {selectedNativeElement.canEditText&&<label>Texte affiché<textarea rows={3} maxLength={2000} value={config.nativeElements?.[selectedNativeElement.path]?.text??selectedNativeElement.originalText} onChange={event=>changeNativeElementStyle({text:event.target.value,originalText:selectedNativeElement.originalText,tag:selectedNativeElement.tag,label:selectedNativeElement.label})}/></label>}
           {!selectedNativeElement.canEditText&&<small>Le contenu de cet élément contient des sous-éléments. Son style peut être modifié, mais son texte n’est pas éditable pour préserver sa structure.</small>}
           <button type="button" className="logout-button" onClick={resetNativeElementStyle}><RotateCcw size={14}/> Réinitialiser cet élément</button>
