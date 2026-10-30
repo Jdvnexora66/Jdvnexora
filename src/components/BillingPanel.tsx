@@ -199,7 +199,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
         paymentmethod:paymentMethod==='mobile_money'?'momo':'card',
         countries:['BJ'],
         partnerId:`nexora-subscription-${userId}-${planToPay.id}`,
-        data:JSON.stringify({plan_id:planToPay.id})
+        data:JSON.stringify({subscription_order_id:order.order_id,plan_id:planToPay.id})
       },{
         onSuccess:async response=>{
           const transactionId=response?.transactionId??response?.transaction_id??response?.id;
