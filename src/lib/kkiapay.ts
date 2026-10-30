@@ -61,3 +61,5 @@ export async function launchKkiapayWidget(options: Record<string, unknown>, call
     throw error;
   }
 }
+
+export function clearKkiapayCallbacks(): void { activeCallbacks = null; }
