@@ -80,12 +80,25 @@ Deno.serve(async (req: Request) => {
 
   const sandbox = Deno.env.get("KKIAPAY_SANDBOX") === "true";
   const providerMode = sandbox ? "sandbox" : "live";
-  const { data: order, error: updateError } = await admin.from("nexora_course_payment_orders")
-    .update({ provider_mode: providerMode, updated_at: new Date().toISOString() })
-    .eq("id", orderId).eq("user_id", authData.user.id)
-    .in("status", ["pending", "verification_required"])
-    .select("id,course_id,enrollment_id,amount_xof,currency,provider_mode,status,provider_reference")
-    .single();
+  const orderFields = "id,course_id,enrollment_id,amount_xof,currency,provider_mode,status,provider_reference";
+  let orderResult;
+  if (orderData?.status === "verification_required") {
+    orderResult = await admin.from("nexora_course_payment_orders")
+      .select(orderFields).eq("id", orderId).eq("user_id", authData.user.id)
+      .eq("status", "verification_required").single();
+  } else {
+    orderResult = await admin.from("nexora_course_payment_orders")
+      .update({ provider_mode: providerMode, updated_at: new Date().toISOString() })
+      .eq("id", orderId).eq("user_id", authData.user.id).eq("status", "pending")
+      .select(orderFields).single();
+    if (orderResult.error || !orderResult.data) {
+      const latest = await admin.from("nexora_course_payment_orders")
+        .select(orderFields).eq("id", orderId).eq("user_id", authData.user.id).maybeSingle();
+      if (latest.data?.status === "verification_required") orderResult = latest;
+    }
+  }
+  const order = orderResult.data;
+  const updateError = orderResult.error;
   if (updateError || !order) {
     console.error("Course payment order preparation failed", updateError);
     return reply(500, { error: "Impossible de préparer le paiement. Réessayez." });
