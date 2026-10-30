@@ -169,3 +169,11 @@ Cette revue est une inspection statique du code et des configurations disponible
 - Les trois RPC SECURITY DEFINER signalées ont été revues : elles exigent `auth.uid()`, contrôlent l'accès au cours ou au quota de l'utilisateur et ne permettent pas l'accès anonyme. L'advisor continue de les signaler car les RPC authentifiées sont intentionnelles.
 - `pg_net` : les tâches cron `nexora-rss-sync-every-6-hours` et `nexora-public-creators-sync-every-6-hours` s'exécutent sous `postgres`. Une migration de restriction a été enregistrée, mais les ACL du schéma `net` et des fonctions restent détenues par `supabase_admin`; le rôle SQL connecté n'a pas l'appartenance/propriété nécessaire pour les révoquer. Le contrôle de permissions confirme que les privilèges n'ont pas changé. Ne pas considérer ce point comme corrigé; intervention du propriétaire de l'extension requise. Le schéma `net` n'a pas été déplacé, car `pg_net` est déclaré non-relocatable et les cron jobs en dépendent.
 - La protection des mots de passe compromis reste désactivée dans Supabase Auth. Elle ne peut pas être modifiée via les fonctions SQL disponibles dans cette connexion; elle doit être activée dans les paramètres Auth du projet.
+
+
+## Stockage sécurisé des sessions natives — 2026-10-30
+
+- Dépendance `@aparajita/capacitor-secure-storage` 8.0.1 ajoutée pour Capacitor 8. Les sessions Supabase natives utilisent l'adaptateur `getItem`/`setItem`/`removeItem` du plugin : Keychain iOS et chiffrement AES-GCM avec clé Android Keystore. Le navigateur Web conserve le stockage standard Supabase.
+- iOS : accessibilité Keychain `whenUnlockedThisDeviceOnly`; synchronisation iCloud non activée. Un marqueur non sensible du WebView permet d'effacer le préfixe NEXORA du Keychain après une réinstallation, car les éléments Keychain peuvent survivre à la suppression de l'application.
+- Les liens de récupération de mot de passe et de secours d'invitation générés depuis le client natif pointent maintenant vers le domaine Web hébergé au lieu de `capacitor://localhost`.
+- Le retour OAuth natif des fournisseurs média et les liens profonds de reprise de session restent à implémenter avant de déclarer tous les parcours d'intégration natifs prêts.
