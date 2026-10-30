@@ -146,7 +146,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
       setSelectedPlan(null);
       await load();
     } catch(cause) {
-      setPendingSubscriptionPayment({planId,transactionId});
+      setPendingSubscriptionPayment({orderId,planId,transactionId});
       setError(cause instanceof Error?cause.message:'La confirmation serveur est momentanément indisponible. Réessayez sans refaire le paiement.');
     } finally {setPaymentPending(false);}
   }
