@@ -77,7 +77,7 @@ npm run mobile:ios
 ## Environnements de compilation
 
 - Android : Android Studio 2025.2.1 ou supérieur, Android SDK et JDK géré par Android Studio.
-- iOS : macOS, Xcode 26 ou supérieur et CocoaPods.
+- iOS : macOS et Xcode 26 ou supérieur. Capacitor 8 utilise Swift Package Manager (SPM) par défaut; CocoaPods reste une option si explicitement choisie.
 - La compilation iOS et la signature App Store nécessitent un environnement Apple et un compte développeur Apple.
 - La publication Google Play nécessite une clé de signature Android conservée hors du dépôt.
 
