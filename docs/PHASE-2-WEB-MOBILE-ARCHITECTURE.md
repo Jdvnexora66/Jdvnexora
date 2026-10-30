@@ -49,7 +49,7 @@ JDV NEXORA
 - Sortie web native configurée sur `dist`.
 - L'application native ouvre directement l'interface d'authentification NEXORA; la vitrine publique reste l'entrée par défaut du Web.
 - Les sessions Supabase natives utilisent `@aparajita/capacitor-secure-storage` : Keychain iOS et Android Keystore/AES-GCM; le navigateur Web conserve le stockage Auth standard du navigateur. Un marqueur non sensible efface les anciens secrets Keychain lors d'une réinstallation iOS.
-- Les connexions OAuth des fournisseurs médias utilisent `@capacitor/browser` dans l'application native; au retour au premier plan (`@capacitor/app`), NEXORA vérifie la connexion côté serveur et lance la synchronisation. Le Web conserve le flux popup `postMessage`.
+- Les connexions OAuth des fournisseurs médias utilisent `@capacitor/browser` dans l'application native; les événements `browserFinished` et retour au premier plan (`@capacitor/app`) déclenchent la vérification côté serveur puis la synchronisation. Le Web conserve le flux popup `postMessage`.
 - PWA : enregistrement du service worker en production, manifeste enrichi avec icônes vectorielles 192/512, cache prudent de la coque et écran hors connexion.
 - Viewport iOS configuré avec `viewport-fit=cover`.
 - CSS adapté aux zones de sécurité iOS, à la navigation tactile, aux orientations paysage courtes et aux tablettes de 761 à 1024 px.
@@ -84,14 +84,14 @@ npm run mobile:ios
 
 ## Lots de réalisation
 
-### Lot 1 — socle commun (en cours)
-PWA, configuration Capacitor, compatibilité responsive, zones de sécurité, compilation web et premières compilations natives.
+### Lot 1 — socle commun (compilation validée)
+PWA, configuration Capacitor, compatibilité responsive, zones de sécurité et compilation Web TypeScript/Vite validées. La CI a généré et compilé un APK Android debug et une application iOS simulateur non signée sur le commit `a04eb17491a5bebf2c4c7ae2ff0b4ec5a3ecf80c`.
 
 ### Lot 2 — expérience mobile métier
 Optimiser chaque page pour le tactile : Studio IA, projets, vidéothèque, catalogue créateurs, bibliothèque, Académie, collaboration, organisation, facturation et administration. Prévoir des états de chargement, d'erreur et de connexion faible.
 
 ### Lot 3 — fonctions natives
-Finaliser les liens profonds pour la récupération de compte et les retours OAuth (les liens de réinitialisation et d'invitation utilisent déjà le domaine Web depuis l'application native). Brancher progressivement caméra, sélecteur de fichiers, partage natif, notifications push et liens profonds, uniquement avec permissions explicites et plugins maintenus.
+Le retour OAuth des fournisseurs médias est implémenté par navigateur intégré et reprise de l'application. Finaliser les liens profonds pour la récupération de compte (les liens de réinitialisation et d'invitation utilisent déjà le domaine Web depuis l'application native). Brancher progressivement caméra, sélecteur de fichiers, partage natif et notifications push, uniquement avec permissions explicites et plugins maintenus.
 
 ### Lot 4 — validation appareils
 Tester Android petit écran, Android grand écran, iPhone compact, iPhone grand écran, iPad portrait/paysage et tablette Android. Contrôler connexion, session restaurée, navigation, upload, lecture, téléchargement autorisé, reprise après perte réseau et déconnexion.
@@ -112,4 +112,4 @@ Produire APK/AAB Android, archive iOS signée, fiches Play Store / App Store, po
 
 ## Limites de cette livraison
 
-Le dépôt contient le socle et la configuration Capacitor, mais les dossiers natifs Android/iOS n'ont pas encore été générés dans cet environnement. Aucun APK/AAB, IPA ou build Xcode n'est déclaré disponible. Le flux OAuth mobile est implémenté au niveau du client (navigateur intégré + reprise au premier plan), mais il doit être vérifié avec les applications développeur réelles et sur appareils physiques. La validation TypeScript/Vite et les essais sur appareils doivent être réalisés via l'intégration continue et les environnements Android/iOS.
+Les projets Android/iOS sont générés à la demande dans GitHub Actions plutôt que versionnés dans le dépôt. Un APK Android debug et une application iOS simulateur non signée ont été compilés et archivés avec succès. Aucun AAB Play Store ni IPA iOS signé n'est encore produit. Le flux OAuth natif est implémenté au niveau du client mais doit être vérifié avec les applications développeur réelles et sur appareils physiques. Les tests de navigation tactile, upload, reprise réseau et partage entre comptes Web/mobile restent à compléter sur appareils.
