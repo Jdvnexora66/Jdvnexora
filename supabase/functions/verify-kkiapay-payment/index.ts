@@ -31,7 +31,7 @@ async function repairCourseEnrollment(admin: AdminClient, order: {
 }
 
 async function verifyCourseOrder(
-  admin: ReturnType<typeof createClient>,
+  admin: AdminClient,
   userId: string,
   orderId: string,
   transactionId: string | null,
