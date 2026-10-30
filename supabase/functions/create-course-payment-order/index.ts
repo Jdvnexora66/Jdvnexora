@@ -81,24 +81,31 @@ Deno.serve(async (req: Request) => {
   const sandbox = Deno.env.get("KKIAPAY_SANDBOX") === "true";
   const providerMode = sandbox ? "sandbox" : "live";
   const orderFields = "id,course_id,enrollment_id,amount_xof,currency,provider_mode,status,provider_reference";
-  let orderResult;
+  type PaymentOrder = { id:string; course_id:string; enrollment_id:string; amount_xof:number; currency:string; provider_mode:"sandbox"|"live"; status:string; provider_reference:string|null };
+  let order: PaymentOrder | null = null;
+  let updateError: { message:string } | null = null;
   if (orderData?.status === "verification_required") {
-    orderResult = await admin.from("nexora_course_payment_orders")
+    const result = await admin.from("nexora_course_payment_orders")
       .select(orderFields).eq("id", orderId).eq("user_id", authData.user.id)
       .eq("status", "verification_required").single();
+    order = result.data as PaymentOrder | null;
+    updateError = result.error;
   } else {
-    orderResult = await admin.from("nexora_course_payment_orders")
+    const result = await admin.from("nexora_course_payment_orders")
       .update({ provider_mode: providerMode, updated_at: new Date().toISOString() })
       .eq("id", orderId).eq("user_id", authData.user.id).eq("status", "pending")
       .select(orderFields).single();
-    if (orderResult.error || !orderResult.data) {
+    order = result.data as PaymentOrder | null;
+    updateError = result.error;
+    if (updateError || !order) {
       const latest = await admin.from("nexora_course_payment_orders")
         .select(orderFields).eq("id", orderId).eq("user_id", authData.user.id).maybeSingle();
-      if (latest.data?.status === "verification_required") orderResult = latest;
+      if (latest.data?.status === "verification_required") {
+        order = latest.data as PaymentOrder;
+        updateError = null;
+      }
     }
   }
-  const order = orderResult.data;
-  const updateError = orderResult.error;
   if (updateError || !order) {
     console.error("Course payment order preparation failed", updateError);
     return reply(500, { error: "Impossible de préparer le paiement. Réessayez." });
