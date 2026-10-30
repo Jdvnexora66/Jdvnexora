@@ -124,6 +124,26 @@ const safeConfig = (value: unknown): StudioConfig => {
   return { schemaVersion: 1, theme, pageStyle, nativeStyles, nativeElements, components };
 };
 
+function isSafeNativeElementPath(path: string): boolean {
+  return path.length <= 1400 && /^body(?: > [a-z][a-z0-9-]*:nth-of-type\([1-9][0-9]*\))*$/.test(path);
+}
+function buildNativeElementPath(element: HTMLElement): string {
+  const parts: string[] = [];
+  let current: HTMLElement | null = element;
+  while (current && current.tagName.toLowerCase() !== 'body' && current.parentElement) {
+    const tag = current.tagName.toLowerCase();
+    const sameTag = Array.from(current.parentElement.children).filter(child => child.tagName.toLowerCase() === tag);
+    const position = sameTag.indexOf(current) + 1;
+    if (position < 1) break;
+    parts.unshift(`${tag}:nth-of-type(${position})`);
+    current = current.parentElement as HTMLElement;
+  }
+  return parts.length ? `body > ${parts.join(' > ')}` : '';
+}
+function isNativeTextEditable(element: HTMLElement): boolean {
+  return element.childElementCount === 0 && ['h1','h2','h3','h4','h5','p','span','strong','em','small','label','button','a','li'].includes(element.tagName.toLowerCase());
+}
+
 export default function VisualDesignStudio({ userId, role }: { userId: string; role: string }) {
   const [layouts, setLayouts] = useState<LayoutRow[]>([]);
   const [versions, setVersions] = useState<VersionRow[]>([]);
@@ -144,7 +164,10 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
   const previewFrameRef = useRef<HTMLIFrameElement | null>(null);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedNativeTarget, setSelectedNativeTarget] = useState<NativeTarget | null>(null);
+  const [selectedNativeElement, setSelectedNativeElement] = useState<NativeElementSelection | null>(null);
   const selectionModeRef = useRef(false);
+  const configRef = useRef(config);
+  configRef.current = config;
   const isAdmin = role === 'admin';
   const selectedBlock = config.components.find(block => block.id === selectedBlockId) ?? null;
   const dirty = useMemo(() => JSON.stringify(config) !== JSON.stringify(savedConfig), [config, savedConfig]);
