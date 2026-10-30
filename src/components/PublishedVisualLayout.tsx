@@ -3,13 +3,12 @@ import { supabase } from '../lib/supabase';
 import { isPageActionTarget, isPageDataBindingKey, loadPageDataBindings, PAGE_DATA_BINDINGS, pageActionTargetLabel, pageDataBindingLabel, type PageActionTarget, type PageDataBindingKey } from '../lib/pageDataBindings';
 
 type Block = { id: string; type: string; title: string; content?: string; dataBinding?: PageDataBindingKey; actionTarget?: PageActionTarget; color?: string; background?: string; radius?: number; padding?: number; width?: string; hidden?: boolean; url?: string; objectFit?: 'cover' | 'contain' };
-type Config = { schemaVersion: 1; theme: string; components: Block[] };
+type Config = { schemaVersion: 1; theme: string; pageStyle?: { density: 'comfortable' | 'compact'; textScale: 'small' | 'normal' | 'large'; radius: number }; components: Block[] };
 type Published = { name: string; config: Config; published_at: string };
-const themes: Record<string,{background:string;surface:string;text:string}> = {
-  // Legacy palettes remain for the approved reference dashboard only.
-  'nexora-dark': {background:'#0b1120',surface:'#141e34',text:'#f4f6ff'},
-  'nexora-light': {background:'#f2f5fb',surface:'#ffffff',text:'#172039'},
-  ocean: {background:'#071b2b',surface:'#103449',text:'#ecfeff'},
+const themes: Record<string,{background:string;surface:string;text:string;accent:string}> = {
+  'nexora-dark': {background:'#0B0B0D',surface:'#202024',text:'#F5F2EA',accent:'#D6B66E'},
+  'nexora-light': {background:'#F2F5FB',surface:'#FFFFFF',text:'#172039',accent:'#2457A6'},
+  ocean: {background:'#071B2B',surface:'#103449',text:'#ECFEFF',accent:'#3CC9B7'},
 };
 function normalizeTextColor(value: unknown): string {
   const normalized = typeof value === 'string' ? value.toUpperCase() : '';
@@ -46,7 +45,9 @@ function validate(value: unknown, enforceBrandPalette: boolean): Config | null {
   const allowed = new Set(['heading','text','stat','action','card','divider','image','video']);
   const components = config.components.filter((item): item is Block => Boolean(item && typeof item === 'object' && typeof item.id === 'string' && typeof item.title === 'string' && allowed.has((item as Block).type))).map(item => ({...item, color: enforceBrandPalette ? normalizeTextColor(item.color) : (typeof item.color === 'string' && /^#[0-9a-f]{6}$/i.test(item.color) ? item.color : undefined), background: enforceBrandPalette ? normalizeBackgroundColor(item.background) : (typeof item.background === 'string' && /^#[0-9a-f]{6}$/i.test(item.background) ? item.background : undefined), dataBinding: isPageDataBindingKey(item.dataBinding) ? item.dataBinding : undefined, actionTarget: isPageActionTarget(item.actionTarget) ? item.actionTarget : undefined, url: typeof item.url === 'string' && (item.type === 'image' ? isAllowedImageUrl(item.url) : item.type === 'video' ? isAllowedVideoUrl(item.url) : false) ? item.url.slice(0, 2000) : undefined, objectFit: item.objectFit === 'contain' ? 'contain' as const : 'cover' as const}));
   const theme = typeof config.theme === 'string' && themes[config.theme] ? config.theme : 'nexora-dark';
-  return {schemaVersion:1,theme,components};
+  const rawStyle = config.pageStyle as Partial<NonNullable<Config['pageStyle']>> | undefined;
+  const pageStyle = { density: rawStyle?.density === 'compact' ? 'compact' as const : 'comfortable' as const, textScale: rawStyle?.textScale === 'small' || rawStyle?.textScale === 'large' ? rawStyle.textScale : 'normal' as const, radius: Number.isFinite(rawStyle?.radius) ? Math.max(4, Math.min(28, Number(rawStyle?.radius))) : 14 };
+  return {schemaVersion:1,theme,pageStyle,components};
 }
 export default function PublishedVisualLayout({ scope }: { scope: string }) {
   const [published,setPublished] = useState<Published|null>(null);
@@ -70,10 +71,11 @@ export default function PublishedVisualLayout({ scope }: { scope: string }) {
   const palette = themes[published.config.theme] ?? themes['nexora-dark'];
   const blocks = published.config.components.filter(block=>!block.hidden);
   const safeScope = scope.replace(/[^a-zA-Z0-9:_-]/g, '');
-  const pageStyle = `.workspace-main[data-active-section="${safeScope}"]{--nexora-page-bg:${palette.background};--nexora-page-surface:${palette.surface};--nexora-page-text:${palette.text};--nexora-page-accent:${palette.accent};}
-.workspace-main[data-active-section="${safeScope}"] .project-panel{background:var(--nexora-page-surface)!important;color:var(--nexora-page-text)!important;border-color:color-mix(in srgb,var(--nexora-page-accent) 24%,transparent)!important}
+  const styleConfig = published.config.pageStyle ?? { density: 'comfortable', textScale: 'normal', radius: 14 };
+  const pageStyle = `.workspace-main[data-active-section="${safeScope}"]{--nexora-page-bg:${palette.background};--nexora-page-surface:${palette.surface};--nexora-page-text:${palette.text};--nexora-page-accent:${palette.accent};--nexora-page-radius:${styleConfig.radius}px;--nexora-page-font:${styleConfig.textScale==='small'?'0.92':styleConfig.textScale==='large'?'1.08':'1'};--nexora-page-density:${styleConfig.density==='compact'?'8':'14'}px;}
+.workspace-main[data-active-section="${safeScope}"] .project-panel{background:var(--nexora-page-surface)!important;color:var(--nexora-page-text)!important;border-color:color-mix(in srgb,var(--nexora-page-accent) 24%,transparent)!important;border-radius:var(--nexora-page-radius)!important;font-size:var(--nexora-page-font)}
 .workspace-main[data-active-section="${safeScope}"] .project-panel h2,.workspace-main[data-active-section="${safeScope}"] .project-panel h3,.workspace-main[data-active-section="${safeScope}"] .project-panel h4{color:var(--nexora-page-text)}
-.workspace-main[data-active-section="${safeScope}"] .project-item,.workspace-main[data-active-section="${safeScope}"] .timeline-event-card,.workspace-main[data-active-section="${safeScope}"] .insight-item{background:var(--nexora-page-bg);border-color:color-mix(in srgb,var(--nexora-page-accent) 20%,transparent)}
+.workspace-main[data-active-section="${safeScope}"] .project-item,.workspace-main[data-active-section="${safeScope}"] .timeline-event-card,.workspace-main[data-active-section="${safeScope}"] .insight-item{background:var(--nexora-page-bg);border-color:color-mix(in srgb,var(--nexora-page-accent) 20%,transparent);border-radius:var(--nexora-page-radius);padding:var(--nexora-page-density)}
 .workspace-main[data-active-section="${safeScope}"] input,.workspace-main[data-active-section="${safeScope}"] select,.workspace-main[data-active-section="${safeScope}"] textarea{border-color:color-mix(in srgb,var(--nexora-page-accent) 42%,transparent)}
 .workspace-main[data-active-section="${safeScope}"] .primary-button{background:var(--nexora-page-accent);border-color:var(--nexora-page-accent);color:${published.config.theme==='nexora-light'?'#FFFFFF':published.config.theme==='ocean'?'#071B2B':'#0B0B0D'}}
 .workspace-main[data-active-section="${safeScope}"] .eyebrow{color:var(--nexora-page-accent)}`;
