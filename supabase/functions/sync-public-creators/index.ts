@@ -10,43 +10,63 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 const text = (s: string) => s.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'");
 const escape = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&apos;" })[c]!);
 
-async function syncChannel(admin: ReturnType<typeof createClient>, ownerId: string, channel: Record<string, unknown>) {
-  const channelId = String(channel.channel_id ?? "");
-  if (!/^UC[a-zA-Z0-9_-]{22}$/.test(channelId)) throw new Error("Identifiant de chaîne YouTube invalide.");
-  const feedUrl = "https://www.youtube.com/feeds/videos.xml?channel_id=" + encodeURIComponent(channelId);
-  let response: Response | null = null;
-  // YouTube's public feed endpoint has intermittent 404/500 incidents even for valid channels.
-  // Retry transient failures instead of treating the first 404 as a missing/deleted channel.
+async function fetchAtomFeed(feedUrl: string, maxAttempts: number, timeoutMs: number): Promise<string> {
   const retryDelays = [700, 1600];
-  for (let attempt = 0; attempt < 3; attempt++) {
+  let lastStatus: number | null = null;
+  let lastError = "";
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
-      response = await fetch(feedUrl, {
+      const response = await fetch(feedUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (compatible; NEXORA-CreatorCatalog/1.0)",
           "Accept": "application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
         },
         redirect: "follow",
+        signal: AbortSignal.timeout(timeoutMs),
       });
-      if (response.ok) break;
-      const transient = response.status === 404 || response.status === 429 || response.status >= 500;
-      if (!transient) break;
-    } catch {
-      response = null;
+      if (response.ok) {
+        const xml = await response.text();
+        if (xml.length > 2_000_000 || !/<feed(?:\\s|>)/i.test(xml)) {
+          throw new Error("YouTube a renvoyé un contenu qui n'est pas un flux Atom valide.");
+        }
+        return xml;
+      }
+      lastStatus = response.status;
+      lastError = "HTTP " + response.status;
+      if (!(response.status === 404 || response.status === 429 || response.status >= 500)) break;
+    } catch (error) {
+      lastStatus = null;
+      lastError = error instanceof Error ? error.message : "Erreur réseau inconnue";
     }
-    if (attempt < retryDelays.length) {
-      await new Promise((resolve) => setTimeout(resolve, retryDelays[attempt]));
+    if (attempt < maxAttempts - 1) {
+      await new Promise(resolve => setTimeout(resolve, retryDelays[Math.min(attempt, retryDelays.length - 1)]));
     }
   }
-  if (!response?.ok) {
-    if (response?.status === 404) {
-      throw new Error("YouTube a renvoyé HTTP 404 pour le flux public. Cette erreur peut être temporaire et ne signifie pas que la chaîne a été supprimée. Réessayez dans quelques minutes.");
+  throw new Error(lastStatus === 404
+    ? "YouTube renvoie HTTP 404 après plusieurs tentatives."
+    : "Flux YouTube indisponible après plusieurs tentatives : " + (lastError || "erreur réseau"));
+}
+
+async function syncChannel(admin: ReturnType<typeof createClient>, ownerId: string, channel: Record<string, unknown>) {
+  const channelId = String(channel.channel_id ?? "");
+  if (!/^UC[a-zA-Z0-9_-]{22}$/.test(channelId)) throw new Error("Identifiant de chaîne YouTube invalide.");
+  const channelFeedUrl = "https://www.youtube.com/feeds/videos.xml?channel_id=" + encodeURIComponent(channelId);
+  let xml: string;
+  try {
+    xml = await fetchAtomFeed(channelFeedUrl, 3, 5000);
+  } catch (primaryError) {
+    // YouTube's channel_id feed can return intermittent 404s. Retry through the channel's
+    // automatically generated uploads playlist (UU + the channel ID without its UC prefix).
+    const uploadsPlaylistId = "UU" + channelId.slice(2);
+    const uploadsFeedUrl = "https://www.youtube.com/feeds/videos.xml?playlist_id=" + encodeURIComponent(uploadsPlaylistId);
+    try {
+      xml = await fetchAtomFeed(uploadsFeedUrl, 2, 4000);
+    } catch (fallbackError) {
+      const primaryMessage = primaryError instanceof Error ? primaryError.message : "flux chaîne indisponible";
+      const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : "flux playlist indisponible";
+      throw new Error("Échec des deux sources YouTube. Flux chaîne : " + primaryMessage + " Flux des uploads : " + fallbackMessage);
     }
-    if (response) {
-      throw new Error("Le flux public YouTube reste indisponible après plusieurs tentatives (HTTP " + response.status + "). Réessayez dans quelques minutes.");
-    }
-    throw new Error("Impossible de joindre le flux public YouTube après plusieurs tentatives. Vérifiez la connexion puis réessayez.");
   }
-  const xml = await response.text();
   if (!/<feed(?:\s|>)/i.test(xml) || !/<(?:entry|title)(?:\s|>)/i.test(xml)) {
     throw new Error("YouTube a renvoyé une réponse qui ne ressemble pas à un flux Atom valide. Réessayez dans quelques minutes.");
   }
