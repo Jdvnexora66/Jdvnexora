@@ -23,8 +23,8 @@ Le tableau de bord référentiel reste la référence visuelle et fonctionnelle.
 | 8 | Académie | `nexora_learning_paths`, `nexora_learning_modules`, `nexora_learning_progress`, `nexora_courses`, `nexora_course_enrollments`, `nexora_course_lessons` | Catalogue publié, inscription, progression, accès aux leçons et états vides | À tester en runtime |
 | 9 | Bibliothèque de formation | `user_learning_items`, `entrepreneurs`, `content_items` | Favoris/notes/progression persistants; données privées limitées à l'utilisateur | À tester en runtime |
 | 10 | Ressources numériques | `nexora_resources`, `nexora_resource_progress` | Catalogue, liens/ressources disponibles, progression persistante | À tester en runtime |
-| 11 | Découvrir | `entrepreneurs`, `content_sources`, `followed_entrepreneurs` | Recherche, filtre pays, paniers, suivi, résultats vides et rendu responsive | CSS ciblé ajouté; test runtime requis |
-| 12 | Vidéothèque et catalogue des créateurs | `media_library_items`; Storage `nexora-media`; Edge Functions `media-integrations`, `sync-public-creators` | Synchronisation, liens médias, erreurs provider, droits Storage et accès public/privé | À tester en runtime |
+| 11 | Découvrir | `entrepreneurs`, `content_sources`, `followed_entrepreneurs`, `social_accounts` | Recherche, filtre pays, paniers, suivi, sources et réseaux sociaux officiels, liens externes HTTP(S) uniquement | Réseaux sociaux raccordés à la lecture; tests runtime et RLS requis |
+| 12 | Vidéothèque et catalogue des créateurs | `media_library_items`; Storage `nexora-media`; Edge Functions `media-integrations`, `sync-public-creators` (v9), `sync-public-creators-cron` (v6) | Flux RSS avec reprise, playlist uploads en secours, YouTube Data API via OAuth, imports idempotents, isolation par propriétaire; galerie compacte de miniatures cliquables (grille dense responsive, cadres 16:9 sans débordement), lecteur dédié fermable avec Échap et téléchargement forcé via URL signée Supabase réservé au propriétaire du fichier | Synchronisation runtime confirmée le 30/10/2026; refonte galerie commitée le 30/10/2026; test visuel navigateur et build à effectuer |
 | 13 | Roadmap | `roadmap_tasks` | Création, modification, suppression, statuts, dates, filtrage propriétaire | À tester en runtime |
 | 14 | Timeline / chronologie | `timeline_events`, `entrepreneurs`, `content_sources` | Sources de dates, ordre, recherche, données manquantes et états vides | À tester en runtime |
 | 15 | Analyses / Insights | `content_items`, relation `content_analyses` | Aucun chiffre inventé; états de chargement/erreur; provenance des métriques | À tester en runtime |
@@ -101,3 +101,80 @@ Cette revue est une inspection statique du code et des configurations disponible
 - Aperçu Netlify de la demande de fusion : déploiement `ready` pour le commit ci-dessus.
 - La consultation automatisée du site d'aperçu depuis l'environnement de contrôle n'a pas permis de récupérer le rendu des pages. Le contrôle visuel par navigateur connecté et les tests avec session réelle restent donc nécessaires.
 - Aucune donnée utilisateur, aucun abonnement ni aucune politique RLS n'a été supprimé ou affaibli dans cette passe.
+
+
+## Correctifs de stabilisation UI et enrichissement Discover — 2026-10-30
+
+- `src/styles.css` : suppression des fragments de fusion non résolus dans le bloc mobile final. La section a été reconstruite avec des règles responsives consolidées pour 760 px et 420 px, les tableaux défilants, les formulaires tactiles et les panneaux métier. Le tableau de bord référentiel n'a pas été reconstruit.
+- `src/components/Discover.tsx` : chargement groupé des comptes sociaux associés aux profils depuis `social_accounts`. Les liens des sites et réseaux sont limités aux protocoles HTTP/HTTPS avant rendu; les réseaux officiels sont identifiés et les handles sont inclus dans la recherche de chaque panier.
+- `src/styles.css` : ajout de pastilles de liens sociaux qui se replient sur plusieurs lignes sur petits écrans.
+- `src/components/CreatorCatalog.tsx` : clarification du texte d'aide pour refléter la synchronisation planifiée toutes les six heures déjà configurée dans le projet.
+
+### Contrôles encore nécessaires
+
+- Le contrôle de statut CI doit être relu sur le commit final après les derniers changements.
+- Le build TypeScript/Vite et le parcours navigateur authentifié n'ont pas été exécutés dans cette passe. Les nouvelles lectures `social_accounts` dépendent des politiques RLS existantes et doivent être validées avec un compte utilisateur.
+- Les liens externes ont une validation de protocole côté interface, mais l'exactitude et le caractère officiel des comptes restent une responsabilité de vérification éditoriale.
+
+
+## Contrôle RLS et protection des badges créateurs — 2026-10-30
+
+- Inspection directe de Supabase : RLS activé et politiques présentes sur `entrepreneurs`, `content_sources`, `social_accounts` et `followed_entrepreneurs`. Les lectures des profils et réseaux publics sont réservées aux utilisateurs authentifiés; les suivis sont limités à `auth.uid()`.
+- Correctif appliqué dans Supabase : migration `20261030045727_protect_creator_verification_status`. Les utilisateurs ordinaires ne peuvent plus attribuer ou modifier eux-mêmes `verification_status`; le contrôle est assuré par un trigger PostgreSQL et la fonction `private.is_admin()` existante.
+- Optimisation appliquée : migration `20261030045808_consolidate_creator_admin_rls_policies`, qui fusionne les permissions propriétaire/administrateur pour les insertions et mises à jour afin d'éviter les politiques permissives redondantes sur `entrepreneurs`.
+- Test SQL négatif exécuté avec un contexte `authenticated` : tentative de passage de `unverified` à `verified` bloquée par PostgreSQL; la ligne temporaire de test a été supprimée (zéro ligne de test résiduelle).
+- Les fonctions de contrôle restent dans le schéma `private`; le trigger est `SECURITY INVOKER`, `search_path` vide, et ne confie pas la validation aux métadonnées modifiables par l'utilisateur.
+
+### État des alertes Supabase après ce correctif
+
+- Les advisors sécurité continuent de signaler trois tables RLS sans politiques (`media_oauth_states`, `media_provider_connections`, `organization_invitations`), un `pg_net` dans `public`, trois RPC SECURITY DEFINER accessibles aux utilisateurs authentifiés (paiement de cours, inscription gratuite, réservation de quota IA — à contrôler séparément selon leur modèle d'autorisation) et la protection contre les mots de passe compromis désactivée.
+- Les advisors performance signalent 29 clés étrangères sans index couvrant, des index inutilisés, un index dupliqué et des politiques permissives multiples sur plusieurs tables. Aucun index ou objet de ces autres modules n'a été modifié dans cette passe.
+- La production Netlify est toujours sur le commit `5789cf61d78cfe64170ab145cccac01ea718e61e` (déploiement `6ae2f0141814af2ae50e6987`, état `ready`), antérieur aux commits de cette session. Le nouveau front n'est donc pas encore confirmé en production.
+- Le statut CI interrogé sur le commit de stabilisation CSS ne retourne aucun statut publié; aucun build TypeScript/Vite ni test navigateur n'est déclaré réussi dans cette passe.
+
+
+## Extension du formulaire Discover — 2026-10-30
+
+- Le formulaire de création de profil permet désormais de renseigner un réseau social principal (YouTube, Instagram, TikTok, LinkedIn, Facebook, X ou autre) et son URL. Le compte est créé comme non vérifié; seul un administrateur peut ensuite confirmer son caractère officiel.
+- Les erreurs d'enregistrement des liens sont conservées comme avertissements au lieu d'être écrasées par le message de succès du profil. L'état d'enregistrement reste actif jusqu'à la fin de la création et du rechargement.
+- Test SQL positif exécuté avec un contexte `authenticated` : création d'un profil privé et ajout/lecture de son lien YouTube dans `social_accounts` réussis selon les politiques RLS; les données temporaires ont été supprimées (zéro ligne résiduelle).
+- Le tableau de synthèse inclut maintenant `social_accounts`; les recherches par panier tiennent compte des plateformes et handles. Les liens des sources documentaires sont également filtrés pour n'autoriser que HTTP/HTTPS.
+- Après consolidation des politiques RLS, l'advisor performance ne signale plus de doublon de politiques `INSERT`/`UPDATE` sur `entrepreneurs`; les alertes multiples restantes concernent d'autres tables et modules.
+
+
+## Phase 2 — architecture Web + Mobile — 2026-10-30
+
+- Architecture retenue : deux pôles de distribution, Web et Mobile natif, avec un seul projet Supabase et une seule source de vérité. Les comptes, projets, organisations, médias, droits RLS, stockage et fonctions serveur restent partagés; aucune base mobile parallèle.
+- Socle natif : Capacitor 8.6.0 (core, CLI, Android, iOS), application `com.jdvglobalcenter.nexora`, sortie web `dist`, schéma Android HTTPS et contenu mixte désactivé. Le client natif ouvre directement l'application authentifiée, tandis que le navigateur conserve la vitrine publique.
+- PWA : service worker de production et écran hors connexion ajoutés. Le cache est limité à la coque et aux ressources statiques; les routes Supabase Auth, REST, Storage, Functions, Realtime et GraphQL sont explicitement exclues du cache.
+- Responsive : viewport iOS `viewport-fit=cover`, gestion des zones de sécurité, orientation paysage de faible hauteur et navigation/tablette 761–1024 px. La navigation rapide mobile existante est conservée.
+- CI : workflow Web TypeScript/Vite sur push/PR et workflow natif manuel qui génère et compile un APK Android debug ainsi qu'une application iOS simulateur non signée.
+- Dépendances natives alignées et épinglées à 8.6.0; Node.js 22 minimum. L'environnement Android exige Android Studio 2025.2.1+ et SDK; l'environnement iOS exige macOS/Xcode 26+ et CocoaPods.
+
+### Limites de validation de la phase 2
+
+- Les projets natifs `android/` et `ios/` sont générés par le workflow de compilation; ils ne sont pas encore matérialisés/commités dans le dépôt.
+- Aucun build TypeScript/Vite, APK, AAB, application iOS, essai sur téléphone réel ou publication store n'est déclaré réussi tant que les workflows et tests appareils ne sont pas exécutés.
+- Le cache hors connexion ne promet pas l'édition hors ligne : les données privées et la synchronisation Supabase nécessitent une connexion active.
+
+
+## Durcissement SQL complémentaire — 2026-10-30
+
+- Les trois RPC `nexora_create_course_payment_order`, `nexora_enroll_free_course` et `nexora_reserve_ai_usage` utilisent désormais `search_path = ''`. Leurs accès restent réservés aux utilisateurs authentifiés, qui passent les contrôles `auth.uid()` et les règles métier; `anon` et `PUBLIC` ne disposent pas d'EXECUTE. Les tests pgTAP vérifient maintenant le search_path des trois fonctions.
+- Indexation : 29 index couvrant les clés étrangères signalées par Supabase ont été ajoutés, ainsi qu'un index complet sur `nexora_notifications.user_id` (l'ancien index étant partiel). Le doublon `media_library_owner_platform_external_uidx` a été supprimé; l'index unique lié à la contrainte reste en place.
+- Contrôle SQL post-migration : zéro clé étrangère publique restante sans index de tête selon le contrôle de catalogue; l'index dupliqué n'existe plus. Les advisors n'affichent plus les alertes `unindexed_foreign_keys` ni `duplicate_index`.
+- Les 46 alertes `unused_index` post-migration ne signifient pas que les index doivent être supprimés : la base est encore peu chargée et les nouveaux index n'ont pas encore servi de requêtes en production. À réévaluer après une période d'usage réel.
+- Les 13 groupes de politiques permissives multiples ont été consolidés : les droits d'écriture sont séparés des règles SELECT et les lectures des projets/assets ont été fusionnées en conservant propriétaires, administrateurs et membres. L'advisor ne signale plus de `multiple_permissive_policies`.
+- Test de non-régression ciblé exécuté après consolidation : un utilisateur authentifié a créé son profil créateur privé, ajouté, relu, modifié puis supprimé un lien social; toutes les opérations ont réussi et aucune donnée temporaire n'est restée.
+- Les trois tables `media_oauth_states`, `media_provider_connections` et `organization_invitations` restent sans politique RLS, mais les privilèges de table `anon` et `authenticated` sont absents; seul `service_role` dispose de privilèges. Ces tables sont actuellement utilisées par les Edge Functions côté serveur.
+- Les trois RPC SECURITY DEFINER signalées ont été revues : elles exigent `auth.uid()`, contrôlent l'accès au cours ou au quota de l'utilisateur et ne permettent pas l'accès anonyme. L'advisor continue de les signaler car les RPC authentifiées sont intentionnelles.
+- `pg_net` : les tâches cron `nexora-rss-sync-every-6-hours` et `nexora-public-creators-sync-every-6-hours` s'exécutent sous `postgres`. Une migration de restriction a été enregistrée, mais les ACL du schéma `net` et des fonctions restent détenues par `supabase_admin`; le rôle SQL connecté n'a pas l'appartenance/propriété nécessaire pour les révoquer. Le contrôle de permissions confirme que les privilèges n'ont pas changé. Ne pas considérer ce point comme corrigé; intervention du propriétaire de l'extension requise. Le schéma `net` n'a pas été déplacé, car `pg_net` est déclaré non-relocatable et les cron jobs en dépendent.
+- La protection des mots de passe compromis reste désactivée dans Supabase Auth. Elle ne peut pas être modifiée via les fonctions SQL disponibles dans cette connexion; elle doit être activée dans les paramètres Auth du projet.
+
+
+## Stockage sécurisé des sessions natives — 2026-10-30
+
+- Dépendance `@aparajita/capacitor-secure-storage` 8.0.1 ajoutée pour Capacitor 8. Les sessions Supabase natives utilisent l'adaptateur `getItem`/`setItem`/`removeItem` du plugin : Keychain iOS et chiffrement AES-GCM avec clé Android Keystore. Le navigateur Web conserve le stockage standard Supabase.
+- iOS : accessibilité Keychain `whenUnlockedThisDeviceOnly`; synchronisation iCloud non activée. Un marqueur non sensible du WebView permet d'effacer le préfixe NEXORA du Keychain après une réinstallation, car les éléments Keychain peuvent survivre à la suppression de l'application.
+- Les liens de récupération de mot de passe et de secours d'invitation générés depuis le client natif pointent maintenant vers le domaine Web hébergé au lieu de `capacitor://localhost`.
+- Le retour OAuth natif des fournisseurs média et les liens profonds de reprise de session restent à implémenter avant de déclarer tous les parcours d'intégration natifs prêts.

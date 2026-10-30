@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Building2, UserPlus, RefreshCw, Copy, ShieldCheck } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { getClientRedirectUrl, supabase } from '../lib/supabase';
 import ModuleDataOverview from './ModuleDataOverview';
 
 type Organization = { id: string; name: string; slug: string; status: string; created_at: string };
@@ -87,7 +87,7 @@ export default function OrganizationPanel({ userId, activeOrganizationId, onActi
     setBusy(false);
     if (inviteError || !data?.token) { setError(data?.error || inviteError?.message || 'Impossible de créer l’invitation.'); return; }
     const result = data as InvitationResult;
-    const url = result.invitation_url || (window.location.origin + '/?token=' + encodeURIComponent(result.token!));
+    const url = result.invitation_url || getClientRedirectUrl('/?token=' + encodeURIComponent(result.token!));
     setInvitationUrl(url);
     setInviteEmail('');
     setMessage('Invitation créée. Copiez le lien et transmettez-le uniquement à la personne invitée. Le compte destinataire devra avoir un e-mail vérifié correspondant.');

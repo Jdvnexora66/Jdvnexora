@@ -1,0 +1,34 @@
+name: NEXORA web quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web-build:
+    name: TypeScript and Vite production build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build web client
+        run: npm run build
+      - name: Upload web distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexora-web-dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
