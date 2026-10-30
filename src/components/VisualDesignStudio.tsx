@@ -23,7 +23,9 @@ type StudioBlock = {
 type PageStyle = { density: 'comfortable' | 'compact'; textScale: 'small' | 'normal' | 'large'; radius: number; background: string; surface: string; text: string; accent: string };
 type NativeTarget = 'panel' | 'card' | 'form' | 'heading' | 'button';
 type NativeOverride = { background: string; color: string; radius: number; padding: number };
-type StudioConfig = { schemaVersion: 1; theme: 'nexora-dark' | 'nexora-light' | 'ocean'; pageStyle?: PageStyle; nativeStyles?: Partial<Record<NativeTarget, NativeOverride>>; components: StudioBlock[] };
+type NativeElementOverride = { tag: string; label: string; originalText?: string; text?: string; background?: string; color?: string; radius?: number; padding?: number };
+type NativeElementSelection = { path: string; tag: string; label: string; originalText: string; canEditText: boolean };
+type StudioConfig = { schemaVersion: 1; theme: 'nexora-dark' | 'nexora-light' | 'ocean'; pageStyle?: PageStyle; nativeStyles?: Partial<Record<NativeTarget, NativeOverride>>; nativeElements?: Record<string, NativeElementOverride>; components: StudioBlock[] };
 type PageScope = string;
 type LayoutRow = { id: string; name: string; scope: PageScope; draft_config: StudioConfig; published_config: StudioConfig | null; version: number; is_default: boolean; updated_at: string; published_at: string | null };
 type VersionRow = { id: string; layout_id: string; version: number; snapshot: StudioConfig; action: string; created_at: string };
@@ -38,7 +40,7 @@ const presets: Array<{ type: StudioBlock['type']; title: string; content?: strin
   { type: 'image', title: 'Image', content: 'Description de l’image' },
   { type: 'video', title: 'Vidéo', content: 'Vidéo intégrée', url: 'https://www.youtube-nocookie.com/embed/ScMzIvxBSi4' },
 ];
-const starter: StudioConfig = { schemaVersion: 1, theme: 'nexora-dark', pageStyle: { density: 'comfortable', textScale: 'normal', radius: 14, background: '#0B0B0D', surface: '#202024', text: '#F5F2EA', accent: '#D6B66E' }, nativeStyles: {}, components: [
+const starter: StudioConfig = { schemaVersion: 1, theme: 'nexora-dark', pageStyle: { density: 'comfortable', textScale: 'normal', radius: 14, background: '#0B0B0D', surface: '#202024', text: '#F5F2EA', accent: '#D6B66E' }, nativeStyles: {}, nativeElements: {}, components: [
   { id: 'welcome-title', type: 'heading', title: 'Bienvenue dans votre espace', content: 'Configurez votre tableau de bord NEXORA', color: '#F5F2EA', width: 'full', padding: 16 },
   { id: 'welcome-text', type: 'text', title: 'Votre espace de travail', content: 'Ajoutez des blocs, personnalisez leur apparence et enregistrez votre brouillon.', color: '#C9C1B2', width: 'full', padding: 12 },
   { id: 'welcome-card', type: 'card', title: 'Vos projets', content: 'Nombre de projets enregistrés dans votre compte.', dataBinding: 'projects.total', background: '#202024', color: '#F5F2EA', radius: 16, padding: 20, width: 'half' },
@@ -102,7 +104,24 @@ const safeConfig = (value: unknown): StudioConfig => {
     const value = rawNative?.[target];
     if (value) nativeStyles[target] = { background: safeColor(value.background, palette.surface), color: safeColor(value.color, palette.text), radius: Number.isFinite(value.radius) ? Math.max(0, Math.min(32, Number(value.radius))) : 12, padding: Number.isFinite(value.padding) ? Math.max(0, Math.min(48, Number(value.padding))) : 12 };
   }
-  return { schemaVersion: 1, theme, pageStyle, nativeStyles, components };
+  const rawElements = input.nativeElements && typeof input.nativeElements === 'object' ? input.nativeElements as Record<string, Partial<NativeElementOverride>> : {};
+  const nativeElements: Record<string, NativeElementOverride> = {};
+  const safePath = (path: string) => path.length <= 1400 && /^body(?: > [a-z][a-z0-9-]*:nth-of-type\([1-9][0-9]*\))*$/.test(path);
+  for (const [path, value] of Object.entries(rawElements).slice(0, 120)) {
+    if (!safePath(path) || !value || typeof value !== 'object') continue;
+    const tag = typeof value.tag === 'string' && /^[a-z][a-z0-9-]{0,30}$/.test(value.tag) ? value.tag : 'div';
+    nativeElements[path] = {
+      tag,
+      label: typeof value.label === 'string' ? value.label.slice(0, 100) : tag,
+      originalText: typeof value.originalText === 'string' ? value.originalText.slice(0, 2000) : undefined,
+      text: typeof value.text === 'string' ? value.text.slice(0, 2000) : undefined,
+      background: typeof value.background === 'string' && /^#[0-9a-f]{6}$/i.test(value.background) ? value.background.toUpperCase() : undefined,
+      color: typeof value.color === 'string' && /^#[0-9a-f]{6}$/i.test(value.color) ? value.color.toUpperCase() : undefined,
+      radius: Number.isFinite(value.radius) ? Math.max(0, Math.min(32, Number(value.radius))) : undefined,
+      padding: Number.isFinite(value.padding) ? Math.max(0, Math.min(48, Number(value.padding))) : undefined,
+    };
+  }
+  return { schemaVersion: 1, theme, pageStyle, nativeStyles, nativeElements, components };
 };
 
 export default function VisualDesignStudio({ userId, role }: { userId: string; role: string }) {
