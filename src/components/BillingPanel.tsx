@@ -236,9 +236,8 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
           <div className="billing-order-price">{formatPrice(selectedPlan)}</div>
           <ul className="billing-benefit-list">
             {planDetails(selectedPlan).length ? planDetails(selectedPlan).map((benefit) => <li key={benefit}><Check size={16}/><span>{benefit}</span></li>) : <li><Check size={16}/><span>Accès aux services inclus dans cette formule</span></li>}
-            {selectedPlan.trial_days > 0 && <li><Check size={16}/><span>{selectedPlan.trial_days} jour(s) d’essai inclus</span></li>}
           </ul>
-          <div className="billing-secure-note"><LockKeyhole size={16}/><span>Les informations de carte sont traitées par KKIAPAY et ne sont pas enregistrées dans NEXORA.</span></div>
+          <div className="billing-secure-note"><LockKeyhole size={16}/><span>Les informations de paiement sont traitées par KKIAPAY et ne sont pas enregistrées dans NEXORA.</span></div><p className="muted">Les forfaits sont activés après confirmation du paiement. Le renouvellement est manuel à l’échéance ; aucun prélèvement automatique récurrent n’est effectué.</p>
         </article>
         <div className="billing-payment-card">
           <h3>Moyen de paiement</h3>
@@ -284,7 +283,6 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
           <div className="billing-plan-card-top"><span className="billing-plan-icon"><ShieldCheck size={20}/></span><span className={plan.active ? 'status-badge status-completed' : 'status-badge status-archived'}>{plan.active ? 'Disponible' : 'Masqué'}</span></div>
           <h4>{plan.name}</h4><p className="billing-plan-description">{plan.description || 'Une formule JDV NEXORA pour avancer à votre rythme.'}</p>
           <div className="billing-plan-price">{formatPrice(plan)}</div>
-          {plan.trial_days > 0 && <span className="billing-trial-badge">{plan.trial_days} jours d’essai</span>}
           <div className="billing-plan-divider"/>
           <p className="billing-benefits-title">Ce qui est inclus</p>
           <ul className="billing-benefit-list">{(benefits.length ? benefits : ['Accès aux fonctionnalités de cette formule']).map((benefit) => <li key={benefit}><Check size={16}/><span>{benefit}</span></li>)}</ul>
