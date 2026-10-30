@@ -171,6 +171,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
       const {data:order,error:orderError}=await supabase.functions.invoke('create-subscription-payment-order',{body:{plan_id:planToPay.id}});
       if(orderError) throw new Error(order?.error??orderError.message??'Impossible de préparer le paiement.');
       if(order?.already_active) {
+        setPaymentPending(false);
         setPaymentNotice('Ce forfait est déjà actif sur votre compte. Aucun nouveau paiement n’a été lancé.');
         setSelectedPlan(null);
         await load();
