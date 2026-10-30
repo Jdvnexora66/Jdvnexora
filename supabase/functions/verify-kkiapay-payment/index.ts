@@ -107,8 +107,11 @@ async function verifyCourseOrder(
       admin.from("nexora_course_payment_orders").select("id,status").eq("provider_reference", transactionId).maybeSingle(),
     ]);
     if (subscriptionCheckError || orderCheckError) return reply(500, { error: "Impossible de vérifier l'utilisation de cette transaction." });
-    if (usedSubscription) return reply(409, { error: "Cette transaction est déjà utilisée pour un abonnement." });
-    if (usedOrder && usedOrder.id !== order.id) return reply(409, { error: "Cette transaction est déjà associée à une autre formation." });
+    if (usedSubscription || (usedOrder && usedOrder.id !== order.id)) {
+      await admin.from("nexora_course_payment_orders").update({ status: "pending", provider_reference: null, updated_at: new Date().toISOString() })
+        .eq("id", order.id).eq("status", "verification_required");
+      return reply(409, { error: usedSubscription ? "Cette transaction est déjà utilisée pour un abonnement." : "Cette transaction est déjà associée à une autre formation." });
+    }
 
     const now = new Date().toISOString();
     const { data: updatedOrder, error: updateOrderError } = await admin.from("nexora_course_payment_orders")
@@ -197,10 +200,12 @@ Deno.serve(async (req: Request) => {
           || String(txRecord?.type ?? "").toUpperCase() !== "DEBIT"
           || Number(txRecord?.amount) !== Number(plan.price_minor)
           || txCurrency !== "XOF") return reply(402, { error: "La transaction n'est pas confirmée pour le montant exact du forfait en FCFA." });
-      const { data: existing, error: existingError } = await admin.from("subscriptions")
-        .select("id,user_id,plan_id,status").eq("provider", "kkiapay")
-        .eq("provider_reference", transactionId).maybeSingle();
-      if (existingError) return reply(500, { error: "Impossible de vérifier si cette transaction a déjà été utilisée." });
+      const [{ data: existing, error: existingError }, { data: usedCourseOrder, error: courseOrderCheckError }] = await Promise.all([
+        admin.from("subscriptions").select("id,user_id,plan_id,status").eq("provider", "kkiapay").eq("provider_reference", transactionId).maybeSingle(),
+        admin.from("nexora_course_payment_orders").select("id").eq("provider_reference", transactionId).maybeSingle(),
+      ]);
+      if (existingError || courseOrderCheckError) return reply(500, { error: "Impossible de vérifier si cette transaction a déjà été utilisée." });
+      if (usedCourseOrder) return reply(409, { error: "Cette transaction est déjà associée à une formation." });
       if (existing) {
         if (existing.user_id === authData.user.id && existing.plan_id === plan.id && existing.status === "active") return reply(200, { verified: true, subscription_id: existing.id, idempotent: true });
         return reply(409, { error: "Cette transaction est déjà associée à un abonnement." });
