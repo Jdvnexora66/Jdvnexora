@@ -195,7 +195,7 @@ async function syncOne(admin: ReturnType<typeof createClient>, channel: Record<s
   try {
     xml = await fetchFeed(channelId);
   } catch (feedError) {
-    return await syncOneViaOAuth(admin, channel, feedError);
+    return await syncOneViaOAuth(admin, ownerId, channelId, channelRowId, String(channel.channel_name ?? ""));
   }
   const entries = [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map(match => match[1]).slice(0, 15);
   const channelTitle = xmlTag(xml, "title") || String(channel.channel_name || "Créateur YouTube");
