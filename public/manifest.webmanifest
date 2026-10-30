@@ -10,6 +10,21 @@
   "background_color": "#090e1c",
   "theme_color": "#0b1020",
   "icons": [
-    { "src": "/nexora-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    {
+      "src": "/nexora-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "categories": [
+    "business",
+    "productivity",
+    "education"
   ]
 }
