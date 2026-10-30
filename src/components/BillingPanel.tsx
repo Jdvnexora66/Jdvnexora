@@ -222,6 +222,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
   }
 
   const statusLabel: Record<Subscription['status'], string> = { pending: 'En attente', active: 'Actif', trialing: 'Essai en cours', past_due: 'Paiement à régulariser', canceled: 'Résilié', expired: 'Expiré' };
+  const subscriptionStatus: Subscription['status'] = subscription && ['active','trialing'].includes(subscription.status) && subscription.ends_at && Date.parse(subscription.ends_at) <= Date.now() ? 'expired' : (subscription?.status ?? 'expired');
   const subscribedPlan = subscription ? (Array.isArray(subscription.plan) ? subscription.plan[0] ?? null : subscription.plan) : null;
 
   if (selectedPlan) {
@@ -270,12 +271,12 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
 
   return <section id="billing" className="project-panel billing-panel">
     <div className="section-heading"><div><p className="eyebrow">OFFRES & ABONNEMENTS</p><h2><CreditCard size={21}/> Forfaits et abonnement</h2><p className="muted">Consultez les offres et le statut de votre abonnement.</p></div><button type="button" className="icon-button" onClick={() => void load()} disabled={loading} aria-label="Actualiser les forfaits"><RefreshCw size={16}/></button></div>
-    <ModuleDataOverview sources={["plans", "subscriptions"]} metrics={[{ label: "Forfaits chargés", value: plans.length }, { label: "Abonnement", value: subscription ? statusLabel[subscription.status] : "Aucun enregistré" }, { label: "Forfait actif", value: subscribedPlan?.name ?? "Non disponible" }]} loading={loading} error={Boolean(error)} caption="Le statut est lu depuis la base; aucun paiement n'est déclaré réussi par cette page." />
+    <ModuleDataOverview sources={["plans", "subscriptions"]} metrics={[{ label: "Forfaits chargés", value: plans.length }, { label: "Abonnement", value: subscription ? statusLabel[subscriptionStatus] : "Aucun enregistré" }, { label: "Forfait actif", value: subscribedPlan?.name ?? "Non disponible" }]} loading={loading} error={Boolean(error)} caption="Le statut est lu depuis la base; aucun paiement n'est déclaré réussi par cette page." />
 
 
     <div className="billing-current">
       <h3><BadgeCheck size={17}/> Votre abonnement</h3>
-      {subscription ? <div className="project-item"><div className="project-type-icon"><CreditCard size={18}/></div><div className="project-info"><h3>{subscribedPlan?.name ?? 'Forfait non disponible'}</h3><p>{statusLabel[subscription.status]}{subscription.ends_at ? ' · échéance ' + new Date(subscription.ends_at).toLocaleDateString('fr-FR') : ''}</p></div><span className="project-type-label">{subscribedPlan ? formatPrice({ price_minor: subscribedPlan.price_minor, currency: subscribedPlan.currency, billing_interval: subscribedPlan.billing_interval as Plan['billing_interval'] }) : subscription.status}</span></div> : <p className="muted">Aucun abonnement enregistré pour ce compte.</p>}
+      {subscription ? <div className="project-item"><div className="project-type-icon"><CreditCard size={18}/></div><div className="project-info"><h3>{subscribedPlan?.name ?? 'Forfait non disponible'}</h3><p>{statusLabel[subscriptionStatus]}{subscription.ends_at ? ' · échéance ' + new Date(subscription.ends_at).toLocaleDateString('fr-FR') : ''}</p></div><span className="project-type-label">{subscribedPlan ? formatPrice({ price_minor: subscribedPlan.price_minor, currency: subscribedPlan.currency, billing_interval: subscribedPlan.billing_interval as Plan['billing_interval'] }) : subscription.status}</span></div> : <p className="muted">Aucun abonnement enregistré pour ce compte.</p>}
     </div>
     <div className="billing-plans">
       <div className="billing-plans-heading"><div><p className="eyebrow">CHOISISSEZ VOTRE FORMULE</p><h3>Des offres simples, des avantages clairs</h3><p className="muted">Comparez les formules, puis cliquez sur « Choisir cet abonnement » pour continuer vers le paiement.</p></div></div>
