@@ -208,7 +208,7 @@ export default function Academy({ userId }: { userId:string }) {
               {lessons.filter(lesson=>lesson.course_id===course.id&&lesson.is_published).length>0&&<div className="project-list academy-course-lessons"><h4>Leçons disponibles</h4>{lessons.filter(lesson=>lesson.course_id===course.id&&lesson.is_published).map((lesson,index)=><article key={lesson.id} className="project-item"><div className="project-type-icon"><BookOpen size={16}/></div><div className="project-info"><p className="eyebrow">LEÇON {lesson.position||index+1}{lesson.is_preview?' · APERÇU':''}</p><h4>{lesson.title}</h4>{lesson.description&&<p>{lesson.description}</p>}{lesson.content&&<p className="academy-lesson-content">{lesson.content}</p>}{lesson.media_url&&<a href={lesson.media_url} target="_blank" rel="noopener noreferrer">{lesson.content_type==='video'?'Ouvrir la vidéo':lesson.content_type==='document'?'Ouvrir le document':'Ouvrir la ressource'}</a>}</div></article>)}</div>}
             </article>)}
           </div>}
-        <p className="muted academy-course-disclaimer">Le paiement et l’activation automatique des formations payantes ne sont pas encore ouverts : aucun paiement n’est demandé depuis cet écran.</p>
+        <p className="muted academy-course-disclaimer">Le paiement est lancé via KKIAPAY et l’accès n’est activé qu’après confirmation de la transaction par le serveur. En cas d’interruption, utilisez « Réessayer la vérification » sans effectuer un second paiement.</p>
       </section>
       <div className="section-heading"><div><h3>Parcours d’apprentissage</h3><p className="muted">Trois parcours, des exercices concrets et une progression sauvegardée dans votre compte.</p></div></div>
       <div className="feature-list academy-path-grid">
