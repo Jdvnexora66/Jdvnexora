@@ -84,7 +84,7 @@ export default function PublishedVisualLayout({ scope }: { scope: string }) {
   const [published,setPublished] = useState<Published|null>(null);
   const [bindingValues,setBindingValues] = useState<Record<string, number | null>>({});
   useEffect(() => {
-    if (!published) return;
+    if (!published || scope === 'dashboard') return;
     const safeScope = scope.replace(/[^a-zA-Z0-9:_-]/g, '');
     const root = document.querySelector<HTMLElement>('.workspace-main[data-active-section="' + safeScope + '"]');
     if (!root) return;
