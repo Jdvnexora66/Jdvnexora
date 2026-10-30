@@ -29,7 +29,19 @@ Les fonctions de commande et de vérification Kkiapay sont déployées côté Su
 
 Les fonctions de paiement restent bloquées côté serveur si leurs secrets marchands ne sont pas configurés.
 
-## 5. Sécurité Auth et validation avant publication
+## 5. Publication Netlify
+
+Le dépôt fournit le workflow manuel `Deploy NEXORA to Netlify production` dans GitHub Actions. Pour publier :
+
+1. Créer un jeton personnel Netlify dans les paramètres du compte Netlify.
+2. Ajouter ce jeton dans GitHub : `Settings → Secrets and variables → Actions`, sous le nom `NETLIFY_AUTH_TOKEN`.
+3. Ouvrir l'onglet Actions du dépôt, choisir `Deploy NEXORA to Netlify production`, puis cliquer sur `Run workflow`.
+4. Le workflow relance `npm test`, compile le site avec Node 22 et publie le dossier `dist` sur le site Netlify `jdvnexora`.
+5. Vérifier que le déploiement Netlify est à l'état `ready` et correspond au commit attendu.
+
+Ne jamais inscrire le jeton Netlify dans le dépôt ou dans une conversation. Le workflow est manuel pour éviter de lancer un déploiement de production sans validation explicite.
+
+## 6. Sécurité Auth et validation avant publication
 
 - Vérifier CI et le build Vite.
 - Tester inscription, connexion, récupération de mot de passe et déconnexion.
