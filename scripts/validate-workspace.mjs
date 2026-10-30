@@ -18,6 +18,17 @@ const studioAiFunction = read('supabase/functions/studio-ai/index.ts');
 const paymentAttemptsIndexMigration = read('supabase/migrations/20261030220000_index_payment_attempts_plan_id.sql');
 const subscriptionSnapshotMigration = read('supabase/migrations/20261030080350_subscription_payment_order_snapshot.sql');
 const sourceMap = read('docs/architecture/page-source-map.md');
+const referenceDashboard = read('src/components/ReferenceDashboard.tsx');
+const organizationPanel = read('src/components/OrganizationPanel.tsx');
+const adminPanel = read('src/components/AdminPanel.tsx');
+const learningLibrary = read('src/components/LearningLibrary.tsx');
+const resourceLibrary = read('src/components/ResourceLibrary.tsx');
+const discoverPage = read('src/components/Discover.tsx');
+const mediaLibrary = read('src/components/MediaLibrary.tsx');
+const roadmapPage = read('src/components/Roadmap.tsx');
+const timelinePage = read('src/components/Timeline.tsx');
+const insightsPage = read('src/components/Insights.tsx');
+const publicVitrine = read('src/components/PublicVitrine.tsx');
 const tenantIsolationMigration = read('supabase/migrations/20261028103000_tenant_isolation_studio_projects.sql');
 
 const expectedRoutes = [
@@ -90,6 +101,29 @@ for (const name of requiredAppBindings) {
 }
 assert.ok(app.includes('<PublicVitrine'), 'Le 17e écran public doit rester accessible.');
 assert.ok(sourceMap.includes('17. Vitrine + connexion'), 'La carte des sources doit documenter le 17e écran.');
+const pageSourceContracts = {
+  'Tableau de bord': [app, ['<ReferenceDashboard', 'projectCount=', 'inProgressCount=']],
+  'Studio IA': [studioAiFunction, ['authClient.auth.getUser()', 'nexora_reserve_ai_usage', 'OPENAI_API_KEY']],
+  'Mes projets': [app, [".from('studio_projects')", ".from('studio_project_members')"]],
+  'Studio Design': [design, [".from('visual_studio_layouts')", ".from('visual_studio_versions')", 'Sélectionner un élément']],
+  'Entreprise / équipe': [organizationPanel, [".from('organizations')", 'invite-organization-member', 'accept-organization-invitation']],
+  'Profil': [app, [".from('profiles')", 'saveProfile']],
+  'Administration': [adminPanel, [".from('audit_logs')", ".from('nexora_courses')"]],
+  'Académie': [academy, [".from('nexora_courses')", 'create-course-payment-order']],
+  'Bibliothèque': [learningLibrary, [".from('user_learning_items')", ".from('content_items')"]],
+  'Ressources': [resourceLibrary, [".from('nexora_resources')", ".from('nexora_resource_progress')"]],
+  'Découvrir': [discoverPage, [".from('entrepreneurs')", ".from('followed_entrepreneurs')"]],
+  'Médias / créateurs': [mediaLibrary, [".from('media_library_items')", 'media-integrations']],
+  'Roadmap': [roadmapPage, [".from('roadmap_tasks')"]],
+  'Timeline': [timelinePage, [".from('timeline_events')"]],
+  'Insights': [insightsPage, [".from('content_items')"]],
+  'Facturation': [billing, [".from('subscriptions')", 'create-subscription-payment-order']],
+  'Vitrine publique': [publicVitrine, ['mailto:', 'JDV NEXORA']],
+};
+for (const [page, [source, tokens]] of Object.entries(pageSourceContracts)) {
+  for (const token of tokens) assert.ok(source.includes(token), `La page ${page} doit rester raccordée à sa fonctionnalité/source : ${token}`);
+}
+assert.ok(referenceDashboard.includes('projectCount') && referenceDashboard.includes('onOpenStudio'), 'Le tableau de bord référentiel doit exposer ses données et raccourcis métier.');
 for (const token of [
   "supabase.auth.signUp",
   "supabase.auth.signInWithPassword",
