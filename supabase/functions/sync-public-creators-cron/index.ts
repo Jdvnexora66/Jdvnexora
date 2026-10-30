@@ -36,7 +36,7 @@ async function fetchFeed(channelId: string): Promise<string> {
         });
         if (response.ok) {
           const xml = await response.text();
-          if (xml.length > 2_000_000 || !/<feed(?:\\s|>)/i.test(xml)) {
+          if (xml.length > 2_000_000 || !/<feed(?:\s|>)/i.test(xml)) {
             throw new Error("Réponse YouTube non conforme au format Atom.");
           }
           return xml;
