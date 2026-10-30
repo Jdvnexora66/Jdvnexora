@@ -7,8 +7,35 @@ type Message = { role: 'user' | 'assistant'; content: string };
 type StoredMessage = Message & { id: string; conversation_id: string; created_at: string };
 type UsageSummary = { quota: number; used: number; remaining: number; plan: string };
 
+type StructuredAnalysis = { summary: string; key_insights: string[]; strategies: string[]; action_steps: string[] };
+
+function parseStructuredAnalysis(raw: string): StructuredAnalysis | null {
+  const first = raw.indexOf('{');
+  const last = raw.lastIndexOf('}');
+  if (first < 0 || last <= first) return null;
+  try {
+    const value = JSON.parse(raw.slice(first, last + 1)) as Record<string, unknown>;
+    const asStrings = (input: unknown) => Array.isArray(input) ? input.filter((item): item is string => typeof item === 'string').slice(0, 20) : [];
+    if (typeof value.summary !== 'string' || !value.summary.trim()) return null;
+    return {
+      summary: value.summary.trim().slice(0, 12000),
+      key_insights: asStrings(value.key_insights),
+      strategies: asStrings(value.strategies),
+      action_steps: asStrings(value.action_steps),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function formatStructuredAnalysis(value: StructuredAnalysis): string {
+  const section = (title: string, items: string[]) => items.length ? `\n\n### ${title}\n${items.map(item => '- ' + item).join('\n')}` : '';
+  return `### Résumé\n${value.summary}${section('Idées clés', value.key_insights)}${section('Stratégies', value.strategies)}${section("Plan d’action", value.action_steps)}`;
+}
+
 export default function StudioIA() {
   const [prompt, setPrompt] = useState(() => new URLSearchParams(window.location.search).get('prompt')?.slice(0, 8000) ?? '');
+  const [analysisContentId, setAnalysisContentId] = useState<string | null>(() => new URLSearchParams(window.location.search).get('contentId'));
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -73,6 +100,7 @@ export default function StudioIA() {
     if (!question || busy) return;
     const currentUrl = new URL(window.location.href);
     currentUrl.searchParams.delete('prompt');
+    currentUrl.searchParams.delete('contentId');
     window.history.replaceState({}, '', currentUrl.toString());
     if (!supabase) { setError('Supabase n’est pas configuré.'); return; }
     if (!userId || !conversationId || !historyReady) {
@@ -101,7 +129,27 @@ export default function StudioIA() {
       if (!data?.text || typeof data.text !== 'string') {
         throw new Error(data?.error || 'Le service IA n’a pas renvoyé de réponse.');
       }
-      const answer = data.text;
+      const rawAnswer = data.text;
+      const structuredAnalysis = analysisContentId ? parseStructuredAnalysis(rawAnswer) : null;
+      const answer = structuredAnalysis ? formatStructuredAnalysis(structuredAnalysis) : rawAnswer;
+      if (analysisContentId) {
+        const payload = structuredAnalysis ?? { summary: rawAnswer, key_insights: [], strategies: [], action_steps: [] };
+        const { error: analysisSaveError } = await supabase.from('content_analyses').insert({
+          content_item_id: analysisContentId,
+          analysis_type: 'strategy',
+          status: 'completed',
+          summary: payload.summary,
+          key_insights: payload.key_insights,
+          strategies: payload.strategies,
+          action_steps: payload.action_steps,
+          model_label: String(data.model_label ?? data.model ?? 'Studio IA'),
+        });
+        if (analysisSaveError) {
+          setError('Réponse générée, mais l’enregistrement dans Insights a échoué. Vérifiez que le contenu vous appartient puis réessayez.');
+        } else {
+          setAnalysisContentId(null);
+        }
+      }
       if (data.usage && Number.isFinite(data.usage.quota) && Number.isFinite(data.usage.used) && Number.isFinite(data.usage.remaining)) {
         setUsage({ quota: data.usage.quota, used: data.usage.used, remaining: data.usage.remaining, plan: String(data.usage.plan ?? 'decouverte') });
       }
