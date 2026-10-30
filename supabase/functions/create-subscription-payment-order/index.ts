@@ -39,7 +39,17 @@ Deno.serve(async (req: Request) => {
     .eq("id", body.plan_id).maybeSingle();
   if (planError || !plan) return reply(404, { error: "Forfait introuvable." });
   if (!plan.active) return reply(409, { error: "Ce forfait n'est plus disponible." });
-  const { data: activeSubscription, error: activeSubscriptionError } = await userClient.from("subscriptions")
+  const admin = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
+  const now = new Date().toISOString();
+  const { error: expiryError } = await admin.from("subscriptions").update({
+    status: "expired", updated_at: now,
+  }).eq("user_id", authData.user.id).in("status", ["active", "trialing"])
+    .not("ends_at", "is", null).lte("ends_at", now);
+  if (expiryError) {
+    console.error("Subscription expiry reconciliation failed", expiryError);
+    return reply(500, { error: "Impossible de vérifier l'échéance de votre abonnement." });
+  }
+  const { data: activeSubscription, error: activeSubscriptionError } = await admin.from("subscriptions")
     .select("id,status").eq("user_id", authData.user.id).eq("plan_id", plan.id)
     .in("status", ["active", "trialing"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (activeSubscriptionError) return reply(500, { error: "Impossible de vérifier votre abonnement actuel." });
@@ -60,7 +70,6 @@ Deno.serve(async (req: Request) => {
     return reply(503, { error: "Le paiement KKIAPAY n'est pas configuré côté serveur. Aucun paiement ne sera lancé." });
   }
 
-  const admin = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
   const providerMode = Deno.env.get("KKIAPAY_SANDBOX") === "true" ? "sandbox" : "live";
   const { data: pendingOrder, error: pendingOrderError } = await admin.from("subscriptions")
     .select("id,provider_reference").eq("user_id", authData.user.id).eq("plan_id", plan.id)

@@ -312,6 +312,16 @@ Deno.serve(async (req: Request) => {
   if (!plan.active) return reply(409, { error: "Ce forfait n'est plus disponible." });
   if (plan.features?.billing_mode === "quote") return reply(400, { error: "Cette offre nécessite un devis." });
 
+  const expiryNow = new Date().toISOString();
+  const { error: expiryError } = await admin.from("subscriptions").update({
+    status: "expired", updated_at: expiryNow,
+  }).eq("user_id", authData.user.id).in("status", ["active", "trialing"])
+    .not("ends_at", "is", null).lte("ends_at", expiryNow);
+  if (expiryError) {
+    console.error("Subscription expiry reconciliation failed", expiryError);
+    return reply(500, { error: "Impossible de vérifier l'échéance de votre abonnement." });
+  }
+
   const isFree = plan.features?.billing_mode === "free" || Number(plan.price_minor) === 0;
   if (isFree) {
     const { data: activeFree, error: activeFreeError } = await admin.from("subscriptions")

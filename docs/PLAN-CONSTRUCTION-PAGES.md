@@ -66,7 +66,7 @@ Aucune des 17 pages ne doit être déclarée « validée en production » unique
 | 13 | Roadmap | Création, édition, suppression, priorités, échéances et statuts | Test complet de persistance et des états limites |
 | 14 | Timeline | Lecture, filtres, ajout, modification et suppression d'événements des profils possédés | Vérifier les sources et les événements sans preuve; test de persistance |
 | 15 | Insights | Catalogue d'analyses et envoi de contenus possédés au Studio IA; sauvegarde du résultat dans `content_analyses` | Tester la génération réelle et l'affichage après rechargement |
-| 16 | Facturation | Forfaits gratuits/payants/devis, commande serveur, KKIAPAY, vérification et activation idempotente | Tester Sandbox et règles de changement/renouvellement; le prélèvement récurrent automatique n'est pas inclus |
+| 16 | Facturation | Forfaits gratuits/payants/devis, commande serveur, KKIAPAY, vérification et activation idempotente; expiration automatique des abonnements échus toutes les 15 minutes | Tester Sandbox et règles de changement/renouvellement; le renouvellement reste manuel et le prélèvement récurrent automatique n'est pas inclus |
 | 17 | Vitrine publique | Présentation publique, navigation vers le portail, formulaire de contact | Vérifier liens, affichage mobile et envoi du contact sur le déploiement final |
 
 ### État du paiement déployé
