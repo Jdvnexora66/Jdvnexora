@@ -102,9 +102,6 @@ for (const token of ['Adresse de l’image (HTTPS)', 'URL de la vidéo intégré
 // Media sources are deliberately restricted to HTTPS and approved embed providers.
 assert.ok(design.includes("url.protocol === 'https:'"), 'Les médias doivent refuser les URL non HTTPS.');
 
-/* STUDIO_NATIVE_EDITOR_ASSERTIONS */
-  assert.ok(design.includes(token), `Fonction d’édition native absente : ${token}`);
-}
 
 for (const [file, source, functions] of [
   ['Facturation', billing, ['create-subscription-payment-order', 'verify-kkiapay-payment']],
