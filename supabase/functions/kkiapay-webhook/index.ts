@@ -22,11 +22,6 @@ function response(req: Request, status: number, body: Record<string, unknown>) {
   });
 }
 
-async function sha256Hex(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-}
-
 function constantTimeEqual(a: string, b: string): boolean {
   const enc = new TextEncoder();
   const aa = enc.encode(a);
@@ -49,14 +44,10 @@ Deno.serve(async (req: Request) => {
     return response(req, 503, { error: "webhook_not_configured" });
   }
 
-  // Store only the SHA-256 digest in Supabase secrets; never keep the merchant token in plaintext.
-  if (!/^[a-f0-9]{64}$/i.test(expectedSecret)) {
-    console.error("KKiaPay webhook secret hash must be a 64-character SHA-256 hex digest");
-    return response(req, 503, { error: "webhook_not_configured" });
-  }
+  // KKiaPay sends its configured webhook secret hash in x-kkiapay-secret.
+  // Compare the received signature directly; do not hash it a second time.
   const suppliedSecret = req.headers.get("x-kkiapay-secret") ?? "";
-  const suppliedHash = await sha256Hex(suppliedSecret);
-  if (!constantTimeEqual(suppliedHash, expectedSecret.toLowerCase())) {
+  if (!suppliedSecret || !constantTimeEqual(suppliedSecret, expectedSecret)) {
     return response(req, 401, { error: "invalid_webhook_signature" });
   }
 
