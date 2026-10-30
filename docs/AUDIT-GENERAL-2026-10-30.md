@@ -83,6 +83,38 @@ Le cache PWA ne fournit pas une édition hors ligne : les opérations privées r
 
 Les routes SPA et le chemin `/app` sont configurés. Toutefois, le code récent de `main` ne doit pas être confondu avec le site Netlify actuellement servi. Le propriétaire gère le déploiement Netlify ; après son déploiement, contrôler le SHA servi, l'authentification, les redirections, les assets et les parcours de chaque rôle.
 
+## Mise à jour après les livraisons du 30 octobre 2026
+
+Les PR suivantes ont été fusionnées après l'audit initial :
+
+- **PR #120 — pages et Studio Design** : amélioration des parcours Timeline, Insights, Organisations, Bibliothèque de formation et Académie; palettes distinctes, aperçu réel, sélection initiale de composants natifs.
+- **PR #122 — compléments des pages métier** : édition des profils Découvrir, tâches Roadmap et analyse contextuelle depuis Insights vers Studio IA.
+- **PR #121 — paiements** : commande serveur KKIAPAY pour formations et abonnements; reprise des vérifications interrompues; activation uniquement après vérification serveur.
+- **PR #123 — éditeur natif avancé** : sélection de l'élément précis dans la page réelle, réglages de fond/couleur/typographie/arrondi/espacement et édition du texte des éléments simples; application à l'aperçu et à la publication; tableau de bord référentiel protégé.
+- **PR #124 — registre de livraison** : mise à jour de l'état des 17 écrans.
+
+### Contrôles post-livraison
+
+- 16 vues authentifiées identifiées dans `App.tsx`, plus la vitrine publique : 17 écrans au total.
+- Build Web, CI, qualité TypeScript/Vite, compilation Android debug et compilation iOS simulateur réussis sur le dernier lot Studio Design.
+- Artéfacts Android debug et iOS simulateur générés. L'iOS est une compilation simulateur non signée; aucun IPA App Store ou AAB Play Store signé n'est produit.
+- Les fonctions Supabase de paiement sont actives avec JWT obligatoire :
+  - `create-course-payment-order` v1
+  - `create-subscription-payment-order` v1
+  - `verify-kkiapay-payment` v2
+- Les commandes de formation ont une contrainte unique par inscription et par référence fournisseur; les transactions ne sont pas réutilisables pour plusieurs commandes.
+- L'état détaillé des pages est suivi dans `docs/PLAN-CONSTRUCTION-PAGES.md`.
+
+### Risques et travaux qui restent réellement ouverts
+
+1. **Sécurité / identité / multi-tenant** : protection contre les mots de passe compromis à activer; revue des privilèges pg_net à traiter avec le propriétaire d'extension; permissions d'équipe, isolation organisationnelle, édition collaborative et politiques RLS à valider. Aucune politique RLS n'a été élargie dans les livraisons de pages, Studio ou paiements.
+2. **Configuration KKIAPAY** : vérifier les secrets marchands `KKIAPAY_PUBLIC_KEY`, `KKIAPAY_PRIVATE_KEY`, `KKIAPAY_SECRET_KEY` et utiliser `KKIAPAY_SANDBOX=true` pour la recette. Les fonctions refusent le paiement si les clés ne sont pas configurées.
+3. **Recette fonctionnelle** : tester avec comptes dédiés les 16 vues authentifiées, la sauvegarde/publication du Studio, les erreurs IA et les scénarios KKIAPAY (succès, refus, annulation, attente, doublon, reprise). Les builds réussis ne remplacent pas les tests réels.
+4. **Production Web** : le code est fusionné dans GitHub; le déploiement de production Netlify reste à effectuer par l'équipe JDV. Les previews de PR ne sont pas la production.
+5. **Facturation récurrente** : le paiement initial et les dates d'abonnement sont gérés; le prélèvement automatique récurrent et les relances programmées ne sont pas inclus dans ce lot.
+
+Le Studio Design édite les styles et le texte des éléments simples. Il ne remplace pas la structure React des composants métier complexes et n'exécute aucun code libre. Le déplacement ou la reconstruction complète de la structure native reste hors du périmètre livré.
+
 ## Architecture cible recommandée
 
 - Une identité et un projet Supabase uniques partagés par Web, PWA, Android et iOS.
