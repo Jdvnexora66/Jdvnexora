@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
+type AdminClient = SupabaseClient<any, "public", "public", any, any>;
 import { kkiapay } from "npm:@kkiapay-org/nodejs-sdk";
 
 const corsHeaders = {
@@ -11,7 +12,7 @@ const corsHeaders = {
 const reply = (status: number, payload: Record<string, unknown>) =>
   new Response(JSON.stringify(payload), { status, headers: corsHeaders });
 
-async function repairCourseEnrollment(admin: ReturnType<typeof createClient>, order: {
+async function repairCourseEnrollment(admin: AdminClient, order: {
   id: string; course_id: string; user_id: string; enrollment_id: string;
 }, transactionId: string) {
   const { data: enrollment, error: enrollmentReadError } = await admin.from("nexora_course_enrollments")
