@@ -13,6 +13,8 @@ type Entrepreneur = {
   industry: string | null;
   website_url: string | null;
   verification_status: 'unverified' | 'reviewed' | 'verified';
+  created_by: string;
+  visibility: 'public' | 'private';
 };
 
 type CreatorSource = { id: string; entrepreneur_id: string | null; title: string; source_url: string; publisher: string | null; source_type: string; excerpt: string | null; credibility_note: string | null; checked_at: string | null };
@@ -42,6 +44,7 @@ export default function Discover({ userId }: Props) {
   const [newCountry, setNewCountry] = useState('');
   const [newIndustry, setNewIndustry] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [editingProfileId, setEditingProfileId] = useState<string | null>(null);
   const [formBasket, setFormBasket] = useState<'content' | 'saas' | 'digital'>('content');
   const [followedIds, setFollowedIds] = useState<string[]>([]);
   const [showFollowedOnly, setShowFollowedOnly] = useState(false);
@@ -56,8 +59,8 @@ export default function Discover({ userId }: Props) {
     setLoading(true); setError('');
     try {
       let request = supabase.from('entrepreneurs')
-        .select('id,name,slug,summary,biography,country,industry,website_url,verification_status')
-        .eq('visibility', 'public').order('name', { ascending: true }).limit(200);
+        .select('id,name,slug,summary,biography,country,industry,website_url,verification_status,created_by,visibility')
+        .or('visibility.eq.public,created_by.eq.' + userId).order('name', { ascending: true }).limit(300);
       if (country.trim()) request = request.ilike('country', '%' + country.trim() + '%');
       const { data, error: loadError } = await request;
       if (loadError) {
@@ -100,7 +103,7 @@ export default function Discover({ userId }: Props) {
     } finally {
       setLoading(false);
     }
-  }, [country]);
+  }, [country, userId]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -143,11 +146,37 @@ export default function Discover({ userId }: Props) {
     return visibleItems.filter(item => belongsToBasket(item, basketId) && (!term || [item.name, item.summary, item.biography, item.country, item.industry, ...(socialsByProfile[item.id] ?? []).flatMap(social => [social.platform, social.handle])].filter(Boolean).join(' ').toLocaleLowerCase('fr').includes(term)));
   }
   function openAddForm(basketId: 'content' | 'saas' | 'digital') {
+    setEditingProfileId(null);setName('');setSummary('');setWebsite('');setSocialUrl('');setNewCountry('');
     setFormBasket(basketId);
     const defaults = { content: 'Création de contenu', saas: 'SaaS · Technologie', digital: 'Produits numériques' };
     setNewIndustry(defaults[basketId]);
     setShowForm(true);
   }
+  function beginEditProfile(item: Entrepreneur) {
+    setEditingProfileId(item.id);setName(item.name);setSummary(item.summary??'');
+    setWebsite(item.website_url??'');setNewCountry(item.country??'');setNewIndustry(item.industry??'');
+    const social=(socialsByProfile[item.id]??[])[0];
+    setSocialPlatform((social?.platform as typeof socialPlatform)??'youtube');
+    setSocialUrl(social?.profile_url??'');
+    setShowForm(true);setError('');setMessage('');
+  }
+
+  function closeProfileForm() {
+    setShowForm(false);setEditingProfileId(null);setName('');setSummary('');setWebsite('');
+    setSocialUrl('');setNewCountry('');setNewIndustry('');setSocialPlatform('youtube');
+  }
+
+  async function setProfileVisibility(item:Entrepreneur, visibility:'public'|'private') {
+    if(!supabase||item.created_by!==userId||saving)return;
+    setSaving(true);setError('');setMessage('');
+    const {error:updateError}=await supabase.from('entrepreneurs').update({visibility})
+      .eq('id',item.id).eq('created_by',userId);
+    setSaving(false);
+    if(updateError){setError('Impossible de modifier la visibilité de ce profil. Vérifiez vos droits puis réessayez.');return;}
+    setItems(current=>current.map(row=>row.id===item.id?{...row,visibility}:row));
+    setMessage(visibility==='public'?'Profil rendu public.':'Profil retiré du catalogue public.');
+  }
+
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!supabase || !userId || !name.trim()) return;
