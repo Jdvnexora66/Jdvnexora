@@ -140,3 +140,19 @@ Cette revue est une inspection statique du code et des configurations disponible
 - Test SQL positif exécuté avec un contexte `authenticated` : création d'un profil privé et ajout/lecture de son lien YouTube dans `social_accounts` réussis selon les politiques RLS; les données temporaires ont été supprimées (zéro ligne résiduelle).
 - Le tableau de synthèse inclut maintenant `social_accounts`; les recherches par panier tiennent compte des plateformes et handles. Les liens des sources documentaires sont également filtrés pour n'autoriser que HTTP/HTTPS.
 - Après consolidation des politiques RLS, l'advisor performance ne signale plus de doublon de politiques `INSERT`/`UPDATE` sur `entrepreneurs`; les alertes multiples restantes concernent d'autres tables et modules.
+
+
+## Phase 2 — architecture Web + Mobile — 2026-10-30
+
+- Architecture retenue : deux pôles de distribution, Web et Mobile natif, avec un seul projet Supabase et une seule source de vérité. Les comptes, projets, organisations, médias, droits RLS, stockage et fonctions serveur restent partagés; aucune base mobile parallèle.
+- Socle natif : Capacitor 8.6.0 (core, CLI, Android, iOS), application `com.jdvglobalcenter.nexora`, sortie web `dist`, schéma Android HTTPS et contenu mixte désactivé. Le client natif ouvre directement l'application authentifiée, tandis que le navigateur conserve la vitrine publique.
+- PWA : service worker de production et écran hors connexion ajoutés. Le cache est limité à la coque et aux ressources statiques; les routes Supabase Auth, REST, Storage, Functions, Realtime et GraphQL sont explicitement exclues du cache.
+- Responsive : viewport iOS `viewport-fit=cover`, gestion des zones de sécurité, orientation paysage de faible hauteur et navigation/tablette 761–1024 px. La navigation rapide mobile existante est conservée.
+- CI : workflow Web TypeScript/Vite sur push/PR et workflow natif manuel qui génère et compile un APK Android debug ainsi qu'une application iOS simulateur non signée.
+- Dépendances natives alignées et épinglées à 8.6.0; Node.js 22 minimum. L'environnement Android exige Android Studio 2025.2.1+ et SDK; l'environnement iOS exige macOS/Xcode 26+ et CocoaPods.
+
+### Limites de validation de la phase 2
+
+- Les projets natifs `android/` et `ios/` sont générés par le workflow de compilation; ils ne sont pas encore matérialisés/commités dans le dépôt.
+- Aucun build TypeScript/Vite, APK, AAB, application iOS, essai sur téléphone réel ou publication store n'est déclaré réussi tant que les workflows et tests appareils ne sont pas exécutés.
+- Le cache hors connexion ne promet pas l'édition hors ligne : les données privées et la synchronisation Supabase nécessitent une connexion active.
