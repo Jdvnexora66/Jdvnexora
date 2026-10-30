@@ -207,7 +207,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
         if (!isSafeNativeElementPath(path)) continue;
         let element: HTMLElement | null = null;
         try { element = previewDocument.querySelector<HTMLElement>(path); } catch { element = null; }
-        if (!element || !root.contains(element)) continue;
+        if (!element || !root.contains(element) || element.tagName.toLowerCase() !== override.tag) continue;
         if (!element.dataset.nexoraNativeStyled) {
           element.dataset.nexoraOriginalStyle = element.getAttribute('style') ?? '__none__';
           if (isNativeTextEditable(element)) element.dataset.nexoraOriginalText = element.textContent ?? '';
