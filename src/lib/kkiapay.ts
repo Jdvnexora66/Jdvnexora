@@ -20,16 +20,17 @@ async function ensureKkiapaySdk(): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>('script[data-kkiapay-sdk]');
     if (existing) {
+      if (window.openKkiapayWidget && window.addSuccessListener && window.addFailedListener) { resolve(); return; }
+      if (existing.dataset.loaded === 'true') { reject(new Error('Le SDK KKIAPAY est chargé mais ses fonctions ne sont pas disponibles.')); return; }
       existing.addEventListener('load', () => resolve(), { once: true });
       existing.addEventListener('error', () => reject(new Error('SDK KKIAPAY indisponible.')), { once: true });
-      if (window.openKkiapayWidget && window.addSuccessListener && window.addFailedListener) resolve();
       return;
     }
     const script = document.createElement('script');
     script.src = 'https://cdn.kkiapay.me/k.js';
     script.async = true;
     script.dataset.kkiapaySdk = 'true';
-    script.onload = () => resolve();
+    script.onload = () => { script.dataset.loaded = 'true'; resolve(); };
     script.onerror = () => reject(new Error('Impossible de charger le SDK KKIAPAY.'));
     document.head.appendChild(script);
   });
@@ -44,12 +45,12 @@ export async function launchKkiapayWidget(options: Record<string, unknown>, call
     window.addSuccessListener?.((response) => {
       const current = activeCallbacks;
       activeCallbacks = null;
-      if (current) void current.onSuccess(response);
+      if (current) void Promise.resolve(current.onSuccess(response)).catch(() => { activeCallbacks = null; });
     });
     window.addFailedListener?.((error) => {
       const current = activeCallbacks;
       activeCallbacks = null;
-      if (current) current.onFailure(error);
+      if (current) { try { current.onFailure(error); } catch { activeCallbacks = null; } }
     });
     listenersRegistered = true;
   }
