@@ -72,7 +72,7 @@ Deno.serve(async (req: Request) => {
 
   const providerMode = Deno.env.get("KKIAPAY_SANDBOX") === "true" ? "sandbox" : "live";
   const { data: pendingOrder, error: pendingOrderError } = await admin.from("subscriptions")
-    .select("id,provider_reference").eq("user_id", authData.user.id).eq("plan_id", plan.id)
+    .select("id,provider_reference,amount_minor,currency,billing_interval").eq("user_id", authData.user.id).eq("plan_id", plan.id)
     .eq("provider", "kkiapay").eq("status", "pending")
     .order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (pendingOrderError) return reply(500, { error: "Impossible de reprendre une commande d'abonnement existante." });
@@ -84,15 +84,18 @@ Deno.serve(async (req: Request) => {
     if (previousTransactionId) {
       return reply(200, { verification_required: true, order_id: pendingOrder.id, transaction_id: previousTransactionId, provider_mode: previousMode });
     }
-    if (previousMode === providerMode) {
+    if (previousMode === providerMode
+        && Number(pendingOrder.amount_minor) === Number(plan.price_minor)
+        && pendingOrder.currency === plan.currency
+        && pendingOrder.billing_interval === plan.billing_interval) {
       return reply(200, {
         order_id: pendingOrder.id,
         plan_id: plan.id,
-        amount_xof: Number(plan.price_minor),
-        currency: plan.currency,
+        amount_xof: Number(pendingOrder.amount_minor),
+        currency: pendingOrder.currency,
         provider_mode: providerMode,
         public_key: publicKey,
-        billing_interval: plan.billing_interval,
+        billing_interval: pendingOrder.billing_interval,
       });
     }
     const { error: cancelError } = await admin.from("subscriptions").update({
@@ -108,7 +111,10 @@ Deno.serve(async (req: Request) => {
     status: "pending",
     provider: "kkiapay",
     provider_reference: orderToken,
-  }).select("id").single();
+    amount_minor: Number(plan.price_minor),
+    currency: plan.currency,
+    billing_interval: plan.billing_interval,
+  }).select("id,amount_minor,currency,billing_interval").single();
   if (createOrderError || !createdOrder) {
     console.error("Subscription payment order creation failed", createOrderError);
     return reply(500, { error: "Impossible de créer la commande d'abonnement. Réessayez." });
@@ -117,10 +123,10 @@ Deno.serve(async (req: Request) => {
   return reply(200, {
     order_id: createdOrder.id,
     plan_id: plan.id,
-    amount_xof: Number(plan.price_minor),
-    currency: plan.currency,
+    amount_xof: Number(createdOrder.amount_minor),
+    currency: createdOrder.currency,
     provider_mode: providerMode,
     public_key: publicKey,
-    billing_interval: plan.billing_interval,
+    billing_interval: createdOrder.billing_interval,
   });
 });
