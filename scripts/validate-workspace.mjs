@@ -13,6 +13,7 @@ const billing = read('src/components/BillingPanel.tsx');
 const academy = read('src/components/Academy.tsx');
 const subscriptionOrder = read('supabase/functions/create-subscription-payment-order/index.ts');
 const paymentVerification = read('supabase/functions/verify-kkiapay-payment/index.ts');
+const kkiapayWebhook = read('supabase/functions/kkiapay-webhook/index.ts');
 const subscriptionSnapshotMigration = read('supabase/migrations/20261030080350_subscription_payment_order_snapshot.sql');
 const sourceMap = read('docs/architecture/page-source-map.md');
 const tenantIsolationMigration = read('supabase/migrations/20261028103000_tenant_isolation_studio_projects.sql');
@@ -87,6 +88,24 @@ for (const name of requiredAppBindings) {
 }
 assert.ok(app.includes('<PublicVitrine'), 'Le 17e écran public doit rester accessible.');
 assert.ok(sourceMap.includes('17. Vitrine + connexion'), 'La carte des sources doit documenter le 17e écran.');
+for (const token of [
+  "supabase.auth.signUp",
+  "supabase.auth.signInWithPassword",
+  "supabase.auth.resetPasswordForEmail",
+  "event === 'PASSWORD_RECOVERY'",
+  "supabase.auth.updateUser({ password })",
+]) {
+  assert.ok(app.includes(token), `Le parcours Auth doit conserver ${token}.`);
+}
+for (const token of [
+  'https://jdvnexora.netlify.app',
+  'await sha256Hex(suppliedSecret)',
+  'KKIAPAY_WEBHOOK_SECRET_HASH',
+  'subscription_activated: false',
+]) {
+  assert.ok(kkiapayWebhook.includes(token), `Le webhook Kkiapay doit conserver la validation sécurisée : ${token}.`);
+}
+assert.ok(!kkiapayWebhook.includes('hilarious-cheesecake-2520ca.netlify.app'), 'Le webhook ne doit plus autoriser un ancien domaine Netlify.');
 for (const token of [
   'drop policy if exists projects_select_owner_admin_or_member on public.studio_projects',
   'drop policy if exists assets_select_owner_admin_or_project_member on public.studio_assets',
