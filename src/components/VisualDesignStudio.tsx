@@ -236,7 +236,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
         if (!clicked) return;
         const activeScope = scope.replace(/[^a-zA-Z0-9:_-]/g, '');
         const pageRoot = previewDocument.querySelector<HTMLElement>('.workspace-main[data-active-section="' + activeScope + '"]');
-        const element = clicked.closest<HTMLElement>('h1,h2,h3,h4,h5,p,span,strong,em,small,label,button,a,article,section,div,form,li,img,header,footer,nav');
+        const element = clicked.closest<HTMLElement>('h1,h2,h3,h4,h5,p,span,strong,em,small,label,button,a,article,section,div,form,li,img,input,textarea,select,svg,video,header,footer,nav');
         if (!element || !pageRoot || !pageRoot.contains(element) || element === pageRoot) return;
         const path = buildNativeElementPath(element);
         if (!path || !isSafeNativeElementPath(path)) return;
