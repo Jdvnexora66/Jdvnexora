@@ -3091,3 +3091,13 @@ button.logout-button) {
   .mobile-bottom-nav button { font-size: .6rem; }
   .mobile-bottom-nav button svg { width: 18px; height: 18px; }
 }
+
+
+/* Phase 1 — authentification accessible et identité NEXORA */
+.page-shell.brand-theme .auth-brand-logo { display:block; width:min(164px,48%); height:auto; max-height:116px; object-fit:contain; object-position:left center; margin:0 0 14px; }
+.page-shell.brand-theme .password-field { position:relative; display:flex; align-items:center; width:100%; }
+.page-shell.brand-theme .auth-card .password-field input { width:100%; padding-right:52px; }
+.page-shell.brand-theme .password-visibility { position:absolute; right:8px; top:50%; transform:translateY(-50%); display:grid; place-items:center; width:40px; height:40px; padding:0; border:0; border-radius:10px; background:transparent; color:var(--text-secondary, #b8b3a8); cursor:pointer; }
+.page-shell.brand-theme .password-visibility:hover { background:rgba(255,255,255,.08); color:var(--text-primary, #fff); }
+.page-shell.brand-theme .password-visibility:focus-visible { outline:2px solid var(--accent, #e7b94f); outline-offset:2px; }
+@media(max-width:760px) { .page-shell.brand-theme .auth-brand-logo { width:132px; max-height:92px; margin-bottom:10px; } .page-shell.brand-theme .password-visibility { width:44px; height:44px; } }
