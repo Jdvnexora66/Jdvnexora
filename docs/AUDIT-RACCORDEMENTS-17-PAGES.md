@@ -177,4 +177,14 @@ Cette revue est une inspection statique du code et des configurations disponible
 - Dépendance `@aparajita/capacitor-secure-storage` 8.0.1 ajoutée pour Capacitor 8. Les sessions Supabase natives utilisent l'adaptateur `getItem`/`setItem`/`removeItem` du plugin : Keychain iOS et chiffrement AES-GCM avec clé Android Keystore. Le navigateur Web conserve le stockage standard Supabase.
 - iOS : accessibilité Keychain `whenUnlockedThisDeviceOnly`; synchronisation iCloud non activée. Un marqueur non sensible du WebView permet d'effacer le préfixe NEXORA du Keychain après une réinstallation, car les éléments Keychain peuvent survivre à la suppression de l'application.
 - Les liens de récupération de mot de passe et de secours d'invitation générés depuis le client natif pointent maintenant vers le domaine Web hébergé au lieu de `capacitor://localhost`.
-- Le retour OAuth natif des fournisseurs média et les liens profonds de reprise de session restent à implémenter avant de déclarer tous les parcours d'intégration natifs prêts.
+- Le retour OAuth natif des fournisseurs média est désormais implémenté : navigateur intégré Capacitor, écoute de `browserFinished` et reprise `appStateChange`, contrôle du compte côté Supabase puis synchronisation. Le flux Web par popup reste conservé. Les essais physiques Android/iOS et les véritables comptes développeur restent à effectuer.
+
+
+## Correctif de fusion et validation native — 2026-10-30
+
+- PR #113 : suppression des étiquettes de fusion résiduelles dans `src/App.tsx` et `src/styles.css`; imports d'authentification, styles de marque et responsive réunis. Vérification GitHub : aucun marqueur standard ou étiquette de branche dans ces deux fichiers.
+- PR #114 : ajout des plugins officiels `@capacitor/app` 8.1.2 et `@capacitor/browser` 8.0.5. Le parcours OAuth média natif est repris après fermeture du navigateur ou retour de l'application au premier plan.
+- PR #115/#116 : pipeline natif déclenché sur les PR et les mises à jour de `main`; corrections de l'installation Android SDK (paquet historique `tools` retiré) et de la continuation de ligne `xcodebuild`.
+- Compilation GitHub Actions réussie sur le commit `a04eb17491a5bebf2c4c7ae2ff0b4ec5a3ecf80c` : APK Android debug et application iOS simulateur non signée. Les artefacts sont disponibles dans l'exécution Actions #6 jusqu'au 13 novembre 2026. Cela valide la compilation native, pas encore les essais sur appareils physiques ni la signature Store.
+- PR #117 : réparation de `sync-resource-catalog`. La fonction déployée dans Supabase est maintenant en version 21, `verify_jwt=false` conservé avec contrôle interne `RESOURCE_SYNC_SECRET`; validation HTTPS stricte, redirections manuelles revalidées (3 maximum), timeout 12 s, corps limité à 2 Mo, import de 30 éléments maximum, ressources conservées non publiées pour validation éditoriale.
+- Cron `resource-catalog-sync` : job 3 actif toutes les 6 heures. Les derniers logs avant déploiement étaient en version 20; la validation du premier passage planifié en version 21 reste à confirmer.
