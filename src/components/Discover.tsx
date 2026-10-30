@@ -195,7 +195,10 @@ export default function Discover({ userId }: Props) {
         if(updateError){setError('Impossible de modifier ce profil. Vérifiez vos droits puis réessayez.');return;}
         const currentSources=sourcesByProfile[editingProfileId]??[];
         const websiteSource=currentSources.find(source=>source.source_type==='website');
-        if(normalizedWebsite&&websiteSource) {
+        if(!normalizedWebsite&&websiteSource) {
+          const {error:sourceError}=await supabase.from('content_sources').delete().eq('id',websiteSource.id);
+          if(sourceError)warnings.push('L’ancienne source du site n’a pas pu être retirée.');
+        } else if(normalizedWebsite&&websiteSource) {
           const {error:sourceError}=await supabase.from('content_sources').update({
             title:name.trim()+' — site de référence',source_url:normalizedWebsite,publisher:name.trim(),
             credibility_note:'Lien mis à jour par le propriétaire du profil. Vérifier les faits et la date de consultation avant validation.',
@@ -210,7 +213,10 @@ export default function Discover({ userId }: Props) {
           if(sourceError)warnings.push('La source du site n’a pas pu être créée.');
         }
         const currentSocial=(socialsByProfile[editingProfileId]??[])[0];
-        if(normalizedSocialUrl&&currentSocial) {
+        if(!normalizedSocialUrl&&currentSocial) {
+          const {error:socialError}=await supabase.from('social_accounts').delete().eq('id',currentSocial.id);
+          if(socialError)warnings.push('L’ancien lien social n’a pas pu être retiré.');
+        } else if(normalizedSocialUrl&&currentSocial) {
           const {error:socialError}=await supabase.from('social_accounts').update({
             platform:socialPlatform,profile_url:normalizedSocialUrl,is_official:false,
           }).eq('id',currentSocial.id);
