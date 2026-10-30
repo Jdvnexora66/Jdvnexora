@@ -206,19 +206,25 @@ Deno.serve(async (req: Request) => {
       const tx = await gateway.verify(transactionId);
       const txRecord = tx as unknown as Record<string, unknown>;
       const txCurrency = String(txRecord?.currency ?? txRecord?.currency_code ?? "XOF").toUpperCase();
-      if (String(txRecord?.status ?? "").toUpperCase() !== "SUCCESS"
-          || String(txRecord?.type ?? "").toUpperCase() !== "DEBIT"
+      const txStatus = String(txRecord?.status ?? "").toUpperCase();
+      if (txStatus !== "SUCCESS") {
+        if (["FAILED", "CANCELLED", "CANCELED", "EXPIRED", "TRANSACTION_NOT_FOUND"].includes(txStatus)) {
+          return reply(200, { verified: false, final: true, error: "La transaction KKIAPAY a échoué ou a été annulée. Vous pouvez relancer un nouveau paiement." });
+        }
+        return reply(200, { verified: false, pending: true, error: "La transaction KKIAPAY est encore en attente. Réessayez la vérification sans refaire le paiement." });
+      }
+      if (String(txRecord?.type ?? "").toUpperCase() !== "DEBIT"
           || Number(txRecord?.amount) !== Number(plan.price_minor)
-          || txCurrency !== "XOF") return reply(402, { error: "La transaction n'est pas confirmée pour le montant exact du forfait en FCFA." });
+          || txCurrency !== "XOF") return reply(200, { verified: false, final: true, error: "Le montant ou le type de transaction ne correspond pas au forfait en FCFA. Contactez le support si votre compte a été débité." });
       const [{ data: existing, error: existingError }, { data: usedCourseOrder, error: courseOrderCheckError }] = await Promise.all([
         admin.from("subscriptions").select("id,user_id,plan_id,status").eq("provider", "kkiapay").eq("provider_reference", transactionId).maybeSingle(),
         admin.from("nexora_course_payment_orders").select("id").eq("provider_reference", transactionId).maybeSingle(),
       ]);
       if (existingError || courseOrderCheckError) return reply(500, { error: "Impossible de vérifier si cette transaction a déjà été utilisée." });
-      if (usedCourseOrder) return reply(409, { error: "Cette transaction est déjà associée à une formation." });
+      if (usedCourseOrder) return reply(200, { verified: false, final: true, error: "Cette transaction est déjà associée à une formation." });
       if (existing) {
         if (existing.user_id === authData.user.id && existing.plan_id === plan.id && existing.status === "active") return reply(200, { verified: true, subscription_id: existing.id, idempotent: true });
-        return reply(409, { error: "Cette transaction est déjà associée à un abonnement." });
+        return reply(200, { verified: false, final: true, error: "Cette transaction est déjà associée à un autre abonnement." });
       }
       provider = "kkiapay";
       providerReference = transactionId;
@@ -241,7 +247,7 @@ Deno.serve(async (req: Request) => {
       if (duplicate?.user_id === authData.user.id && duplicate.plan_id === plan.id && duplicate.status === "active") {
         return reply(200, { verified: true, subscription_id: duplicate.id, idempotent: true });
       }
-      return reply(409, { error: "Cette transaction KKIAPAY a déjà été utilisée." });
+      return reply(200, { verified: false, final: true, error: "Cette transaction KKIAPAY a déjà été utilisée." });
     }
     console.error("Subscription activation failed", insertError);
     return reply(500, { error: "Impossible d'enregistrer l'abonnement. Contactez le support." });
