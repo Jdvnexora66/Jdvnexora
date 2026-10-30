@@ -28,6 +28,8 @@ jobs:
           java-version: '21'
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Install Android API 36
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: Install dependencies
@@ -76,7 +78,7 @@ jobs:
             -sdk iphonesimulator \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath ios/App/build \\
+            -derivedDataPath ios/App/build \
             CODE_SIGNING_ALLOWED=NO build
       - name: Package simulator app
         run: |
