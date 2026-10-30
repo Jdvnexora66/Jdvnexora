@@ -131,3 +131,11 @@ Cette revue est une inspection statique du code et des configurations disponible
 - Les advisors performance signalent 29 clés étrangères sans index couvrant, des index inutilisés, un index dupliqué et des politiques permissives multiples sur plusieurs tables. Aucun index ou objet de ces autres modules n'a été modifié dans cette passe.
 - La production Netlify est toujours sur le commit `5789cf61d78cfe64170ab145cccac01ea718e61e` (déploiement `6ae2f0141814af2ae50e6987`, état `ready`), antérieur aux commits de cette session. Le nouveau front n'est donc pas encore confirmé en production.
 - Le statut CI interrogé sur le commit de stabilisation CSS ne retourne aucun statut publié; aucun build TypeScript/Vite ni test navigateur n'est déclaré réussi dans cette passe.
+
+
+## Extension du formulaire Discover — 2026-10-30
+
+- Le formulaire de création de profil permet désormais de renseigner un réseau social principal (YouTube, Instagram, TikTok, LinkedIn, Facebook, X ou autre) et son URL. Le compte est créé comme non vérifié; seul un administrateur peut ensuite confirmer son caractère officiel.
+- Les erreurs d'enregistrement des liens sont conservées comme avertissements au lieu d'être écrasées par le message de succès du profil. L'état d'enregistrement reste actif jusqu'à la fin de la création et du rechargement.
+- Le tableau de synthèse inclut maintenant `social_accounts`; les recherches par panier tiennent compte des plateformes et handles. Les liens des sources documentaires sont également filtrés pour n'autoriser que HTTP/HTTPS.
+- Après consolidation des politiques RLS, l'advisor performance ne signale plus de doublon de politiques `INSERT`/`UPDATE` sur `entrepreneurs`; les alertes multiples restantes concernent d'autres tables et modules.
