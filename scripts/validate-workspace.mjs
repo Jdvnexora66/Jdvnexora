@@ -15,6 +15,7 @@ const subscriptionOrder = read('supabase/functions/create-subscription-payment-o
 const paymentVerification = read('supabase/functions/verify-kkiapay-payment/index.ts');
 const subscriptionSnapshotMigration = read('supabase/migrations/20261030080350_subscription_payment_order_snapshot.sql');
 const sourceMap = read('docs/architecture/page-source-map.md');
+const tenantIsolationMigration = read('supabase/migrations/20261028103000_tenant_isolation_studio_projects.sql');
 
 const expectedRoutes = [
   'dashboard', 'studio', 'design', 'projects', 'organizations', 'profile',
@@ -86,6 +87,15 @@ for (const name of requiredAppBindings) {
 }
 assert.ok(app.includes('<PublicVitrine'), 'Le 17e écran public doit rester accessible.');
 assert.ok(sourceMap.includes('17. Vitrine + connexion'), 'La carte des sources doit documenter le 17e écran.');
+for (const token of [
+  'drop policy if exists projects_select_owner_admin_or_member on public.studio_projects',
+  'drop policy if exists assets_select_owner_admin_or_project_member on public.studio_assets',
+  'create policy studio_projects_select_tenant',
+  'create policy studio_assets_select_project_access',
+  'private.can_access_studio_project(project_id, (select auth.uid()))',
+]) {
+  assert.ok(tenantIsolationMigration.includes(token), `La migration multi-tenant doit neutraliser les anciennes politiques permissives : ${token}`);
+}
 
 const actionTargets = routesFile.match(/export const PAGE_ACTION_TARGETS = \[([\s\S]*?)\] as const;/);
 assert.ok(actionTargets, 'Les destinations d’action doivent rester centralisées.');
