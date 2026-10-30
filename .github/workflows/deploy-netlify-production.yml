@@ -1,0 +1,43 @@
+name: Deploy NEXORA to Netlify production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and publish production
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Validate all workspace modules
+        run: npm test
+
+      - name: Build production assets
+        run: npm run build
+
+      - name: Verify Netlify deployment credential
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: |
+          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
+            echo "::error::Add NETLIFY_AUTH_TOKEN as a GitHub Actions repository secret before running this workflow."
+            exit 1
+          fi
+
+      - name: Publish to Netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        run: npx --yes netlify-cli deploy --prod --dir=dist --site=94ac2f19-da00-49e2-828f-aa1d3f35d67b
