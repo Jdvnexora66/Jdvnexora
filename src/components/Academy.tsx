@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BookOpen, CheckCircle2, Circle, LoaderCircle, RefreshCw, Sparkles, GraduationCap, Clock3 } from 'lucide-react';
+import { BookOpen, CheckCircle2, Circle, LoaderCircle, RefreshCw, Sparkles, GraduationCap, Clock3, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ModuleDataOverview from './ModuleDataOverview';
 
