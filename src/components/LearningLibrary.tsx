@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Bookmark, CheckCircle2, Heart, RefreshCw, StickyNote, Trash2 } from 'lucide-react';
+import { Bookmark, CheckCircle2, Heart, RefreshCw, StickyNote, Trash2, Pencil, Save, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ModuleDataOverview from './ModuleDataOverview';
 
@@ -23,6 +23,8 @@ export default function LearningLibrary({ userId }: { userId: string }) {
   const [entrepreneurId, setEntrepreneurId] = useState('');
   const [contentId, setContentId] = useState('');
   const [note, setNote] = useState('');
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingNote, setEditingNote] = useState('');
   const [entrepreneurs, setEntrepreneurs] = useState<{id:string;name:string}[]>([]);
   const [contents, setContents] = useState<{id:string;title:string}[]>([]);
 
@@ -75,6 +77,16 @@ export default function LearningLibrary({ userId }: { userId: string }) {
     else { setItems(current => current.map(row => row.id === item.id ? { ...row, progress, completed_at: progress === 100 ? new Date().toISOString() : null } : row)); setMessage('Progression mise à jour.'); }
   }
 
+  async function saveNote(item: LearningItem) {
+    if (!supabase || saving) return;
+    setSaving(true); setError(''); setMessage('');
+    const { error: updateError } = await supabase.from('user_learning_items').update({ note: editingNote.trim() || null }).eq('id', item.id).eq('user_id', userId);
+    setSaving(false);
+    if (updateError) { setError('Impossible d’enregistrer cette note : ' + updateError.message); return; }
+    setItems(current => current.map(row => row.id === item.id ? { ...row, note: editingNote.trim() || null } : row));
+    setEditingNoteId(null); setEditingNote(''); setMessage('Note personnelle mise à jour.');
+  }
+
   async function remove(item: LearningItem) {
     if (!supabase || !window.confirm('Retirer cet élément de votre bibliothèque ?')) return;
     const { error: deleteError } = await supabase.from('user_learning_items').delete().eq('id', item.id).eq('user_id', userId);
@@ -99,6 +111,6 @@ export default function LearningLibrary({ userId }: { userId: string }) {
       <div className="learning-form-actions"><button className="primary-button" type="submit" disabled={saving || loading}>{saving ? 'Enregistrement…' : 'Ajouter à ma bibliothèque'}</button></div>
     </form>
     {error && <p className="feedback error" role="alert">{error}</p>}{message && <p className="feedback success" role="status">{message}</p>}
-    {loading ? <p className="empty-state">Chargement de votre bibliothèque…</p> : items.length === 0 ? <div className="empty-state"><div className="empty-icon"><Bookmark size={24}/></div><h3>Votre bibliothèque est vide</h3><p>Ajoutez un profil ou un contenu, puis conservez vos notes et votre progression ici.</p></div> : <div className="learning-list">{items.map(item => <article className="learning-item" key={item.id}><div className="learning-item-icon">{icon(item.item_type)}</div><div className="learning-item-main"><span className="insight-type">{label[item.item_type]}</span><h3>{item.content?.title ?? item.entrepreneur?.name ?? 'Ressource'}</h3>{item.content?.canonical_url && <a href={item.content.canonical_url} target="_blank" rel="noreferrer">Ouvrir le contenu ↗</a>}{item.note && <p>{item.note}</p>}<div className="learning-progress"><label>Progression <strong>{item.progress}%</strong></label><input type="range" min="0" max="100" step="10" value={item.progress} aria-label={'Progression pour ' + (item.content?.title ?? item.entrepreneur?.name ?? 'la ressource')} onChange={e => { const value = Number(e.target.value); setItems(current => current.map(row => row.id === item.id ? {...row,progress:value} : row)); }} onMouseUp={e => void updateProgress(item, Number(e.currentTarget.value))} onTouchEnd={e => void updateProgress(item, Number(e.currentTarget.value))} onKeyUp={e => { if (['ArrowLeft','ArrowRight','Home','End'].includes(e.key)) void updateProgress(item, Number(e.currentTarget.value)); }}/></div></div><button className="chapter-delete-button" type="button" onClick={() => void remove(item)} aria-label="Retirer de la bibliothèque"><Trash2 size={15}/></button></article>)}</div>}
+    {loading ? <p className="empty-state">Chargement de votre bibliothèque…</p> : items.length === 0 ? <div className="empty-state"><div className="empty-icon"><Bookmark size={24}/></div><h3>Votre bibliothèque est vide</h3><p>Ajoutez un profil ou un contenu, puis conservez vos notes et votre progression ici.</p></div> : <div className="learning-list">{items.map(item => <article className="learning-item" key={item.id}><div className="learning-item-icon">{icon(item.item_type)}</div><div className="learning-item-main"><span className="insight-type">{label[item.item_type]}</span><h3>{item.content?.title ?? item.entrepreneur?.name ?? 'Ressource'}</h3>{item.content?.canonical_url && <a href={item.content.canonical_url} target="_blank" rel="noreferrer">Ouvrir le contenu ↗</a>}{editingNoteId===item.id ? <div className="learning-note-edit"><textarea rows={3} maxLength={3000} value={editingNote} onChange={e=>setEditingNote(e.target.value)} aria-label="Modifier la note personnelle"/><div className="learning-note-actions"><button type="button" className="text-button" onClick={()=>{setEditingNoteId(null);setEditingNote('');}}><X size={13}/> Annuler</button><button type="button" className="text-button" onClick={()=>void saveNote(item)} disabled={saving}><Save size={13}/> Enregistrer la note</button></div></div> : <>{item.note && <p>{item.note}</p>}<button type="button" className="text-button learning-edit-note" onClick={()=>{setEditingNoteId(item.id);setEditingNote(item.note??'');}}><Pencil size={13}/> {item.note?'Modifier la note':'Ajouter une note'}</button></>}<div className="learning-progress"><label>Progression <strong>{item.progress}%</strong></label><input type="range" min="0" max="100" step="10" value={item.progress} aria-label={'Progression pour ' + (item.content?.title ?? item.entrepreneur?.name ?? 'la ressource')} onChange={e => { const value = Number(e.target.value); setItems(current => current.map(row => row.id === item.id ? {...row,progress:value} : row)); }} onMouseUp={e => void updateProgress(item, Number(e.currentTarget.value))} onTouchEnd={e => void updateProgress(item, Number(e.currentTarget.value))} onKeyUp={e => { if (['ArrowLeft','ArrowRight','Home','End'].includes(e.key)) void updateProgress(item, Number(e.currentTarget.value)); }}/></div></div><button className="chapter-delete-button" type="button" onClick={() => void remove(item)} aria-label="Retirer de la bibliothèque"><Trash2 size={15}/></button></article>)}</div>}
   </section>;
 }
