@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, BadgeCheck, Check, CreditCard, LockKeyhole, Plus, RefreshCw, ShieldCheck, Smartphone, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { launchKkiapayWidget } from '../lib/kkiapay';
+import { clearKkiapayCallbacks, launchKkiapayWidget } from '../lib/kkiapay';
 import ModuleDataOverview from './ModuleDataOverview';
 
 type Plan = { id: string; code: string; name: string; description: string | null; active: boolean; features: Record<string, unknown>; price_minor: number; currency: string; billing_interval: 'month'|'year'|'one_time'; trial_days: number; created_at: string };
@@ -9,6 +9,7 @@ type PlanBrief = { name: string; code: string; price_minor: number; currency: st
 type Subscription = { id: string; status: 'pending'|'active'|'trialing'|'past_due'|'canceled'|'expired'; starts_at: string | null; ends_at: string | null; provider: string | null; plan: PlanBrief[] | PlanBrief | null };
 type PaymentMethod = 'mobile_money' | 'card';
 export default function BillingPanel({ userId, role }: { userId: string; role: string }) {
+  useEffect(() => () => clearKkiapayCallbacks(), []);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
