@@ -151,6 +151,128 @@ async function verifyCourseOrder(
   }
 }
 
+async function verifySubscriptionOrder(
+  admin: AdminClient,
+  userId: string,
+  orderId: string,
+  transactionId: string | null,
+) {
+  if (!transactionId) return reply(400, { error: "Référence KKIAPAY manquante." });
+  const { data: order, error: orderError } = await admin.from("subscriptions")
+    .select("id,user_id,plan_id,status,provider,provider_reference")
+    .eq("id", orderId).eq("user_id", userId).maybeSingle();
+  if (orderError || !order) return reply(404, { error: "Commande d'abonnement introuvable." });
+  if (order.status === "active" && order.provider === "kkiapay" && order.provider_reference === transactionId) {
+    return reply(200, { verified: true, subscription_id: order.id, idempotent: true });
+  }
+  if (order.status !== "pending" || order.provider !== "kkiapay" || typeof order.provider_reference !== "string") {
+    return reply(409, { error: "Cette commande d'abonnement n'est plus en attente de paiement." });
+  }
+
+  const tokenParts = order.provider_reference.split(":");
+  const orderMode = tokenParts[0];
+  const nonce = tokenParts[1];
+  const recordedTransactionId = tokenParts.length >= 3 ? tokenParts.slice(2).join(":") : "";
+  if ((orderMode !== "sandbox" && orderMode !== "live") || !nonce) {
+    return reply(409, { error: "Référence interne de commande invalide. Contactez le support." });
+  }
+  if (recordedTransactionId && recordedTransactionId !== transactionId) {
+    return reply(200, { verified: false, final: true, error: "Cette commande attend déjà une autre transaction KKIAPAY." });
+  }
+  const currentMode = Deno.env.get("KKIAPAY_SANDBOX") === "true" ? "sandbox" : "live";
+  if (orderMode !== currentMode) {
+    return reply(409, { error: "Le mode KKIAPAY a changé depuis la création de cette commande. Restaurez le mode d'origine pour vérifier le paiement." });
+  }
+
+  const { data: plan, error: planError } = await admin.from("plans")
+    .select("id,active,price_minor,currency,billing_interval,features")
+    .eq("id", order.plan_id).maybeSingle();
+  if (planError || !plan || !plan.active || plan.features?.billing_mode === "quote") {
+    return reply(409, { error: "Le forfait n'est plus disponible." });
+  }
+  if (plan.features?.billing_mode === "free" || Number(plan.price_minor) <= 0 || plan.currency !== "XOF") {
+    return reply(409, { error: "Le forfait ne correspond pas à une commande KKIAPAY payante en FCFA." });
+  }
+
+  const transactionToken = orderMode + ":" + nonce + ":" + transactionId;
+  const { data: verificationLock, error: lockError } = await admin.from("subscriptions")
+    .update({ provider_reference: transactionToken, updated_at: new Date().toISOString() })
+    .eq("id", order.id).eq("user_id", userId).eq("status", "pending")
+    .select("id").maybeSingle();
+  if (lockError) return reply(500, { error: "Impossible d'enregistrer la vérification de cette commande." });
+  if (!verificationLock) {
+    const { data: latest } = await admin.from("subscriptions")
+      .select("id,status,provider_reference").eq("id", order.id).eq("user_id", userId).maybeSingle();
+    if (latest?.status === "active" && latest.provider_reference === transactionId) {
+      return reply(200, { verified: true, subscription_id: order.id, idempotent: true });
+    }
+    return reply(409, { error: "La commande a changé pendant la vérification. Actualisez puis réessayez." });
+  }
+
+  const publicKey = Deno.env.get("KKIAPAY_PUBLIC_KEY");
+  const privateKey = Deno.env.get("KKIAPAY_PRIVATE_KEY");
+  const secretKey = Deno.env.get("KKIAPAY_SECRET_KEY");
+  if (!publicKey || !privateKey || !secretKey) return reply(503, { error: "Les clés KKIAPAY doivent être configurées côté serveur." });
+
+  try {
+    const gateway = kkiapay({ publickey: publicKey, privatekey: privateKey, secretkey: secretKey, sandbox: orderMode === "sandbox" });
+    const tx = await gateway.verify(transactionId);
+    const txRecord = tx as unknown as Record<string, unknown>;
+    const txStatus = String(txRecord?.status ?? "").toUpperCase();
+    const txCurrency = String(txRecord?.currency ?? txRecord?.currency_code ?? "XOF").toUpperCase();
+    if (txStatus !== "SUCCESS") {
+      if (["FAILED", "CANCELLED", "CANCELED", "EXPIRED", "TRANSACTION_NOT_FOUND"].includes(txStatus)) {
+        await admin.from("subscriptions").update({ status: "canceled", provider_reference: null, updated_at: new Date().toISOString() })
+          .eq("id", order.id).eq("status", "pending");
+        return reply(200, { verified: false, final: true, error: "La transaction KKIAPAY a échoué ou a été annulée. Vous pouvez relancer un nouveau paiement." });
+      }
+      return reply(200, { verified: false, pending: true, error: "La transaction KKIAPAY est encore en attente. Réessayez la vérification sans refaire le paiement." });
+    }
+    if (String(txRecord?.type ?? "").toUpperCase() !== "DEBIT"
+        || Number(txRecord?.amount) !== Number(plan.price_minor)
+        || txCurrency !== "XOF") {
+      await admin.from("subscriptions").update({ status: "canceled", provider_reference: null, updated_at: new Date().toISOString() })
+        .eq("id", order.id).eq("status", "pending");
+      return reply(200, { verified: false, final: true, error: "Le montant ou le type de transaction ne correspond pas au forfait en FCFA. Contactez le support si votre compte a été débité." });
+    }
+
+    const [{ data: usedCourseOrder, error: courseOrderError }, { data: usedSubscription, error: subscriptionError }] = await Promise.all([
+      admin.from("nexora_course_payment_orders").select("id").eq("provider_reference", transactionId).maybeSingle(),
+      admin.from("subscriptions").select("id,user_id,plan_id,status").eq("provider", "kkiapay").eq("provider_reference", transactionId).maybeSingle(),
+    ]);
+    if (courseOrderError || subscriptionError) return reply(500, { error: "Impossible de vérifier si cette transaction a déjà été utilisée." });
+    if (usedCourseOrder || usedSubscription) {
+      await admin.from("subscriptions").update({ status: "canceled", provider_reference: null, updated_at: new Date().toISOString() })
+        .eq("id", order.id).eq("status", "pending");
+      return reply(200, { verified: false, final: true, error: usedCourseOrder ? "Cette transaction est déjà associée à une formation." : "Cette transaction est déjà utilisée pour un autre abonnement." });
+    }
+
+    const now = new Date();
+    const end = plan.billing_interval === "month" ? new Date(new Date(now).setMonth(now.getMonth() + 1)) : plan.billing_interval === "year" ? new Date(new Date(now).setFullYear(now.getFullYear() + 1)) : null;
+    const { data: activated, error: activationError } = await admin.from("subscriptions")
+      .update({ status: "active", provider_reference: transactionId, starts_at: now.toISOString(), ends_at: end?.toISOString() ?? null, updated_at: now.toISOString() })
+      .eq("id", order.id).eq("user_id", userId).eq("status", "pending")
+      .select("id,status,starts_at,ends_at").maybeSingle();
+    if (activationError) {
+      if (activationError.code === "23505") return reply(200, { verified: false, final: true, error: "Cette transaction KKIAPAY a déjà été utilisée." });
+      console.error("Subscription order activation failed", activationError);
+      return reply(500, { error: "Paiement confirmé, mais l'activation de l'abonnement doit être réessayée." });
+    }
+    if (!activated) {
+      const { data: latest } = await admin.from("subscriptions")
+        .select("id,status,provider_reference").eq("id", order.id).eq("user_id", userId).maybeSingle();
+      if (latest?.status === "active" && latest.provider_reference === transactionId) {
+        return reply(200, { verified: true, subscription_id: order.id, idempotent: true });
+      }
+      return reply(409, { error: "La commande a changé pendant l'activation. Contactez le support." });
+    }
+    return reply(200, { verified: true, subscription: activated });
+  } catch (error) {
+    console.error("KKIAPAY subscription order verification failed", error);
+    return reply(502, { error: "La vérification KKIAPAY a échoué. Réessayez sans refaire le paiement." });
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return reply(405, { error: "Méthode non autorisée." });
@@ -165,7 +287,7 @@ Deno.serve(async (req: Request) => {
   const { data: authData, error: authError } = await userClient.auth.getUser();
   if (authError || !authData.user) return reply(401, { error: "Session invalide." });
 
-  let body: { plan_id?: unknown; course_order_id?: unknown; transaction_id?: unknown };
+  let body: { plan_id?: unknown; course_order_id?: unknown; subscription_order_id?: unknown; transaction_id?: unknown };
   try { body = await req.json(); } catch { return reply(400, { error: "Requête invalide." }); }
   const transactionId = typeof body.transaction_id === "string" ? body.transaction_id.trim() : null;
   if (transactionId && transactionId.length > 200) return reply(400, { error: "Référence de transaction invalide." });
@@ -175,6 +297,11 @@ Deno.serve(async (req: Request) => {
     if (body.plan_id !== undefined) return reply(400, { error: "Une seule cible de paiement est autorisée." });
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.course_order_id)) return reply(400, { error: "Commande de formation invalide." });
     return await verifyCourseOrder(admin, authData.user.id, body.course_order_id, transactionId);
+  }
+  if (typeof body.subscription_order_id === "string") {
+    if (body.plan_id !== undefined || body.course_order_id !== undefined) return reply(400, { error: "Une seule cible de paiement est autorisée." });
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(body.subscription_order_id)) return reply(400, { error: "Commande d'abonnement invalide." });
+    return await verifySubscriptionOrder(admin, authData.user.id, body.subscription_order_id, transactionId);
   }
 
   if (typeof body.plan_id !== "string" || body.plan_id.length > 100) return reply(400, { error: "Forfait invalide." });
