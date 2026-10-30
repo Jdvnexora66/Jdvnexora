@@ -52,7 +52,7 @@ Ne jamais inscrire le jeton Netlify dans le dépôt ou dans une conversation. Le
 - Activer la protection contre les mots de passe compromis dans la configuration Supabase Auth.
 - Vérifier les alertes de sécurité Supabase et les URL de redirection.
 
-## 6. Limites actuelles connues
+## 7. Limites actuelles connues
 
 - Les collaborateurs peuvent lire les projets partagés et commenter, mais l'édition collaborative des chapitres n'est pas encore activée.
 - Le paiement en ligne n'est pas activé tant que le prestataire et ses secrets ne sont pas configurés.
