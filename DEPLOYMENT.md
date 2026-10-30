@@ -37,7 +37,8 @@ Les fonctions de paiement restent bloquées côté serveur si leurs secrets marc
 - Tester Studio IA avec une session authentifiée.
 - Tester les commentaires et les rôles de collaboration.
 - Tester les vues mobile et tablette.
-- Activer la protection contre les mots de passe compromis dans la configuration Supabase Auth.\n- Vérifier les alertes de sécurité Supabase et les URL de redirection.
+- Activer la protection contre les mots de passe compromis dans la configuration Supabase Auth.
+- Vérifier les alertes de sécurité Supabase et les URL de redirection.
 
 ## 6. Limites actuelles connues
 
