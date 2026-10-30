@@ -21,7 +21,9 @@ type StudioBlock = {
   actionTarget?: PageActionTarget;
 };
 type PageStyle = { density: 'comfortable' | 'compact'; textScale: 'small' | 'normal' | 'large'; radius: number; background: string; surface: string; text: string; accent: string };
-type StudioConfig = { schemaVersion: 1; theme: 'nexora-dark' | 'nexora-light' | 'ocean'; pageStyle?: PageStyle; components: StudioBlock[] };
+type NativeTarget = 'panel' | 'card' | 'form' | 'heading' | 'button';
+type NativeOverride = { background: string; color: string; radius: number; padding: number };
+type StudioConfig = { schemaVersion: 1; theme: 'nexora-dark' | 'nexora-light' | 'ocean'; pageStyle?: PageStyle; nativeStyles?: Partial<Record<NativeTarget, NativeOverride>>; components: StudioBlock[] };
 type PageScope = string;
 type LayoutRow = { id: string; name: string; scope: PageScope; draft_config: StudioConfig; published_config: StudioConfig | null; version: number; is_default: boolean; updated_at: string; published_at: string | null };
 type VersionRow = { id: string; layout_id: string; version: number; snapshot: StudioConfig; action: string; created_at: string };
@@ -36,7 +38,7 @@ const presets: Array<{ type: StudioBlock['type']; title: string; content?: strin
   { type: 'image', title: 'Image', content: 'Description de l’image' },
   { type: 'video', title: 'Vidéo', content: 'Vidéo intégrée', url: 'https://www.youtube-nocookie.com/embed/ScMzIvxBSi4' },
 ];
-const starter: StudioConfig = { schemaVersion: 1, theme: 'nexora-dark', pageStyle: { density: 'comfortable', textScale: 'normal', radius: 14, background: '#0B0B0D', surface: '#202024', text: '#F5F2EA', accent: '#D6B66E' }, components: [
+const starter: StudioConfig = { schemaVersion: 1, theme: 'nexora-dark', pageStyle: { density: 'comfortable', textScale: 'normal', radius: 14, background: '#0B0B0D', surface: '#202024', text: '#F5F2EA', accent: '#D6B66E' }, nativeStyles: {}, components: [
   { id: 'welcome-title', type: 'heading', title: 'Bienvenue dans votre espace', content: 'Configurez votre tableau de bord NEXORA', color: '#F5F2EA', width: 'full', padding: 16 },
   { id: 'welcome-text', type: 'text', title: 'Votre espace de travail', content: 'Ajoutez des blocs, personnalisez leur apparence et enregistrez votre brouillon.', color: '#C9C1B2', width: 'full', padding: 12 },
   { id: 'welcome-card', type: 'card', title: 'Vos projets', content: 'Nombre de projets enregistrés dans votre compte.', dataBinding: 'projects.total', background: '#202024', color: '#F5F2EA', radius: 16, padding: 20, width: 'half' },
@@ -94,7 +96,13 @@ const safeConfig = (value: unknown): StudioConfig => {
   const palette = themes[theme];
   const safeColor = (value: unknown, fallback: string) => typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value) ? value.toUpperCase() : fallback;
   const pageStyle: PageStyle = { density: rawStyle?.density === 'compact' ? 'compact' : 'comfortable', textScale: rawStyle?.textScale === 'small' || rawStyle?.textScale === 'large' ? rawStyle.textScale : 'normal', radius: Number.isFinite(rawStyle?.radius) ? Math.max(4, Math.min(28, Number(rawStyle?.radius))) : 14, background: safeColor(rawStyle?.background, palette.background), surface: safeColor(rawStyle?.surface, palette.surface), text: safeColor(rawStyle?.text, palette.text), accent: safeColor(rawStyle?.accent, palette.accent) };
-  return { schemaVersion: 1, theme, pageStyle, components };
+  const rawNative = input.nativeStyles as Partial<Record<NativeTarget, Partial<NativeOverride>>> | undefined;
+  const nativeStyles: Partial<Record<NativeTarget, NativeOverride>> = {};
+  for (const target of ['panel','card','form','heading','button'] as NativeTarget[]) {
+    const value = rawNative?.[target];
+    if (value) nativeStyles[target] = { background: safeColor(value.background, palette.surface), color: safeColor(value.color, palette.text), radius: Number.isFinite(value.radius) ? Math.max(0, Math.min(32, Number(value.radius))) : 12, padding: Number.isFinite(value.padding) ? Math.max(0, Math.min(48, Number(value.padding))) : 12 };
+  }
+  return { schemaVersion: 1, theme, pageStyle, nativeStyles, components };
 };
 
 export default function VisualDesignStudio({ userId, role }: { userId: string; role: string }) {
