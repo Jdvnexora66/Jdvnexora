@@ -1,22 +1,15 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, BadgeCheck, Check, CreditCard, LockKeyhole, Plus, RefreshCw, ShieldCheck, Smartphone, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { clearKkiapayCallbacks, launchKkiapayWidget } from '../lib/kkiapay';
 import ModuleDataOverview from './ModuleDataOverview';
 
 type Plan = { id: string; code: string; name: string; description: string | null; active: boolean; features: Record<string, unknown>; price_minor: number; currency: string; billing_interval: 'month'|'year'|'one_time'; trial_days: number; created_at: string };
 type PlanBrief = { name: string; code: string; price_minor: number; currency: string; billing_interval: string };
 type Subscription = { id: string; status: 'pending'|'active'|'trialing'|'past_due'|'canceled'|'expired'; starts_at: string | null; ends_at: string | null; provider: string | null; plan: PlanBrief[] | PlanBrief | null };
 type PaymentMethod = 'mobile_money' | 'card';
-type KkiapayResponse = { transactionId?: string; transaction_id?: string; id?: string };
-declare global {
-  interface Window {
-    openKkiapayWidget?: (options: Record<string, unknown>) => void;
-    addSuccessListener?: (callback: (response: KkiapayResponse) => void) => void;
-    addFailedListener?: (callback: (error: unknown) => void) => void;
-  }
-}
-
 export default function BillingPanel({ userId, role }: { userId: string; role: string }) {
+  useEffect(() => () => clearKkiapayCallbacks(), []);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,8 +28,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mobile_money');
   const [paymentPending, setPaymentPending] = useState(false);
   const [paymentNotice, setPaymentNotice] = useState('');
-  const kkiapayPublicKey = (import.meta.env.VITE_KKIAPAY_PUBLIC_KEY as string | undefined)?.trim() ?? '';
-  const kkiapaySandbox = import.meta.env.VITE_KKIAPAY_SANDBOX === 'true';
+  const [pendingSubscriptionPayment, setPendingSubscriptionPayment] = useState<{orderId:string;planId:string;transactionId:string}|null>(null);
 
   const isAdmin = role === 'admin';
   const load = useCallback(async () => {
@@ -126,97 +118,106 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
     setSelectedPlan(plan);
     setPaymentMethod('mobile_money');
     setPaymentNotice('');
+    setPendingSubscriptionPayment(null);
     setError('');
     setNotice('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  async function confirmSubscriptionPayment(orderId:string,planId:string,transactionId:string) {
+    if(!supabase) return;
+    setPaymentPending(true);setError('');setPaymentNotice('');
+    try {
+      const {data,error:verifyError}=await supabase.functions.invoke('verify-kkiapay-payment',{
+        body:{subscription_order_id:orderId,transaction_id:transactionId}
+      });
+      if(data?.final) {
+        setPendingSubscriptionPayment(null);
+        setError(data?.error??'La transaction n’a pas été validée. Vous pouvez relancer un nouveau paiement.');
+        return;
+      }
+      if(verifyError||!data?.verified) {
+        setPendingSubscriptionPayment({orderId,planId,transactionId});
+        setError(data?.error??verifyError?.message??'Paiement reçu, mais la confirmation serveur doit être réessayée. Votre abonnement reste inactif.');
+        return;
+      }
+      setPendingSubscriptionPayment(null);
+      setPaymentNotice('Paiement confirmé par le serveur. Votre abonnement est activé.');
+      setSelectedPlan(null);
+      await load();
+    } catch(cause) {
+      setPendingSubscriptionPayment({orderId,planId,transactionId});
+      setError(cause instanceof Error?cause.message:'La confirmation serveur est momentanément indisponible. Réessayez sans refaire le paiement.');
+    } finally {setPaymentPending(false);}
+  }
+
   async function launchKkiapayPayment() {
-    if (!selectedPlan || !supabase || paymentPending) return;
-    if (selectedPlan.features?.billing_mode === 'quote') {
+    const planToPay=selectedPlan;
+    if (!planToPay || !supabase || paymentPending) return;
+    if (planToPay.features?.billing_mode === 'quote') {
       setError('Cette offre est sur devis. Contactez l’équipe d’administration pour recevoir une proposition personnalisée.');
       return;
     }
-    if (selectedPlan.features?.billing_mode === 'free' || selectedPlan.price_minor === 0) {
-      setPaymentPending(true);
-      setError('');
-      const { error: activateError } = await supabase.functions.invoke('verify-kkiapay-payment', {
-        body: { plan_id: selectedPlan.id, transaction_id: null },
-      });
-      setPaymentPending(false);
-      if (activateError) { setError('Activation du forfait gratuit indisponible pour le moment. Réessayez plus tard.'); return; }
-      setPaymentNotice('Votre demande d’activation a été envoyée. Actualisez votre abonnement pour vérifier son statut.');
-      await load();
-      return;
-    }
-    if (selectedPlan.currency !== 'XOF') {
-      setError('Le paiement KKIAPAY est configuré en FCFA (XOF). Cette offre utilise une autre devise : contactez l’administrateur.');
-      return;
-    }
-    if (!kkiapayPublicKey) {
-      setError('Le paiement sécurisé n’est pas encore configuré. La clé publique KKIAPAY doit être ajoutée à VITE_KKIAPAY_PUBLIC_KEY ; aucun paiement ne sera simulé.');
-      return;
-    }
-    setPaymentPending(true);
-    setError('');
-    setPaymentNotice('');
-    try {
-      if (!window.openKkiapayWidget) {
-        await new Promise<void>((resolve, reject) => {
-          const existing = document.querySelector<HTMLScriptElement>('script[data-kkiapay-sdk]');
-          if (existing) {
-            existing.addEventListener('load', () => resolve(), { once: true });
-            existing.addEventListener('error', () => reject(new Error('SDK KKIAPAY indisponible')), { once: true });
-            if (window.openKkiapayWidget) resolve();
-            return;
-          }
-          const script = document.createElement('script');
-          script.src = 'https://cdn.kkiapay.me/k.js';
-          script.async = true;
-          script.dataset.kkiapaySdk = 'true';
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error('Impossible de charger le SDK KKIAPAY.'));
-          document.body.appendChild(script);
-        });
-      }
-      if (!window.openKkiapayWidget) throw new Error('Le SDK KKIAPAY ne fournit pas le module de paiement.');
-      window.addSuccessListener?.(async (response) => {
-        const transactionId = response?.transactionId ?? response?.transaction_id ?? response?.id;
-        if (!transactionId || !supabase || !selectedPlan) {
-          setPaymentPending(false);
-          setError('Référence de transaction absente. Vérifiez le paiement auprès de KKIAPAY avant de recommencer.');
-          return;
-        }
-        const { data, error: verifyError } = await supabase.functions.invoke('verify-kkiapay-payment', {
-          body: { plan_id: selectedPlan.id, transaction_id: transactionId },
-        });
-        setPaymentPending(false);
-        if (verifyError || !data?.verified) {
-          setError('Paiement reçu par le widget mais pas encore confirmé par le serveur. Votre abonnement reste inactif jusqu’à vérification.');
-          return;
-        }
-        setPaymentNotice('Paiement confirmé par le serveur. Votre abonnement est activé.');
+    if (planToPay.features?.billing_mode === 'free' || planToPay.price_minor === 0) {
+      setPaymentPending(true);setError('');
+      try {
+        const {data,error:activateError}=await supabase.functions.invoke('verify-kkiapay-payment',{body:{plan_id:planToPay.id,transaction_id:null}});
+        if(activateError||!data?.verified) throw new Error(data?.error??activateError?.message??'Activation du forfait gratuit indisponible.');
+        setPaymentNotice('Votre forfait gratuit est activé.');
         setSelectedPlan(null);
         await load();
-      });
-      window.addFailedListener?.(() => {
+      } catch(cause) {
+        setError(cause instanceof Error?cause.message:'Activation du forfait gratuit impossible. Réessayez.');
+      } finally {setPaymentPending(false);}
+      return;
+    }
+    setPaymentPending(true);setError('');setPaymentNotice('');setPendingSubscriptionPayment(null);
+    try {
+      const {data:order,error:orderError}=await supabase.functions.invoke('create-subscription-payment-order',{body:{plan_id:planToPay.id}});
+      if(orderError) throw new Error(order?.error??orderError.message??'Impossible de préparer le paiement.');
+      if(order?.already_active) {
         setPaymentPending(false);
-        setError('Le paiement a échoué ou a été annulé. Aucun abonnement payant n’a été activé.');
+        setPaymentNotice('Ce forfait est déjà actif sur votre compte. Aucun nouveau paiement n’a été lancé.');
+        setSelectedPlan(null);
+        await load();
+        return;
+      }
+      if(order?.verification_required&&order?.order_id&&order?.transaction_id) {
+        await confirmSubscriptionPayment(order.order_id,planToPay.id,order.transaction_id);
+        return;
+      }
+      if(!order?.order_id||!order?.public_key||!Number.isSafeInteger(Number(order.amount_xof))||Number(order.amount_xof)<=0||order.currency!=='XOF') {
+        throw new Error(order?.error??'La commande de paiement ou la configuration KKIAPAY est incomplète.');
+      }
+      if(order.provider_mode!=='sandbox'&&order.provider_mode!=='live') throw new Error('Mode KKIAPAY invalide. Contactez le support.');
+      await launchKkiapayWidget({
+        amount:Number(order.amount_xof),
+        key:order.public_key,
+        position:'center',
+        theme:'#D6B66E',
+        sandbox:order.provider_mode==='sandbox',
+        paymentmethod:[paymentMethod==='mobile_money'?'momo':'card'],
+        countries:['BJ'],
+        partnerId:`nexora-subscription-${userId}-${planToPay.id}`,
+        data:JSON.stringify({subscription_order_id:order.order_id,plan_id:planToPay.id})
+      },{
+        onSuccess:async response=>{
+          const transactionId=response?.transactionId??response?.transaction_id??response?.id;
+          if(!transactionId) {
+            setPaymentPending(false);
+            setError('Référence de transaction absente. Contactez le support KKIAPAY avant de recommencer.');
+            return;
+          }
+          await confirmSubscriptionPayment(order.order_id,planToPay.id,transactionId);
+        },
+        onFailure:()=>{
+          setPaymentPending(false);
+          setError('Le paiement a échoué ou a été annulé. Aucun abonnement payant n’a été activé.');
+        }
       });
-      window.openKkiapayWidget({
-        amount: selectedPlan.price_minor,
-        key: kkiapayPublicKey,
-        position: 'center',
-        theme: '#D6B66E',
-        sandbox: kkiapaySandbox,
-        paymentmethod: paymentMethod === 'mobile_money' ? 'momo' : 'card',
-        countries: ['BJ'],
-        partnerId: `nexora-${selectedPlan.id}-${userId}`,
-        data: JSON.stringify({ plan_id: selectedPlan.id }),
-      });
-    } catch (paymentError) {
+    } catch(paymentError) {
       setPaymentPending(false);
-      setError(paymentError instanceof Error ? paymentError.message : 'Impossible de lancer KKIAPAY.');
+      setError(paymentError instanceof Error?paymentError.message:'Impossible de lancer KKIAPAY.');
     }
   }
 
@@ -239,9 +240,8 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
           <div className="billing-order-price">{formatPrice(selectedPlan)}</div>
           <ul className="billing-benefit-list">
             {planDetails(selectedPlan).length ? planDetails(selectedPlan).map((benefit) => <li key={benefit}><Check size={16}/><span>{benefit}</span></li>) : <li><Check size={16}/><span>Accès aux services inclus dans cette formule</span></li>}
-            {selectedPlan.trial_days > 0 && <li><Check size={16}/><span>{selectedPlan.trial_days} jour(s) d’essai inclus</span></li>}
           </ul>
-          <div className="billing-secure-note"><LockKeyhole size={16}/><span>Les informations de carte sont traitées par KKIAPAY et ne sont pas enregistrées dans NEXORA.</span></div>
+          <div className="billing-secure-note"><LockKeyhole size={16}/><span>Les informations de paiement sont traitées par KKIAPAY et ne sont pas enregistrées dans NEXORA.</span></div><p className="muted">Les forfaits sont activés après confirmation du paiement. Le renouvellement est manuel à l’échéance ; aucun prélèvement automatique récurrent n’est effectué.</p>
         </article>
         <div className="billing-payment-card">
           <h3>Moyen de paiement</h3>
@@ -260,9 +260,9 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
           {!quotePlan && <button type="button" className="primary-button billing-pay-button" onClick={() => void launchKkiapayPayment()} disabled={paymentPending || loading}>
             <LockKeyhole size={17}/>{paymentPending ? 'Vérification en cours…' : freePlan ? 'Activer le forfait gratuit' : `Payer ${formatPrice(selectedPlan)}`}
           </button>}
+          {pendingSubscriptionPayment&&<div className="feedback warning" role="status"><p>Le paiement a été reçu, mais la confirmation serveur n’est pas terminée. Ne refaites pas le paiement : relancez uniquement la vérification.</p><button type="button" className="secondary-button" disabled={paymentPending} onClick={()=>void confirmSubscriptionPayment(pendingSubscriptionPayment.orderId,pendingSubscriptionPayment.planId,pendingSubscriptionPayment.transactionId)}>{paymentPending?'Vérification…':'Réessayer la vérification'}</button></div>}
           {error && <p className="feedback error" role="alert">{error}</p>}
           {paymentNotice && <p className="feedback success" role="status">{paymentNotice}</p>}
-          {!quotePlan && !freePlan && !kkiapayPublicKey && <p className="billing-config-notice">Configuration marchande requise avant l’ouverture du paiement réel.</p>}
         </div>
       </div>
     </section>;
@@ -287,7 +287,6 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
           <div className="billing-plan-card-top"><span className="billing-plan-icon"><ShieldCheck size={20}/></span><span className={plan.active ? 'status-badge status-completed' : 'status-badge status-archived'}>{plan.active ? 'Disponible' : 'Masqué'}</span></div>
           <h4>{plan.name}</h4><p className="billing-plan-description">{plan.description || 'Une formule JDV NEXORA pour avancer à votre rythme.'}</p>
           <div className="billing-plan-price">{formatPrice(plan)}</div>
-          {plan.trial_days > 0 && <span className="billing-trial-badge">{plan.trial_days} jours d’essai</span>}
           <div className="billing-plan-divider"/>
           <p className="billing-benefits-title">Ce qui est inclus</p>
           <ul className="billing-benefit-list">{(benefits.length ? benefits : ['Accès aux fonctionnalités de cette formule']).map((benefit) => <li key={benefit}><Check size={16}/><span>{benefit}</span></li>)}</ul>
@@ -306,7 +305,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
         <label htmlFor="billing-price">Prix (XOF en FCFA ; autres devises en centimes)</label><input id="billing-price" type="number" min="0" step="1" value={price} onChange={event => setPrice(event.target.value)} required/>
         <label htmlFor="billing-currency">Devise</label><select id="billing-currency" value={currency} onChange={event => setCurrency(event.target.value)}><option value="XOF">XOF — Franc CFA</option><option value="EUR">EUR — Euro</option><option value="USD">USD — Dollar US</option></select>
         <label htmlFor="billing-interval">Périodicité</label><select id="billing-interval" value={interval} onChange={event => setInterval(event.target.value as Plan['billing_interval'])}><option value="month">Mensuel</option><option value="year">Annuel</option><option value="one_time">Paiement unique</option></select>
-        <label htmlFor="billing-trial">Essai gratuit (jours)</label><input id="billing-trial" type="number" min="0" max="365" step="1" value={trialDays} onChange={event => setTrialDays(event.target.value)} required/>
+        <label htmlFor="billing-trial">Essai gratuit (jours) — non activé</label><input id="billing-trial" type="number" min="0" max="365" step="1" value={trialDays} onChange={event => setTrialDays(event.target.value)} required/><small className="muted">Les essais automatiques ne sont pas gérés par le paiement manuel KKIAPAY. Laissez 0 jusqu’à l’intégration d’un renouvellement récurrent.</small>
         <label htmlFor="billing-features">Fonctionnalités (une par ligne)</label><textarea id="billing-features" value={featuresText} onChange={event => setFeaturesText(event.target.value)} rows={4} placeholder={'Projets illimités\nStudio IA\nCollaboration'}/>
         <button className="primary-button" type="submit" disabled={saving}><Plus size={16}/>{saving ? 'Création…' : 'Créer le forfait'}</button>
       </form>
