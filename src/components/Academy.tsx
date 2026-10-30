@@ -85,20 +85,24 @@ export default function Academy({ userId }: { userId:string }) {
 
   async function confirmCoursePayment(orderId:string,courseId:string,transactionId:string) {
     if (!supabase) return;
-    setEnrollingCourseId(courseId); setError(''); setMessage('');
-    const { data, error: verifyError } = await supabase.functions.invoke('verify-kkiapay-payment', {
-      body: { course_order_id: orderId, transaction_id: transactionId },
-    });
-    setEnrollingCourseId('');
-    if (verifyError || !data?.verified) {
-      setPendingCourseOrder({ orderId, courseId, transactionId });
-      setError(data?.error ?? 'Le paiement a été reçu par KKIAPAY, mais sa confirmation serveur doit être réessayée. Aucun accès n’est activé avant cette confirmation.');
-      return;
-    }
-    setPendingCourseOrder(null);
-    setEnrolledCourseIds(current=>current.includes(courseId)?current:[...current,courseId]);
-    setMessage('Paiement confirmé par le serveur. Votre inscription à la formation est activée.');
-    await load();
+    setEnrollingCourseId(courseId);setError('');setMessage('');
+    try {
+      const {data,error:verifyError}=await supabase.functions.invoke('verify-kkiapay-payment',{
+        body:{course_order_id:orderId,transaction_id:transactionId}
+      });
+      if(verifyError||!data?.verified) {
+        setPendingCourseOrder({orderId,courseId,transactionId});
+        setError(data?.error??verifyError?.message??'Le paiement a été reçu, mais la confirmation serveur doit être réessayée. Aucun accès n’est activé avant cette confirmation.');
+        return;
+      }
+      setPendingCourseOrder(null);
+      setEnrolledCourseIds(current=>current.includes(courseId)?current:[...current,courseId]);
+      setMessage('Paiement confirmé par le serveur. Votre inscription à la formation est activée.');
+      await load();
+    } catch(cause) {
+      setPendingCourseOrder({orderId,courseId,transactionId});
+      setError(cause instanceof Error?cause.message:'La vérification serveur est momentanément indisponible. Réessayez sans refaire le paiement.');
+    } finally {setEnrollingCourseId('');}
   }
 
   async function startPaidCoursePayment(course:CourseRow) {
