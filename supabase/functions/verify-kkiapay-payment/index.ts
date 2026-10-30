@@ -65,6 +65,19 @@ async function verifyCourseOrder(
     return reply(409, { error: "Le tarif de la formation a changé. Préparez une nouvelle commande." });
   }
 
+  if (order.status === "verification_required" && order.provider_reference && order.provider_reference !== transactionId) {
+    return reply(409, { error: "Cette commande attend déjà la vérification d'une autre transaction." });
+  }
+  const { data: verificationLock, error: lockError } = await admin.from("nexora_course_payment_orders")
+    .update({ status: "verification_required", provider_reference: transactionId, updated_at: new Date().toISOString() })
+    .eq("id", order.id).eq("user_id", userId).in("status", ["pending", "verification_required"])
+    .select("id").maybeSingle();
+  if (lockError) {
+    if (lockError.code === "23505") return reply(409, { error: "Cette transaction est déjà utilisée." });
+    return reply(500, { error: "Impossible d'enregistrer la vérification du paiement." });
+  }
+  if (!verificationLock) return reply(409, { error: "La commande a changé pendant la vérification. Actualisez puis réessayez." });
+
   const publicKey = Deno.env.get("KKIAPAY_PUBLIC_KEY");
   const privateKey = Deno.env.get("KKIAPAY_PRIVATE_KEY");
   const secretKey = Deno.env.get("KKIAPAY_SECRET_KEY");
@@ -74,9 +87,16 @@ async function verifyCourseOrder(
     const gateway = kkiapay({ publickey: publicKey, privatekey: privateKey, secretkey: secretKey, sandbox });
     const tx = await gateway.verify(transactionId);
     const txRecord = tx as unknown as Record<string, unknown>;
+    const txStatus = String(txRecord?.status ?? "").toUpperCase();
     const txCurrency = String(txRecord?.currency ?? txRecord?.currency_code ?? "XOF").toUpperCase();
-    if (String(txRecord?.status ?? "").toUpperCase() !== "SUCCESS"
-        || String(txRecord?.type ?? "").toUpperCase() !== "DEBIT"
+    if (txStatus !== "SUCCESS") {
+      if (["FAILED", "CANCELLED", "CANCELED", "EXPIRED"].includes(txStatus)) {
+        await admin.from("nexora_course_payment_orders").update({ status: "failed", provider_reference: null, updated_at: new Date().toISOString() })
+          .eq("id", order.id).eq("status", "verification_required");
+      }
+      return reply(402, { error: "La transaction KKIAPAY n'est pas encore confirmée." });
+    }
+    if (String(txRecord?.type ?? "").toUpperCase() !== "DEBIT"
         || Number(txRecord?.amount) !== Number(order.amount_xof)
         || txCurrency !== "XOF") {
       return reply(402, { error: "La transaction n'est pas confirmée pour le montant exact de cette formation en FCFA." });
@@ -93,7 +113,7 @@ async function verifyCourseOrder(
     const now = new Date().toISOString();
     const { data: updatedOrder, error: updateOrderError } = await admin.from("nexora_course_payment_orders")
       .update({ status: "succeeded", provider_reference: transactionId, provider_mode: providerMode, verified_at: now, updated_at: now })
-      .eq("id", order.id).eq("status", order.status)
+      .eq("id", order.id).eq("status", "verification_required")
       .select("id").maybeSingle();
     if (updateOrderError) {
       console.error("Course payment order verification update failed", updateOrderError);
