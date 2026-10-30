@@ -14,6 +14,8 @@ const academy = read('src/components/Academy.tsx');
 const subscriptionOrder = read('supabase/functions/create-subscription-payment-order/index.ts');
 const paymentVerification = read('supabase/functions/verify-kkiapay-payment/index.ts');
 const kkiapayWebhook = read('supabase/functions/kkiapay-webhook/index.ts');
+const studioAiFunction = read('supabase/functions/studio-ai/index.ts');
+const paymentAttemptsIndexMigration = read('supabase/migrations/20261030220000_index_payment_attempts_plan_id.sql');
 const subscriptionSnapshotMigration = read('supabase/migrations/20261030080350_subscription_payment_order_snapshot.sql');
 const sourceMap = read('docs/architecture/page-source-map.md');
 const tenantIsolationMigration = read('supabase/migrations/20261028103000_tenant_isolation_studio_projects.sql');
@@ -106,6 +108,15 @@ for (const token of [
   assert.ok(kkiapayWebhook.includes(token), `Le webhook Kkiapay doit conserver la validation sécurisée : ${token}.`);
 }
 assert.ok(!kkiapayWebhook.includes('hilarious-cheesecake-2520ca.netlify.app'), 'Le webhook ne doit plus autoriser un ancien domaine Netlify.');
+for (const token of [
+  'authClient.auth.getUser()',
+  'authClient.rpc("nexora_reserve_ai_usage"',
+  'Deno.env.get("OPENAI_API_KEY")',
+  'usageClient.rpc("nexora_finalize_ai_usage"',
+]) {
+  assert.ok(studioAiFunction.includes(token), `Studio IA doit authentifier et comptabiliser côté serveur : ${token}.`);
+}
+assert.ok(paymentAttemptsIndexMigration.includes('on public.payment_attempts (plan_id)'), 'La clé étrangère payment_attempts.plan_id doit être indexée.');
 for (const token of [
   'drop policy if exists projects_select_owner_admin_or_member on public.studio_projects',
   'drop policy if exists assets_select_owner_admin_or_project_member on public.studio_assets',
