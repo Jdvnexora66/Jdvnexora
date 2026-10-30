@@ -209,23 +209,34 @@ export default function MediaLibrary({ userId }: Props) {
 
     let active = true;
     let nativeAppStateListener: { remove: () => Promise<void> } | null = null;
+    let nativeBrowserFinishedListener: { remove: () => Promise<void> } | null = null;
+
+    const finishNativeOAuth = async () => {
+      const pendingPlatform = pendingNativeOAuthRef.current;
+      if (!pendingPlatform) return;
+      pendingNativeOAuthRef.current = null;
+
+      const currentConnections = await loadConnections();
+      if (!currentConnections.some((connection) => connection.platform === pendingPlatform)) {
+        setProviderError('La fenêtre de connexion a été fermée avant la confirmation. Réessayez si vous avez annulé l’autorisation.');
+        return;
+      }
+
+      setProviderNotice('Compte connecté. Première synchronisation en cours…');
+      await syncProviderRef.current(pendingPlatform);
+    };
+
     if (Capacitor.isNativePlatform()) {
-      void CapacitorApp.addListener('appStateChange', async ({ isActive }) => {
-        if (!isActive) return;
-        const pendingPlatform = pendingNativeOAuthRef.current;
-        if (!pendingPlatform) return;
-        pendingNativeOAuthRef.current = null;
-
-        const currentConnections = await loadConnections();
-        if (!currentConnections.some((connection) => connection.platform === pendingPlatform)) {
-          setProviderError('La fenêtre de connexion a été fermée avant la confirmation. Réessayez si vous avez annulé l’autorisation.');
-          return;
-        }
-
-        setProviderNotice('Compte connecté. Première synchronisation en cours…');
-        await syncProviderRef.current(pendingPlatform);
+      void CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+        if (isActive) void finishNativeOAuth();
       }).then((listener) => {
         if (active) nativeAppStateListener = listener;
+        else void listener.remove();
+      });
+      void Browser.addListener('browserFinished', () => {
+        void finishNativeOAuth();
+      }).then((listener) => {
+        if (active) nativeBrowserFinishedListener = listener;
         else void listener.remove();
       });
     }
@@ -235,6 +246,7 @@ export default function MediaLibrary({ userId }: Props) {
       window.removeEventListener('message', onOAuthMessage);
       window.removeEventListener('nexora-media-library-refresh', onCreatorSync);
       if (nativeAppStateListener) void nativeAppStateListener.remove();
+      if (nativeBrowserFinishedListener) void nativeBrowserFinishedListener.remove();
     };
   }, [load, loadConnections]);
 
