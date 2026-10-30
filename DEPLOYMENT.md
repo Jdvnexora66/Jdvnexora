@@ -22,8 +22,8 @@ Les fonctions de commande et de vérification Kkiapay sont déployées côté Su
 - Configurer `KKIAPAY_PUBLIC_KEY`, `KKIAPAY_PRIVATE_KEY` et `KKIAPAY_SECRET_KEY` dans les secrets Edge Functions Supabase.
 - Définir `KKIAPAY_SANDBOX=true` pour les essais, puis basculer explicitement à `false` après validation marchand.
 - Configurer l'URL de notification dans le compte marchand Kkiapay : `https://gkguyjmqdvjwcqjivcwj.supabase.co/functions/v1/kkiapay-webhook`.
-- Générer un jeton webhook aléatoire long, puis stocker uniquement son SHA-256 hexadécimal (64 caractères) sous `KKIAPAY_WEBHOOK_SECRET_HASH`. Ne jamais envoyer le jeton brut dans GitHub ou dans cette conversation. Exemple local pour calculer son empreinte : `printf '%s' "$KKIAPAY_WEBHOOK_SECRET" | sha256sum`.
-- Configurer le webhook Kkiapay pour transmettre le jeton brut dans l'en-tête `x-kkiapay-secret`. La fonction calcule son empreinte et compare celle-ci en temps constant.
+- Définir le secret hash du webhook dans le tableau de bord Kkiapay, puis enregistrer exactement cette même valeur sous `KKIAPAY_WEBHOOK_SECRET_HASH` dans les secrets Edge Functions Supabase. Ne jamais envoyer cette valeur dans GitHub ou dans cette conversation.
+- Kkiapay transmet sa signature dans l'en-tête `x-kkiapay-secret`. La fonction compare directement cette valeur à celle configurée, en temps constant, sans lui appliquer une seconde empreinte.
 - Tester les paiements réussis, refusés, abandonnés, les notifications répétées et les vérifications serveur. Le webhook enregistre un événement ; il n'active jamais seul un abonnement.
 - Ne jamais activer un abonnement uniquement à partir d'un retour navigateur.
 

@@ -138,7 +138,7 @@ for (const token of [
 }
 for (const token of [
   'https://jdvnexora.netlify.app',
-  'await sha256Hex(suppliedSecret)',
+  'constantTimeEqual(suppliedSecret, expectedSecret)',
   'KKIAPAY_WEBHOOK_SECRET_HASH',
   'subscription_activated: false',
 ]) {
