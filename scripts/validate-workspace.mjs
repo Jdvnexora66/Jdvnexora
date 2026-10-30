@@ -95,6 +95,16 @@ assert.ok(design.includes("row.scope !== 'dashboard'"), 'Le tableau de bord réf
 for (const token of ['selectedNativeElement', 'changeNativeElementStyle', 'nativeElements', "previewMode==='real'", 'scopeRef.current.replace', 'textAlign', 'marginTop', 'marginBottom', 'Masquer cet élément']) {
   assert.ok(design.includes(token), `Fonction d’édition native absente : ${token}`);
 }
+for (const token of ['Adresse de l’image (HTTPS)', 'URL de la vidéo intégrée', 'Ajustement de l’image', 'youtube-nocookie.com/embed/', 'player.vimeo.com/video/']) {
+  assert.ok(design.includes(token), `Contrôle de média manquant dans le Studio Design : ${token}`);
+}
+
+// Media sources are deliberately restricted to HTTPS and approved embed providers.
+assert.ok(design.includes("url.protocol === 'https:'"), 'Les médias doivent refuser les URL non HTTPS.');
+
+/* STUDIO_NATIVE_EDITOR_ASSERTIONS */
+  assert.ok(design.includes(token), `Fonction d’édition native absente : ${token}`);
+}
 
 for (const [file, source, functions] of [
   ['Facturation', billing, ['create-subscription-payment-order', 'verify-kkiapay-payment']],
