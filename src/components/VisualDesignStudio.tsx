@@ -188,7 +188,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
     const selectors: Record<NativeTarget, string> = { panel: '.project-panel', card: '.project-item', form: '.project-form', heading: '.section-heading', button: '.primary-button' };
     const nativeRules = Object.entries(config.nativeStyles ?? {}).map(([target, override]) => { const style = override as NativeOverride; return '.workspace-main[data-active-section="' + safeScope + '"] ' + selectors[target as NativeTarget] + '{background:' + style.background + '!important;color:' + style.color + '!important;border-radius:' + style.radius + 'px!important;padding:' + style.padding + 'px!important}'; }).join('');
     style.textContent += nativeRules +
-      'body[data-nexora-design-selection="true"] .workspace-main [data-active-section] *{cursor:crosshair!important}body[data-nexora-design-selection="true"] .workspace-main [data-active-section] *:hover{outline:2px dashed var(--nexora-page-accent)!important;outline-offset:2px}' +
+      'body[data-nexora-design-selection="true"] .workspace-main *{cursor:crosshair!important}body[data-nexora-design-selection="true"] .workspace-main *:hover{outline:2px dashed var(--nexora-page-accent)!important;outline-offset:2px}' +
       '[data-nexora-editor-selected="true"]{outline:3px solid var(--nexora-page-accent)!important;outline-offset:3px!important}';
     const root = previewDocument.querySelector<HTMLElement>('.workspace-main[data-active-section="' + safeScope + '"]');
     previewDocument.querySelectorAll<HTMLElement>('[data-nexora-native-styled="true"]').forEach(element => {
@@ -218,6 +218,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
         if (override.text !== undefined && isNativeTextEditable(element)) element.textContent = override.text;
       }
     }
+    previewDocument.querySelectorAll<HTMLElement>('[data-nexora-editor-selected="true"]').forEach(element => { delete element.dataset.nexoraEditorSelected; });
     if (selectedNativeElement && isSafeNativeElementPath(selectedNativeElement.path)) {
       try {
         const selectedElement = previewDocument.querySelector<HTMLElement>(selectedNativeElement.path);
