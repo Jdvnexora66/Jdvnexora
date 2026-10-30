@@ -107,7 +107,7 @@ export default function Academy({ userId }: { userId:string }) {
           <label className="search-field"><Search size={16}/><input value={courseSearch} onChange={e=>setCourseSearch(e.target.value)} placeholder="Rechercher une formation, un formateur…" aria-label="Rechercher une formation"/></label>
           <select value={courseFilter} onChange={e=>setCourseFilter(e.target.value as typeof courseFilter)} aria-label="Filtrer les formations"><option value="all">Toutes les formations</option><option value="free">Gratuites</option><option value="paid">Payantes</option><option value="enrolled">Mes inscriptions</option></select>
         </div>
-        {courses.length===0?<p className="empty-state">Aucune formation publiée pour le moment. Les formations ajoutées et publiées par l’équipe apparaîtront ici avec leur tarif.</p>:
+        {filteredCourses.length===0?<p className="empty-state">{courses.length===0?'Aucune formation publiée pour le moment. Les formations ajoutées et publiées par l’équipe apparaîtront ici avec leur tarif.':'Aucune formation ne correspond à votre recherche ou à ce filtre.'}</p>:
           <div className="feature-list academy-course-grid">
             {filteredCourses.map(course=><article key={course.id} className="project-item academy-course-card">
               {course.cover_image_url&&<img src={course.cover_image_url} alt="" loading="lazy" className="academy-course-cover"/>}
