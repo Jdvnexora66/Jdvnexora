@@ -1,21 +1,13 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, BadgeCheck, Check, CreditCard, LockKeyhole, Plus, RefreshCw, ShieldCheck, Smartphone, Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { launchKkiapayWidget } from '../lib/kkiapay';
 import ModuleDataOverview from './ModuleDataOverview';
 
 type Plan = { id: string; code: string; name: string; description: string | null; active: boolean; features: Record<string, unknown>; price_minor: number; currency: string; billing_interval: 'month'|'year'|'one_time'; trial_days: number; created_at: string };
 type PlanBrief = { name: string; code: string; price_minor: number; currency: string; billing_interval: string };
 type Subscription = { id: string; status: 'pending'|'active'|'trialing'|'past_due'|'canceled'|'expired'; starts_at: string | null; ends_at: string | null; provider: string | null; plan: PlanBrief[] | PlanBrief | null };
 type PaymentMethod = 'mobile_money' | 'card';
-type KkiapayResponse = { transactionId?: string; transaction_id?: string; id?: string };
-declare global {
-  interface Window {
-    openKkiapayWidget?: (options: Record<string, unknown>) => void;
-    addSuccessListener?: (callback: (response: KkiapayResponse) => void) => void;
-    addFailedListener?: (callback: (error: unknown) => void) => void;
-  }
-}
-
 export default function BillingPanel({ userId, role }: { userId: string; role: string }) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -161,49 +153,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
     setError('');
     setPaymentNotice('');
     try {
-      if (!window.openKkiapayWidget) {
-        await new Promise<void>((resolve, reject) => {
-          const existing = document.querySelector<HTMLScriptElement>('script[data-kkiapay-sdk]');
-          if (existing) {
-            existing.addEventListener('load', () => resolve(), { once: true });
-            existing.addEventListener('error', () => reject(new Error('SDK KKIAPAY indisponible')), { once: true });
-            if (window.openKkiapayWidget) resolve();
-            return;
-          }
-          const script = document.createElement('script');
-          script.src = 'https://cdn.kkiapay.me/k.js';
-          script.async = true;
-          script.dataset.kkiapaySdk = 'true';
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error('Impossible de charger le SDK KKIAPAY.'));
-          document.body.appendChild(script);
-        });
-      }
-      if (!window.openKkiapayWidget) throw new Error('Le SDK KKIAPAY ne fournit pas le module de paiement.');
-      window.addSuccessListener?.(async (response) => {
-        const transactionId = response?.transactionId ?? response?.transaction_id ?? response?.id;
-        if (!transactionId || !supabase || !selectedPlan) {
-          setPaymentPending(false);
-          setError('Référence de transaction absente. Vérifiez le paiement auprès de KKIAPAY avant de recommencer.');
-          return;
-        }
-        const { data, error: verifyError } = await supabase.functions.invoke('verify-kkiapay-payment', {
-          body: { plan_id: selectedPlan.id, transaction_id: transactionId },
-        });
-        setPaymentPending(false);
-        if (verifyError || !data?.verified) {
-          setError('Paiement reçu par le widget mais pas encore confirmé par le serveur. Votre abonnement reste inactif jusqu’à vérification.');
-          return;
-        }
-        setPaymentNotice('Paiement confirmé par le serveur. Votre abonnement est activé.');
-        setSelectedPlan(null);
-        await load();
-      });
-      window.addFailedListener?.(() => {
-        setPaymentPending(false);
-        setError('Le paiement a échoué ou a été annulé. Aucun abonnement payant n’a été activé.');
-      });
-      window.openKkiapayWidget({
+      await launchKkiapayWidget({
         amount: selectedPlan.price_minor,
         key: kkiapayPublicKey,
         position: 'center',
@@ -213,6 +163,30 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
         countries: ['BJ'],
         partnerId: `nexora-${selectedPlan.id}-${userId}`,
         data: JSON.stringify({ plan_id: selectedPlan.id }),
+      }, {
+        onSuccess: async (response) => {
+          const transactionId = response?.transactionId ?? response?.transaction_id ?? response?.id;
+          if (!transactionId || !supabase) {
+            setPaymentPending(false);
+            setError('Référence de transaction absente. Vérifiez le paiement auprès de KKIAPAY avant de recommencer.');
+            return;
+          }
+          const { data, error: verifyError } = await supabase.functions.invoke('verify-kkiapay-payment', {
+            body: { plan_id: selectedPlan.id, transaction_id: transactionId },
+          });
+          setPaymentPending(false);
+          if (verifyError || !data?.verified) {
+            setError('Paiement reçu par le widget mais pas encore confirmé par le serveur. Votre abonnement reste inactif jusqu’à vérification.');
+            return;
+          }
+          setPaymentNotice('Paiement confirmé par le serveur. Votre abonnement est activé.');
+          setSelectedPlan(null);
+          await load();
+        },
+        onFailure: () => {
+          setPaymentPending(false);
+          setError('Le paiement a échoué ou a été annulé. Aucun abonnement payant n’a été activé.');
+        },
       });
     } catch (paymentError) {
       setPaymentPending(false);
