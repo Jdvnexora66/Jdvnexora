@@ -42,8 +42,8 @@ const starter: StudioConfig = { schemaVersion: 1, theme: 'nexora-dark', componen
 ] };
 const themes: Record<StudioConfig['theme'], { background: string; surface: string; accent: string; text: string }> = {
   'nexora-dark': { background: '#0B0B0D', surface: '#202024', accent: '#D6B66E', text: '#F5F2EA' },
-  'nexora-light': { background: '#0B0B0D', surface: '#202024', accent: '#D6B66E', text: '#F5F2EA' },
-  ocean: { background: '#0B0B0D', surface: '#202024', accent: '#D6B66E', text: '#F5F2EA' },
+  'nexora-light': { background: '#F2F5FB', surface: '#FFFFFF', accent: '#2457A6', text: '#172039' },
+  ocean: { background: '#071B2B', surface: '#103449', accent: '#3CC9B7', text: '#ECFEFF' },
 };
 function isAllowedImageUrl(value: string): boolean {
   try {
@@ -88,8 +88,8 @@ const safeConfig = (value: unknown): StudioConfig => {
     padding: Number.isFinite(x.padding) ? Math.max(0, Math.min(48, x.padding!)) : 16,
     width: ['full','half','third'].includes(x.width ?? '') ? x.width : 'full', hidden: Boolean(x.hidden), dataBinding: isPageDataBindingKey(x.dataBinding) ? x.dataBinding : undefined, actionTarget: isPageActionTarget(x.actionTarget) ? x.actionTarget : undefined,
   }));
-  // All historical theme IDs resolve to the same official brand palette.
-  return { schemaVersion: 1, theme: 'nexora-dark', components };
+  const theme = input.theme === 'nexora-light' || input.theme === 'ocean' ? input.theme : 'nexora-dark';
+  return { schemaVersion: 1, theme, components };
 };
 
 export default function VisualDesignStudio({ userId, role }: { userId: string; role: string }) {
@@ -261,7 +261,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
       <span className={dirty ? 'visual-studio-dirty' : 'visual-studio-clean'}>{dirty ? 'Modifications non enregistrées' : 'Brouillon synchronisé'}</span>
     </div>
     <div className="visual-studio-workbench">
-      <aside className="visual-studio-library"><h3><LayoutDashboard size={16}/> Composants</h3><p>Blocs prédéfinis uniquement. Aucun script libre n’est exécuté.</p>{presets.map(item => <button key={item.type} type="button" className="visual-studio-preset" onClick={() => addBlock(item.type)}><Plus size={14}/><span>{item.title}</span></button>)}<div className="visual-studio-theme"><h3><Palette size={16}/> Thème global</h3><select aria-label="Thème global" value={config.theme} disabled><option value="nexora-dark">NEXORA — noir, or, ivoire et graphite</option></select><div className="visual-studio-swatches">{Object.entries(themes[config.theme]).map(([key,value]) => <span key={key} title={key} style={{ background:value }} />)}</div><button type="button" className="logout-button" onClick={() => changeConfig(starter)}><RotateCcw size={14}/> Réinitialiser</button></div></aside>
+      <aside className="visual-studio-library"><h3><LayoutDashboard size={16}/> Composants</h3><p>Blocs prédéfinis uniquement. Aucun script libre n’est exécuté.</p>{presets.map(item => <button key={item.type} type="button" className="visual-studio-preset" onClick={() => addBlock(item.type)}><Plus size={14}/><span>{item.title}</span></button>)}<div className="visual-studio-theme"><h3><Palette size={16}/> Thème global</h3><select aria-label="Thème global" value={config.theme} disabled={busy} onChange={event=>changeConfig({...config,theme:event.target.value as StudioConfig['theme']})}><option value="nexora-dark">NEXORA — noir, or, ivoire et graphite</option><option value="nexora-light">Clair — bleu et blanc</option><option value="ocean">Océan — bleu profond et turquoise</option></select><div className="visual-studio-swatches">{Object.entries(themes[config.theme]).map(([key,value]) => <span key={key} title={key} style={{ background:value }} />)}</div><button type="button" className="logout-button" onClick={() => changeConfig(starter)}><RotateCcw size={14}/> Réinitialiser</button></div></aside>
       <div className="visual-studio-canvas-wrap"><div className="visual-studio-canvas-tools"><div><button type="button" className={preview==='desktop'?'active':''} onClick={() => setPreview('desktop')} aria-label="Aperçu ordinateur"><Monitor size={15}/></button><button type="button" className={preview==='tablet'?'active':''} onClick={() => setPreview('tablet')} aria-label="Aperçu tablette"><Tablet size={15}/></button><button type="button" className={preview==='mobile'?'active':''} onClick={() => setPreview('mobile')} aria-label="Aperçu téléphone"><Smartphone size={15}/></button></div><div className="visual-studio-preview-modes"><button type="button" className={previewMode==='real'?'active':''} onClick={() => setPreviewMode('real')}>Page réelle</button><button type="button" className={previewMode==='draft'?'active':''} onClick={() => setPreviewMode('draft')}>Brouillon éditable</button></div><span><Eye size={14}/> {previewMode==='real'?'Aperçu de la page existante':'Aperçu du brouillon'}</span></div>
         {previewMode==='real' ? <div className={`visual-studio-real-preview frame-${preview}`}><iframe title={`Page réelle : ${scope}`} src={`${window.location.pathname}?studioPreview=${encodeURIComponent(scope.startsWith('custom:')||scope==='custom'?'dashboard':scope)}&embeddedPreview=1`} loading="lazy" referrerPolicy="same-origin" className="visual-studio-real-iframe" /></div> : <div className={`visual-studio-canvas frame-${preview}`} style={{ background:theme.background,color:theme.text }}>
           {displayed.map(block => <article key={block.id} draggable onDragStart={event => event.dataTransfer.setData('text/plain',block.id)} onDragOver={event => event.preventDefault()} onDrop={event => {event.preventDefault();moveBlock(event.dataTransfer.getData('text/plain'),block.id);}} onClick={() => setSelectedBlockId(block.id)} className={`visual-studio-block width-${block.width ?? 'full'} ${selectedBlockId===block.id?'selected':''}`} style={{ background:block.background ?? theme.surface,color:block.color ?? theme.text,borderRadius:block.radius ?? 12,padding:block.padding ?? 16 }}>
