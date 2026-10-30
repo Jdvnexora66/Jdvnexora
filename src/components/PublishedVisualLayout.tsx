@@ -5,7 +5,7 @@ import { isPageActionTarget, isPageDataBindingKey, loadPageDataBindings, PAGE_DA
 type Block = { id: string; type: string; title: string; content?: string; dataBinding?: PageDataBindingKey; actionTarget?: PageActionTarget; color?: string; background?: string; radius?: number; padding?: number; width?: string; hidden?: boolean; url?: string; objectFit?: 'cover' | 'contain' };
 type NativeElementOverride = { tag: string; label: string; originalText?: string; text?: string; background?: string; color?: string; radius?: number; padding?: number; fontSize?: number; fontWeight?: 'normal'|'500'|'600'|'700'|'800' };
 type Config = { schemaVersion: 1; theme: string; pageStyle?: { density: 'comfortable' | 'compact'; textScale: 'small' | 'normal' | 'large'; radius: number; background: string; surface: string; text: string; accent: string }; nativeStyles?: Partial<Record<'panel' | 'card' | 'form' | 'heading' | 'button', { background: string; color: string; radius: number; padding: number }>>; nativeElements?: Record<string, NativeElementOverride>; components: Block[] };
-type Published = { name: string; config: Config; published_at: string };
+type Published = { scope: string; name: string; config: Config; published_at: string };
 const themes: Record<string,{background:string;surface:string;text:string;accent:string}> = {
   'nexora-dark': {background:'#0B0B0D',surface:'#202024',text:'#F5F2EA',accent:'#D6B66E'},
   'nexora-light': {background:'#F2F5FB',surface:'#FFFFFF',text:'#172039',accent:'#2457A6'},
@@ -84,7 +84,7 @@ export default function PublishedVisualLayout({ scope }: { scope: string }) {
   const [published,setPublished] = useState<Published|null>(null);
   const [bindingValues,setBindingValues] = useState<Record<string, number | null>>({});
   useEffect(() => {
-    if (!published || scope === 'dashboard') return;
+    if (!published || published.scope !== scope || scope === 'dashboard') return;
     const safeScope = scope.replace(/[^a-zA-Z0-9:_-]/g, '');
     const root = document.querySelector<HTMLElement>('.workspace-main[data-active-section="' + safeScope + '"]');
     if (!root) return;
@@ -121,7 +121,7 @@ export default function PublishedVisualLayout({ scope }: { scope: string }) {
       if (!active || error || !data) return;
       const config = validate(data.config, scope !== 'dashboard');
       if (!config) return;
-      setPublished({name:data.name,config,published_at:data.published_at});
+      setPublished({scope,name:data.name,config,published_at:data.published_at});
       const keys = config.components.flatMap(block => block.dataBinding ? [block.dataBinding] : []);
       void loadPageDataBindings(keys).then(values => { if (active) setBindingValues(values); });
     });
