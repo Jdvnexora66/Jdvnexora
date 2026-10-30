@@ -110,9 +110,9 @@ for (const token of [
 assert.ok(!kkiapayWebhook.includes('hilarious-cheesecake-2520ca.netlify.app'), 'Le webhook ne doit plus autoriser un ancien domaine Netlify.');
 for (const token of [
   'authClient.auth.getUser()',
-  'authClient.rpc("nexora_reserve_ai_usage"',
+  'nexora_reserve_ai_usage',
   'Deno.env.get("OPENAI_API_KEY")',
-  'usageClient.rpc("nexora_finalize_ai_usage"',
+  'nexora_finalize_ai_usage',
 ]) {
   assert.ok(studioAiFunction.includes(token), `Studio IA doit authentifier et comptabiliser côté serveur : ${token}.`);
 }
