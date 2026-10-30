@@ -78,7 +78,7 @@ jobs:
             -sdk iphonesimulator \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath ios/App/build \\
+            -derivedDataPath ios/App/build \
             CODE_SIGNING_ALLOWED=NO build
       - name: Package simulator app
         run: |
