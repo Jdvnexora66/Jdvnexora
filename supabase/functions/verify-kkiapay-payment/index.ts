@@ -182,6 +182,13 @@ Deno.serve(async (req: Request) => {
   if (plan.features?.billing_mode === "quote") return reply(400, { error: "Cette offre nécessite un devis." });
 
   const isFree = plan.features?.billing_mode === "free" || Number(plan.price_minor) === 0;
+  if (isFree) {
+    const { data: activeFree, error: activeFreeError } = await admin.from("subscriptions")
+      .select("id,status").eq("user_id", authData.user.id).eq("plan_id", plan.id)
+      .in("status", ["active", "trialing"]).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    if (activeFreeError) return reply(500, { error: "Impossible de vérifier votre activation gratuite." });
+    if (activeFree) return reply(200, { verified: true, subscription_id: activeFree.id, idempotent: true });
+  }
   let provider = "free";
   let providerReference: string | null = null;
   if (!isFree) {
@@ -224,6 +231,17 @@ Deno.serve(async (req: Request) => {
     user_id: authData.user.id, plan_id: plan.id, status: "active", starts_at: now.toISOString(),
     ends_at: end?.toISOString() ?? null, provider, provider_reference: providerReference,
   }).select("id,status,starts_at,ends_at").single();
-  if (insertError) { console.error("Subscription activation failed", insertError); return reply(500, { error: "Impossible d'enregistrer l'abonnement. Contactez le support." }); }
+  if (insertError) {
+    if (insertError.code === "23505" && providerReference) {
+      const { data: duplicate } = await admin.from("subscriptions")
+        .select("id,user_id,plan_id,status").eq("provider", "kkiapay").eq("provider_reference", providerReference).maybeSingle();
+      if (duplicate?.user_id === authData.user.id && duplicate.plan_id === plan.id && duplicate.status === "active") {
+        return reply(200, { verified: true, subscription_id: duplicate.id, idempotent: true });
+      }
+      return reply(409, { error: "Cette transaction KKIAPAY a déjà été utilisée." });
+    }
+    console.error("Subscription activation failed", insertError);
+    return reply(500, { error: "Impossible d'enregistrer l'abonnement. Contactez le support." });
+  }
   return reply(200, { verified: true, subscription });
 });
