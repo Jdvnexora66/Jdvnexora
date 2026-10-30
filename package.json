@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "test": "node scripts/validate-workspace.mjs",
     "preview": "vite preview",
     "cap:add:android": "cap add android",
     "cap:add:ios": "cap add ios",
     "cap:sync": "cap sync",
-    "mobile:build": "npm run build && cap sync",
+    "mobile:build": "npm run test && npm run build && cap sync",
     "mobile:android": "cap open android",
     "mobile:ios": "cap open ios"
   },
