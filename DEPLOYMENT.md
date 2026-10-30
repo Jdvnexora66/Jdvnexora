@@ -15,11 +15,21 @@ Dans les URL de redirection autorisées, ajouter le domaine de production et le 
 
 La fonction Edge `studio-ai` doit conserver `verify_jwt=true`. Configurer `OPENAI_API_KEY` dans les secrets Edge Functions de Supabase. Ne pas mettre cette clé dans les variables `VITE_*`.
 
-## 4. Paiements
+## 4. Paiements Kkiapay
 
-La phase 10 prépare les forfaits et abonnements, mais n'initie pas de paiement réel. Avant d'activer les ventes, choisir un prestataire adapté aux pays ciblés, configurer ses secrets côté serveur, vérifier les signatures des webhooks et ne jamais activer un abonnement uniquement à partir d'un retour navigateur.
+Les fonctions de commande et de vérification Kkiapay sont déployées côté Supabase. Avant d'activer les ventes en production :
 
-## 5. Validation avant publication
+- Configurer `KKIAPAY_PUBLIC_KEY`, `KKIAPAY_PRIVATE_KEY` et `KKIAPAY_SECRET_KEY` dans les secrets Edge Functions Supabase.
+- Définir `KKIAPAY_SANDBOX=true` pour les essais, puis basculer explicitement à `false` après validation marchand.
+- Configurer l'URL de notification dans le compte marchand Kkiapay : `https://gkguyjmqdvjwcqjivcwj.supabase.co/functions/v1/kkiapay-webhook`.
+- Générer un jeton webhook aléatoire long, puis stocker uniquement son SHA-256 hexadécimal (64 caractères) sous `KKIAPAY_WEBHOOK_SECRET_HASH`. Ne jamais envoyer le jeton brut dans GitHub ou dans cette conversation. Exemple local pour calculer son empreinte : `printf '%s' "$KKIAPAY_WEBHOOK_SECRET" | sha256sum`.
+- Configurer le webhook Kkiapay pour transmettre le jeton brut dans l'en-tête `x-kkiapay-secret`. La fonction calcule son empreinte et compare celle-ci en temps constant.
+- Tester les paiements réussis, refusés, abandonnés, les notifications répétées et les vérifications serveur. Le webhook enregistre un événement ; il n'active jamais seul un abonnement.
+- Ne jamais activer un abonnement uniquement à partir d'un retour navigateur.
+
+Les fonctions de paiement restent bloquées côté serveur si leurs secrets marchands ne sont pas configurés.
+
+## 5. Sécurité Auth et validation avant publication
 
 - Vérifier CI et le build Vite.
 - Tester inscription, connexion, récupération de mot de passe et déconnexion.
@@ -27,7 +37,7 @@ La phase 10 prépare les forfaits et abonnements, mais n'initie pas de paiement 
 - Tester Studio IA avec une session authentifiée.
 - Tester les commentaires et les rôles de collaboration.
 - Tester les vues mobile et tablette.
-- Vérifier les alertes de sécurité Supabase et les URL de redirection.
+- Activer la protection contre les mots de passe compromis dans la configuration Supabase Auth.\n- Vérifier les alertes de sécurité Supabase et les URL de redirection.
 
 ## 6. Limites actuelles connues
 
