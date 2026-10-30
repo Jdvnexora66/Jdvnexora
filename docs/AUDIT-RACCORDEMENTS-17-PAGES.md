@@ -115,3 +115,19 @@ Cette revue est une inspection statique du code et des configurations disponible
 - Le contrôle de statut CI doit être relu sur le commit final après les derniers changements.
 - Le build TypeScript/Vite et le parcours navigateur authentifié n'ont pas été exécutés dans cette passe. Les nouvelles lectures `social_accounts` dépendent des politiques RLS existantes et doivent être validées avec un compte utilisateur.
 - Les liens externes ont une validation de protocole côté interface, mais l'exactitude et le caractère officiel des comptes restent une responsabilité de vérification éditoriale.
+
+
+## Contrôle RLS et protection des badges créateurs — 2026-10-30
+
+- Inspection directe de Supabase : RLS activé et politiques présentes sur `entrepreneurs`, `content_sources`, `social_accounts` et `followed_entrepreneurs`. Les lectures des profils et réseaux publics sont réservées aux utilisateurs authentifiés; les suivis sont limités à `auth.uid()`.
+- Correctif appliqué dans Supabase : migration `20261030045727_protect_creator_verification_status`. Les utilisateurs ordinaires ne peuvent plus attribuer ou modifier eux-mêmes `verification_status`; le contrôle est assuré par un trigger PostgreSQL et la fonction `private.is_admin()` existante.
+- Optimisation appliquée : migration `20261030045808_consolidate_creator_admin_rls_policies`, qui fusionne les permissions propriétaire/administrateur pour les insertions et mises à jour afin d'éviter les politiques permissives redondantes sur `entrepreneurs`.
+- Test SQL négatif exécuté avec un contexte `authenticated` : tentative de passage de `unverified` à `verified` bloquée par PostgreSQL; la ligne temporaire de test a été supprimée (zéro ligne de test résiduelle).
+- Les fonctions de contrôle restent dans le schéma `private`; le trigger est `SECURITY INVOKER`, `search_path` vide, et ne confie pas la validation aux métadonnées modifiables par l'utilisateur.
+
+### État des alertes Supabase après ce correctif
+
+- Les advisors sécurité continuent de signaler trois tables RLS sans politiques (`media_oauth_states`, `media_provider_connections`, `organization_invitations`), un `pg_net` dans `public`, trois RPC SECURITY DEFINER accessibles aux utilisateurs authentifiés (paiement de cours, inscription gratuite, réservation de quota IA — à contrôler séparément selon leur modèle d'autorisation) et la protection contre les mots de passe compromis désactivée.
+- Les advisors performance signalent 29 clés étrangères sans index couvrant, des index inutilisés, un index dupliqué et des politiques permissives multiples sur plusieurs tables. Aucun index ou objet de ces autres modules n'a été modifié dans cette passe.
+- La production Netlify est toujours sur le commit `5789cf61d78cfe64170ab145cccac01ea718e61e` (déploiement `6ae2f0141814af2ae50e6987`, état `ready`), antérieur aux commits de cette session. Le nouveau front n'est donc pas encore confirmé en production.
+- Le statut CI interrogé sur le commit de stabilisation CSS ne retourne aucun statut publié; aucun build TypeScript/Vite ni test navigateur n'est déclaré réussi dans cette passe.
