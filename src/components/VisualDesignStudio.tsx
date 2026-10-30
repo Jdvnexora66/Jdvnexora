@@ -187,21 +187,66 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
       'body[data-nexora-design-selection="true"] .project-panel,body[data-nexora-design-selection="true"] .project-item,body[data-nexora-design-selection="true"] .project-form,body[data-nexora-design-selection="true"] .section-heading,body[data-nexora-design-selection="true"] .primary-button{cursor:crosshair!important}body[data-nexora-design-selection="true"] .project-panel:hover,body[data-nexora-design-selection="true"] .project-item:hover,body[data-nexora-design-selection="true"] .project-form:hover,body[data-nexora-design-selection="true"] .section-heading:hover,body[data-nexora-design-selection="true"] .primary-button:hover{outline:2px dashed var(--nexora-page-accent)!important;outline-offset:2px}';
     const selectors: Record<NativeTarget, string> = { panel: '.project-panel', card: '.project-item', form: '.project-form', heading: '.section-heading', button: '.primary-button' };
     const nativeRules = Object.entries(config.nativeStyles ?? {}).map(([target, override]) => { const style = override as NativeOverride; return '.workspace-main[data-active-section="' + safeScope + '"] ' + selectors[target as NativeTarget] + '{background:' + style.background + '!important;color:' + style.color + '!important;border-radius:' + style.radius + 'px!important;padding:' + style.padding + 'px!important}'; }).join('');
-    style.textContent += nativeRules;
+    style.textContent += nativeRules +
+      'body[data-nexora-design-selection="true"] .workspace-main [data-active-section] *{cursor:crosshair!important}body[data-nexora-design-selection="true"] .workspace-main [data-active-section] *:hover{outline:2px dashed var(--nexora-page-accent)!important;outline-offset:2px}' +
+      '[data-nexora-editor-selected="true"]{outline:3px solid var(--nexora-page-accent)!important;outline-offset:3px!important}';
+    const root = previewDocument.querySelector<HTMLElement>('.workspace-main[data-active-section="' + safeScope + '"]');
+    previewDocument.querySelectorAll<HTMLElement>('[data-nexora-native-styled="true"]').forEach(element => {
+      const originalStyle = element.dataset.nexoraOriginalStyle;
+      if (originalStyle === '__none__') element.removeAttribute('style');
+      else if (typeof originalStyle === 'string') element.setAttribute('style', originalStyle);
+      if (element.dataset.nexoraOriginalText !== undefined && isNativeTextEditable(element)) element.textContent = element.dataset.nexoraOriginalText;
+      delete element.dataset.nexoraNativeStyled;
+      delete element.dataset.nexoraOriginalStyle;
+      delete element.dataset.nexoraOriginalText;
+    });
+    if (root) {
+      for (const [path, override] of Object.entries(config.nativeElements ?? {})) {
+        if (!isSafeNativeElementPath(path)) continue;
+        let element: HTMLElement | null = null;
+        try { element = previewDocument.querySelector<HTMLElement>(path); } catch { element = null; }
+        if (!element || !root.contains(element)) continue;
+        if (!element.dataset.nexoraNativeStyled) {
+          element.dataset.nexoraOriginalStyle = element.getAttribute('style') ?? '__none__';
+          if (isNativeTextEditable(element)) element.dataset.nexoraOriginalText = element.textContent ?? '';
+          element.dataset.nexoraNativeStyled = 'true';
+        }
+        if (override.background) element.style.setProperty('background', override.background, 'important');
+        if (override.color) element.style.setProperty('color', override.color, 'important');
+        if (Number.isFinite(override.radius)) element.style.setProperty('border-radius', Number(override.radius) + 'px', 'important');
+        if (Number.isFinite(override.padding)) element.style.setProperty('padding', Number(override.padding) + 'px', 'important');
+        if (override.text !== undefined && isNativeTextEditable(element)) element.textContent = override.text;
+      }
+    }
+    if (selectedNativeElement && isSafeNativeElementPath(selectedNativeElement.path)) {
+      try {
+        const selectedElement = previewDocument.querySelector<HTMLElement>(selectedNativeElement.path);
+        if (selectedElement && root?.contains(selectedElement)) selectedElement.dataset.nexoraEditorSelected = 'true';
+      } catch { /* stale element path after page update */ }
+    }
     if (!previewDocument.body.dataset.nexoraNativePickerBound) {
       previewDocument.body.addEventListener('click', event => {
         if (!selectionModeRef.current) return;
         const clicked = event.target as HTMLElement | null;
         if (!clicked) return;
-        const candidates: Array<[NativeTarget, string]> = [['button','.primary-button'],['form','.project-form'],['card','.project-item'],['heading','.section-heading'],['panel','.project-panel']];
-        for (const [target, selector] of candidates) {
-          if (clicked.closest(selector)) { event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); setSelectedBlockId(''); setSelectedNativeTarget(target); return; }
-        }
+        const activeScope = scope.replace(/[^a-zA-Z0-9:_-]/g, '');
+        const pageRoot = previewDocument.querySelector<HTMLElement>('.workspace-main[data-active-section="' + activeScope + '"]');
+        const element = clicked.closest<HTMLElement>('h1,h2,h3,h4,h5,p,span,strong,em,small,label,button,a,article,section,div,form,li,img,header,footer,nav');
+        if (!element || !pageRoot || !pageRoot.contains(element) || element === pageRoot) return;
+        const path = buildNativeElementPath(element);
+        if (!path || !isSafeNativeElementPath(path)) return;
+        event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation();
+        const savedOverride = configRef.current.nativeElements?.[path];
+        const originalText = savedOverride?.originalText ?? element.dataset.nexoraOriginalText ?? element.textContent ?? '';
+        const label = element.getAttribute('aria-label') || element.getAttribute('title') || (element.textContent ?? '').trim().replace(/\s+/g,' ').slice(0,70) || element.tagName.toLowerCase();
+        setSelectedBlockId('');
+        setSelectedNativeTarget(null);
+        setSelectedNativeElement({ path, tag: element.tagName.toLowerCase(), label, originalText, canEditText: isNativeTextEditable(element) });
       }, true);
       previewDocument.body.dataset.nexoraNativePickerBound = 'true';
     }
     previewDocument.body.dataset.nexoraDesignSelection = selectionModeRef.current ? 'true' : 'false';
-  }, [config, previewMode, scope, theme]);
+  }, [config, previewMode, scope, theme, selectedNativeElement]);
   useEffect(() => { if (previewMode === 'real') applyDraftPreview(); }, [applyDraftPreview, previewMode]);
   useEffect(() => {
     selectionModeRef.current = selectionMode;
