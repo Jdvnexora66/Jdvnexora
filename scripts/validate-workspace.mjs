@@ -42,6 +42,37 @@ const pageFiles = [
 ];
 for (const path of pageFiles) read(path);
 
+const routeRenderAssertions = {
+  dashboard: "activeSection === 'dashboard' && <ReferenceDashboard",
+  studio: "activeSection === 'studio' && <StudioIA",
+  design: "activeSection === 'design' && (profile?.role === 'admin'",
+  projects: "activeSection === 'projects' ? <>",
+  organizations: "activeSection === 'organizations' && <OrganizationPanel",
+  profile: "activeSection === 'profile' && <section",
+  administration: "activeSection === 'administration' && <AdminPanel",
+  academy: "activeSection === 'academy' && <Academy",
+  library: "activeSection === 'library' && <LearningLibrary",
+  resources: "activeSection === 'resources' && <ResourceLibrary",
+  discover: "activeSection === 'discover' && <Discover",
+  media: "activeSection === 'media' && <MediaLibrary",
+  roadmap: "activeSection === 'roadmap' && <Roadmap",
+  timeline: "activeSection === 'timeline' && <Timeline",
+  insights: "activeSection === 'insights' && <Insights",
+  billing: "activeSection === 'billing' && <BillingPanel",
+};
+for (const route of expectedRoutes) {
+  assert.ok(app.includes(routeRenderAssertions[route]), `La route ${route} n’affiche plus son écran métier attendu.`);
+  assert.ok(app.includes(`navigateWorkspace('${route}')`), `La navigation ne permet plus d’ouvrir la route ${route}.`);
+}
+for (const path of [
+  'src/components/CollaborationPanel.tsx',
+  'src/components/CreatorCatalog.tsx',
+  'src/components/PublishedVisualLayout.tsx',
+  'src/components/ModuleDataOverview.tsx',
+]) read(path);
+assert.ok(app.includes('<CollaborationPanel'), 'La collaboration doit rester accessible depuis les projets.'); 
+assert.ok(app.includes('<PublishedVisualLayout'), 'Les mises en page publiées doivent rester raccordées aux écrans.');
+
 const requiredAppBindings = [
   'ReferenceDashboard', 'StudioIA', 'VisualDesignStudio', 'OrganizationPanel',
   'AdminPanel', 'Academy', 'LearningLibrary', 'ResourceLibrary', 'Discover',
@@ -71,4 +102,4 @@ for (const [file, source, functions] of [
   }
 }
 
-console.log('NEXORA workspace checks passed: 16 routes authentifiées + vitrine publique, sources, Studio Design natif, sélection multi-pages, contrôles de précision et paiements vérifiés côté serveur.');
+console.log('NEXORA workspace checks passed: 16 routes authentifiées rendues et navigables + vitrine publique, composants transversaux, sources, Studio Design natif, sélection multi-pages, contrôles de précision et paiements vérifiés côté serveur.');
