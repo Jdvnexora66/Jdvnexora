@@ -71,7 +71,7 @@ async function verifyCourseOrder(
   }
   const { data: verificationLock, error: lockError } = await admin.from("nexora_course_payment_orders")
     .update({ status: "verification_required", provider_reference: transactionId, updated_at: new Date().toISOString() })
-    .eq("id", order.id).eq("user_id", userId).in("status", ["pending", "verification_required"])
+    .eq("id", order.id).eq("user_id", userId).in("status", ["pending", "verification_required"]).eq("provider_reference", order.provider_reference)
     .select("id").maybeSingle();
   if (lockError) {
     if (lockError.code === "23505") return reply(200, { verified: false, final: true, error: "Cette transaction est déjà utilisée pour un autre paiement." });
@@ -197,7 +197,7 @@ async function verifySubscriptionOrder(
   const transactionToken = orderMode + ":" + nonce + ":" + transactionId;
   const { data: verificationLock, error: lockError } = await admin.from("subscriptions")
     .update({ provider_reference: transactionToken, updated_at: new Date().toISOString() })
-    .eq("id", order.id).eq("user_id", userId).eq("status", "pending")
+    .eq("id", order.id).eq("user_id", userId).eq("status", "pending").eq("provider_reference", order.provider_reference)
     .select("id").maybeSingle();
   if (lockError) return reply(500, { error: "Impossible d'enregistrer la vérification de cette commande." });
   if (!verificationLock) {
