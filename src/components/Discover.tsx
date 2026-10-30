@@ -16,12 +16,22 @@ type Entrepreneur = {
 };
 
 type CreatorSource = { id: string; entrepreneur_id: string | null; title: string; source_url: string; publisher: string | null; source_type: string; excerpt: string | null; credibility_note: string | null; checked_at: string | null };
+type CreatorSocial = { id: string; entrepreneur_id: string; platform: string; handle: string | null; profile_url: string; is_official: boolean };
+
+function safeExternalUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null;
+  } catch { return null; }
+}
 
 type Props = { userId: string };
 
 export default function Discover({ userId }: Props) {
   const [items, setItems] = useState<Entrepreneur[]>([]);
   const [sourcesByProfile, setSourcesByProfile] = useState<Record<string, CreatorSource[]>>({});
+  const [socialsByProfile, setSocialsByProfile] = useState<Record<string, CreatorSocial[]>>({});
   const [country, setCountry] = useState('');
   const [basketSearches, setBasketSearches] = useState<Record<string, string>>({ content: '', saas: '', digital: '' });
   const [name, setName] = useState('');
@@ -55,21 +65,34 @@ export default function Discover({ userId }: Props) {
       const profiles = (data ?? []) as Entrepreneur[];
       setItems(profiles);
       if (profiles.length) {
-        const { data: sourceRows, error: sourceError } = await supabase.from('content_sources')
-          .select('id,entrepreneur_id,title,source_url,publisher,source_type,excerpt,credibility_note,checked_at')
-          .in('entrepreneur_id', profiles.map(item => item.id));
-        if (sourceError) {
-          setSourcesByProfile({});
-          setError('Les créateurs sont chargés, mais leurs sources sont temporairement indisponibles.');
-          return;
-        }
-        const grouped: Record<string, CreatorSource[]> = {};
-        for (const source of (sourceRows ?? []) as CreatorSource[]) {
+        const profileIds = profiles.map(item => item.id);
+        const [sourceResult, socialResult] = await Promise.all([
+          supabase.from('content_sources')
+            .select('id,entrepreneur_id,title,source_url,publisher,source_type,excerpt,credibility_note,checked_at')
+            .in('entrepreneur_id', profileIds),
+          supabase.from('social_accounts')
+            .select('id,entrepreneur_id,platform,handle,profile_url,is_official')
+            .in('entrepreneur_id', profileIds),
+        ]);
+        const groupedSources: Record<string, CreatorSource[]> = {};
+        for (const source of (sourceResult.data ?? []) as CreatorSource[]) {
           if (!source.entrepreneur_id) continue;
-          (grouped[source.entrepreneur_id] ??= []).push(source);
+          (groupedSources[source.entrepreneur_id] ??= []).push(source);
         }
-        setSourcesByProfile(grouped);
-      } else setSourcesByProfile({});
+        setSourcesByProfile(groupedSources);
+        const groupedSocials: Record<string, CreatorSocial[]> = {};
+        for (const social of (socialResult.data ?? []) as CreatorSocial[]) {
+          (groupedSocials[social.entrepreneur_id] ??= []).push(social);
+        }
+        setSocialsByProfile(groupedSocials);
+        if (sourceResult.error) setError('Les créateurs sont chargés, mais leurs sources sont temporairement indisponibles.');
+        else if (socialResult.error && !socialResult.error.message.includes('social_accounts')) {
+          setError('Les créateurs sont chargés, mais certains réseaux sociaux sont temporairement indisponibles.');
+        }
+      } else {
+        setSourcesByProfile({});
+        setSocialsByProfile({});
+      }
     } catch {
       setError('Erreur réseau pendant le chargement de Discover. Vérifiez la connexion puis réessayez.');
     } finally {
@@ -115,7 +138,7 @@ export default function Discover({ userId }: Props) {
   }
   function itemsForBasket(basketId: 'content' | 'saas' | 'digital') {
     const term = basketSearches[basketId].trim().toLocaleLowerCase('fr');
-    return visibleItems.filter(item => belongsToBasket(item, basketId) && (!term || [item.name, item.summary, item.biography, item.country, item.industry].filter(Boolean).join(' ').toLocaleLowerCase('fr').includes(term)));
+    return visibleItems.filter(item => belongsToBasket(item, basketId) && (!term || [item.name, item.summary, item.biography, item.country, item.industry, ...(socialsByProfile[item.id] ?? []).flatMap(social => [social.platform, social.handle])].filter(Boolean).join(' ').toLocaleLowerCase('fr').includes(term)));
   }
   function openAddForm(basketId: 'content' | 'saas' | 'digital') {
     setFormBasket(basketId);
@@ -177,7 +200,7 @@ export default function Discover({ userId }: Props) {
       return <section className="discover-basket" key={basket.id} aria-labelledby={'basket-' + basket.id}>
         <div className="discover-basket-heading"><div><h3 id={'basket-' + basket.id}>{basket.title}</h3><p>{basket.description}</p><span className="discover-basket-count">{basketItems.length} profil{basketItems.length > 1 ? 's' : ''}</span></div><button type="button" className="primary-button discover-add" onClick={() => openAddForm(basket.id)}><Plus size={15}/> Ajouter ici</button></div>
         <label className="discover-basket-search"><Search size={16}/><input aria-label={'Rechercher dans ' + basket.title} value={basketSearches[basket.id]} onChange={e => setBasketSearches(current => ({ ...current, [basket.id]: e.target.value }))} placeholder={'Rechercher un créateur dans « ' + basket.title + ' »…'}/></label>
-        {basketItems.length === 0 ? <div className="discover-basket-empty"><p>{showFollowedOnly ? 'Aucun créateur suivi dans ce panier.' : basketSearches[basket.id] ? 'Aucun résultat. Essayez un autre nom, pays ou mot-clé.' : 'Aucun profil dans ce panier pour le moment.'}</p><button type="button" className="secondary-button" onClick={() => openAddForm(basket.id)}><Plus size={14}/> Ajouter le premier créateur</button></div> : <div className="discover-list">{basketItems.map(item => <article className="discover-item" key={item.id}><div className="discover-avatar"><Compass size={20}/></div><div className="discover-item-main"><div className="discover-card-title"><h3>{item.name}</h3><button type="button" className={followedIds.includes(item.id) ? 'discover-follow-button following' : 'discover-follow-button'} disabled={followingBusyId === item.id} onClick={() => void toggleFollow(item.id)} aria-pressed={followedIds.includes(item.id)}><Bookmark size={14} fill={followedIds.includes(item.id) ? 'currentColor' : 'none'}/>{followingBusyId === item.id ? 'En cours…' : followedIds.includes(item.id) ? 'Suivi' : 'Suivre'}</button></div><div className="discover-meta">{item.country && <span>{item.country}</span>}{item.industry && <span>{item.industry}</span>}<span className={'verification-tag verification-' + item.verification_status}><ShieldCheck size={12}/>{item.verification_status === 'verified' ? 'Vérifié' : item.verification_status === 'reviewed' ? 'Relu' : 'À vérifier'}</span></div>{item.summary && <p>{item.summary}</p>}{item.biography && <details className="discover-biography"><summary>Parcours et pistes d’apprentissage</summary><p>{item.biography}</p></details>}{item.website_url && <a href={item.website_url} target="_blank" rel="noreferrer">{item.website_url.replace(/^https?:\/\//, '')} <ExternalLink size={12}/></a>}{(sourcesByProfile[item.id] ?? []).length > 0 && <details className="discover-sources"><summary>Sources de référence ({sourcesByProfile[item.id].length})</summary><ul>{sourcesByProfile[item.id].map(source => <li key={source.id}><a href={source.source_url} target="_blank" rel="noreferrer">{source.title || source.publisher || source.source_url} <ExternalLink size={11}/></a>{source.excerpt && <p>{source.excerpt}</p>}{source.credibility_note && <small>{source.credibility_note}</small>}{source.checked_at && <small>Consultée le {new Date(source.checked_at).toLocaleDateString('fr-FR')}</small>}</li>)}</ul></details>}</div></article>)}</div>}
+        {basketItems.length === 0 ? <div className="discover-basket-empty"><p>{showFollowedOnly ? 'Aucun créateur suivi dans ce panier.' : basketSearches[basket.id] ? 'Aucun résultat. Essayez un autre nom, pays ou mot-clé.' : 'Aucun profil dans ce panier pour le moment.'}</p><button type="button" className="secondary-button" onClick={() => openAddForm(basket.id)}><Plus size={14}/> Ajouter le premier créateur</button></div> : <div className="discover-list">{basketItems.map(item => <article className="discover-item" key={item.id}><div className="discover-avatar"><Compass size={20}/></div><div className="discover-item-main"><div className="discover-card-title"><h3>{item.name}</h3><button type="button" className={followedIds.includes(item.id) ? 'discover-follow-button following' : 'discover-follow-button'} disabled={followingBusyId === item.id} onClick={() => void toggleFollow(item.id)} aria-pressed={followedIds.includes(item.id)}><Bookmark size={14} fill={followedIds.includes(item.id) ? 'currentColor' : 'none'}/>{followingBusyId === item.id ? 'En cours…' : followedIds.includes(item.id) ? 'Suivi' : 'Suivre'}</button></div><div className="discover-meta">{item.country && <span>{item.country}</span>}{item.industry && <span>{item.industry}</span>}<span className={'verification-tag verification-' + item.verification_status}><ShieldCheck size={12}/>{item.verification_status === 'verified' ? 'Vérifié' : item.verification_status === 'reviewed' ? 'Relu' : 'À vérifier'}</span></div>{item.summary && <p>{item.summary}</p>}{item.biography && <details className="discover-biography"><summary>Parcours et pistes d’apprentissage</summary><p>{item.biography}</p></details>}{safeExternalUrl(item.website_url) && <a href={safeExternalUrl(item.website_url)!} target="_blank" rel="noreferrer">{safeExternalUrl(item.website_url)!.replace(/^https?:\/\//, '')} <ExternalLink size={12}/></a>}{(socialsByProfile[item.id] ?? []).length > 0 && <div className="discover-socials" aria-label="Réseaux sociaux du créateur">{(socialsByProfile[item.id] ?? []).map(social => safeExternalUrl(social.profile_url) && <a key={social.id} href={safeExternalUrl(social.profile_url)!} target="_blank" rel="noreferrer"><span>{social.platform}</span>{social.handle && <small>{social.handle}</small>}{social.is_official && <span className="discover-social-official">Officiel</span>}<ExternalLink size={11}/></a>)}</div>}{(sourcesByProfile[item.id] ?? []).length > 0 && <details className="discover-sources"><summary>Sources de référence ({sourcesByProfile[item.id].length})</summary><ul>{sourcesByProfile[item.id].map(source => <li key={source.id}><a href={source.source_url} target="_blank" rel="noreferrer">{source.title || source.publisher || source.source_url} <ExternalLink size={11}/></a>{source.excerpt && <p>{source.excerpt}</p>}{source.credibility_note && <small>{source.credibility_note}</small>}{source.checked_at && <small>Consultée le {new Date(source.checked_at).toLocaleDateString('fr-FR')}</small>}</li>)}</ul></details>}</div></article>)}</div>}
       </section>;
     })}</div>}
     <p className="workspace-footnote">Les profils ajoutés par un utilisateur sont identifiés dans la base. Le statut « vérifié » ne doit être attribué qu’après contrôle des sources.</p>
