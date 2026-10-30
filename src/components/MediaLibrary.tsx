@@ -1,4 +1,7 @@
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
+import { Capacitor } from '@capacitor/core';
 import { Film, Headphones, Play, Plus, Search, Trash2, Youtube, Video, RefreshCw, Globe2, LockKeyhole, Link2, Unplug, ExternalLink, X, Download } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import ModuleDataOverview from './ModuleDataOverview';
@@ -102,6 +105,8 @@ function mediaKindLabel(kind: MediaKind) {
 
 export default function MediaLibrary({ userId }: Props) {
   const oauthPopupRef = useRef<Window | null>(null);
+  const pendingNativeOAuthRef = useRef<ProviderConnection['platform'] | null>(null);
+  const syncProviderRef = useRef<(platform: ProviderConnection['platform']) => Promise<void>>(async () => undefined);
   const [items, setItems] = useState<MediaItem[]>([]);
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const [query, setQuery] = useState('');
@@ -201,9 +206,47 @@ export default function MediaLibrary({ userId }: Props) {
     const onCreatorSync = () => { void load(); };
     window.addEventListener('message', onOAuthMessage);
     window.addEventListener('nexora-media-library-refresh', onCreatorSync);
+
+    let active = true;
+    let nativeAppStateListener: { remove: () => Promise<void> } | null = null;
+    let nativeBrowserFinishedListener: { remove: () => Promise<void> } | null = null;
+
+    const finishNativeOAuth = async () => {
+      const pendingPlatform = pendingNativeOAuthRef.current;
+      if (!pendingPlatform) return;
+      pendingNativeOAuthRef.current = null;
+
+      const currentConnections = await loadConnections();
+      if (!currentConnections.some((connection) => connection.platform === pendingPlatform)) {
+        setProviderError('La fenêtre de connexion a été fermée avant la confirmation. Réessayez si vous avez annulé l’autorisation.');
+        return;
+      }
+
+      setProviderNotice('Compte connecté. Première synchronisation en cours…');
+      await syncProviderRef.current(pendingPlatform);
+    };
+
+    if (Capacitor.isNativePlatform()) {
+      void CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+        if (isActive) void finishNativeOAuth();
+      }).then((listener) => {
+        if (active) nativeAppStateListener = listener;
+        else void listener.remove();
+      });
+      void Browser.addListener('browserFinished', () => {
+        void finishNativeOAuth();
+      }).then((listener) => {
+        if (active) nativeBrowserFinishedListener = listener;
+        else void listener.remove();
+      });
+    }
+
     return () => {
+      active = false;
       window.removeEventListener('message', onOAuthMessage);
       window.removeEventListener('nexora-media-library-refresh', onCreatorSync);
+      if (nativeAppStateListener) void nativeAppStateListener.remove();
+      if (nativeBrowserFinishedListener) void nativeBrowserFinishedListener.remove();
     };
   }, [load, loadConnections]);
 
@@ -214,13 +257,21 @@ export default function MediaLibrary({ userId }: Props) {
       const { data, error: invokeError } = await supabase.functions.invoke('media-integrations?action=connect', { body: { platform } });
       if (invokeError) throw new Error(data?.error || invokeError.message || 'Impossible de démarrer la connexion.');
       if (!data?.authorization_url) throw new Error(data?.error || 'La plateforme n’a pas fourni de lien d’autorisation.');
-      const popup = window.open(data.authorization_url, 'nexora-media-oauth', 'popup,width=600,height=760');
-      if (!popup) window.location.assign(data.authorization_url);
-      else {
-        oauthPopupRef.current = popup;
-        popup.focus();
+      if (Capacitor.isNativePlatform()) {
+        // Use the platform browser for OAuth; return to NEXORA by closing it.
+        // The App lifecycle listener refreshes the provider connection on resume.
+        pendingNativeOAuthRef.current = platform;
+        await Browser.open({ url: data.authorization_url });
+      } else {
+        const popup = window.open(data.authorization_url, 'nexora-media-oauth', 'popup,width=600,height=760');
+        if (!popup) window.location.assign(data.authorization_url);
+        else {
+          oauthPopupRef.current = popup;
+          popup.focus();
+        }
       }
     } catch (cause) {
+      pendingNativeOAuthRef.current = null;
       setProviderError(cause instanceof Error ? cause.message : 'Connexion impossible. Vérifiez les secrets développeur dans Supabase.');
     } finally {
       setProviderBusy(null);
@@ -243,6 +294,10 @@ export default function MediaLibrary({ userId }: Props) {
       setProviderBusy(null);
     }
   }
+
+  // Keep the latest sync callback available to the native resume listener without
+  // re-registering the App lifecycle listener on every React render.
+  syncProviderRef.current = syncProvider;
 
   async function disconnectProvider(platform: ProviderConnection['platform']) {
     if (!supabase) return;

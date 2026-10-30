@@ -49,6 +49,7 @@ JDV NEXORA
 - Sortie web native configurée sur `dist`.
 - L'application native ouvre directement l'interface d'authentification NEXORA; la vitrine publique reste l'entrée par défaut du Web.
 - Les sessions Supabase natives utilisent `@aparajita/capacitor-secure-storage` : Keychain iOS et Android Keystore/AES-GCM; le navigateur Web conserve le stockage Auth standard du navigateur. Un marqueur non sensible efface les anciens secrets Keychain lors d'une réinstallation iOS.
+- Les connexions OAuth des fournisseurs médias utilisent `@capacitor/browser` dans l'application native; au retour au premier plan (`@capacitor/app`), NEXORA vérifie la connexion côté serveur et lance la synchronisation. Le Web conserve le flux popup `postMessage`.
 - PWA : enregistrement du service worker en production, manifeste enrichi avec icônes vectorielles 192/512, cache prudent de la coque et écran hors connexion.
 - Viewport iOS configuré avec `viewport-fit=cover`.
 - CSS adapté aux zones de sécurité iOS, à la navigation tactile, aux orientations paysage courtes et aux tablettes de 761 à 1024 px.
@@ -111,4 +112,4 @@ Produire APK/AAB Android, archive iOS signée, fiches Play Store / App Store, po
 
 ## Limites de cette livraison
 
-Le dépôt contient le socle et la configuration Capacitor, mais les dossiers natifs Android/iOS n'ont pas encore été générés dans cet environnement. Aucun APK/AAB, IPA ou build Xcode n'est déclaré disponible. La validation TypeScript/Vite et les essais sur appareils doivent être réalisés via l'intégration continue et les environnements Android/iOS.
+Le dépôt contient le socle et la configuration Capacitor, mais les dossiers natifs Android/iOS n'ont pas encore été générés dans cet environnement. Aucun APK/AAB, IPA ou build Xcode n'est déclaré disponible. Le flux OAuth mobile est implémenté au niveau du client (navigateur intégré + reprise au premier plan), mais il doit être vérifié avec les applications développeur réelles et sur appareils physiques. La validation TypeScript/Vite et les essais sur appareils doivent être réalisés via l'intégration continue et les environnements Android/iOS.
