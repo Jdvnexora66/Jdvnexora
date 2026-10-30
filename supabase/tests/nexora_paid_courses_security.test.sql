@@ -1,5 +1,5 @@
 begin;
-select plan(19);
+select plan(22);
 
 select has_table('public', 'nexora_courses', 'course catalog exists');
 select has_table('public', 'nexora_course_lessons', 'course lessons exist');
@@ -20,6 +20,9 @@ select ok(not has_function_privilege('anon', 'public.nexora_enroll_free_course(u
 select ok(has_function_privilege('authenticated', 'public.nexora_enroll_free_course(uuid)', 'EXECUTE'), 'signed-in users can request free enrollment through validated RPC');
 select ok(not has_function_privilege('anon', 'public.nexora_create_course_payment_order(uuid)', 'EXECUTE'), 'anonymous users cannot create paid-course orders');
 select ok(has_function_privilege('authenticated', 'public.nexora_create_course_payment_order(uuid)', 'EXECUTE'), 'signed-in users can create paid-course orders through validated RPC');
+select ok((select proconfig @> array['search_path=""'] from pg_proc where oid='public.nexora_create_course_payment_order(uuid)'::regprocedure), 'paid-course order SECURITY DEFINER RPC has an empty search_path');
+select ok((select proconfig @> array['search_path=""'] from pg_proc where oid='public.nexora_enroll_free_course(uuid)'::regprocedure), 'free-course enrollment SECURITY DEFINER RPC has an empty search_path');
+select ok((select proconfig @> array['search_path=""'] from pg_proc where oid='public.nexora_reserve_ai_usage(text)'::regprocedure), 'AI quota reservation SECURITY DEFINER RPC has an empty search_path');
 select ok(not has_function_privilege('anon', 'public.nexora_finalize_ai_usage(uuid,bigint,text,integer,integer)', 'EXECUTE'), 'anonymous users cannot finalize AI quota usage');
 select ok(not has_function_privilege('authenticated', 'public.nexora_finalize_ai_usage(uuid,bigint,text,integer,integer)', 'EXECUTE'), 'authenticated clients cannot forge AI usage finalization');
 select ok(has_function_privilege('service_role', 'public.nexora_finalize_ai_usage(uuid,bigint,text,integer,integer)', 'EXECUTE'), 'trusted server can finalize AI usage');
