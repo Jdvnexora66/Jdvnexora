@@ -6,6 +6,8 @@ const APP_SHELL = [
   '/offline.html',
   '/manifest.webmanifest',
   '/nexora-icon.svg',
+  '/nexora-icon-192.svg',
+  '/nexora-icon-512.svg',
   '/nexora-brand.svg',
 ];
 const NEVER_CACHE = [
