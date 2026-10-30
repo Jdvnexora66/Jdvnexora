@@ -11,8 +11,7 @@ const decodeXml = (value: string) => value
   .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'");
 
 function xmlTag(block: string, name: string): string | null {
-  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = block.match(new RegExp("<" + escaped + "(?:\\s[^>]*)?>([\\s\\S]*?)</" + escaped + ">"));
+  const match = block.match(new RegExp("<" + name + "(?:\\s[^>]*)?>([\\s\\S]*?)</" + name + ">"));
   return match ? decodeXml(match[1]).trim() : null;
 }
 
@@ -35,7 +34,7 @@ async function fetchFeed(channelId: string): Promise<string> {
       if (response.ok) {
         const xml = await response.text();
         if (xml.length > 2_000_000) throw new Error("Flux YouTube trop volumineux.");
-        if (!/<feed(?:\\s|>)/i.test(xml)) throw new Error("Réponse YouTube non conforme au format Atom.");
+        if (!/<feed(?:\s|>)/i.test(xml)) throw new Error("Réponse YouTube non conforme au format Atom.");
         return xml;
       }
       lastStatus = response.status;
@@ -64,7 +63,7 @@ async function syncOne(admin: ReturnType<typeof createClient>, channel: Record<s
   }
 
   const xml = await fetchFeed(channelId);
-  const entries = [...xml.matchAll(/<entry>([\\s\\S]*?)<\\/entry>/g)].map(match => match[1]).slice(0, 15);
+  const entries = [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map(match => match[1]).slice(0, 15);
   const channelTitle = xmlTag(xml, "title") || String(channel.channel_name || "Créateur YouTube");
   let imported = 0;
   let failed = 0;
@@ -132,8 +131,6 @@ Deno.serve(async (req) => {
   if (!url || !service) return json({ error: "Configuration serveur incomplète." }, 503);
 
   const admin = createClient(url, service, { auth: { persistSession: false, autoRefreshToken: false } });
-  // Process a bounded batch concurrently so the six-hour pg_cron request stays within its timeout.
-  // Oldest/never-synced channels are selected first; the next run continues with remaining channels.
   const { data: channels, error } = await admin
     .from("nexora_creator_channels")
     .select("id, owner_id, channel_id, channel_name")
