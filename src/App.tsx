@@ -1,12 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
- feat/nexora-branding-auth-phase1
 import { ArrowRight, Eye, EyeOff, ShieldCheck, Sparkles, FolderKanban, Building2, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette, BookOpen, Menu } from 'lucide-react';
-import { isSupabaseConfigured, supabase } from './lib/supabase';
-=======
-import { ArrowRight, ShieldCheck, Sparkles, FolderKanban, Building2, Plus, Trash2, RefreshCw, LogOut, Clock3, Search, CalendarDays, Compass, Bookmark, CalendarClock, UserRound, Save, Globe2, Pencil, X, Check, Film, Palette, BookOpen, Menu } from 'lucide-react';
 import { getClientRedirectUrl, isSupabaseConfigured, supabase } from './lib/supabase';
- main
 import { isPageRouteId } from './lib/pageDataBindings';
 import Discover from './components/Discover';
 import MediaLibrary from './components/MediaLibrary';
