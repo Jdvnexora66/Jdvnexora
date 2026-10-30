@@ -26,7 +26,7 @@ async function fetchAtomFeed(feedUrl: string, maxAttempts: number, timeoutMs: nu
       });
       if (response.ok) {
         const xml = await response.text();
-        if (xml.length > 2_000_000 || !/<feed(?:\\s|>)/i.test(xml)) {
+        if (xml.length > 2_000_000 || !/<feed(?:\s|>)/i.test(xml)) {
           throw new Error("YouTube a renvoyé un contenu qui n'est pas un flux Atom valide.");
         }
         return xml;
