@@ -28,8 +28,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mobile_money');
   const [paymentPending, setPaymentPending] = useState(false);
   const [paymentNotice, setPaymentNotice] = useState('');
-  const kkiapayPublicKey = (import.meta.env.VITE_KKIAPAY_PUBLIC_KEY as string | undefined)?.trim() ?? '';
-  const kkiapaySandbox = import.meta.env.VITE_KKIAPAY_SANDBOX === 'true';
+  const [pendingSubscriptionPayment, setPendingSubscriptionPayment] = useState<{planId:string;transactionId:string}|null>(null);
 
   const isAdmin = role === 'admin';
   const load = useCallback(async () => {
@@ -119,79 +118,90 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
     setSelectedPlan(plan);
     setPaymentMethod('mobile_money');
     setPaymentNotice('');
+    setPendingSubscriptionPayment(null);
     setError('');
     setNotice('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  async function confirmSubscriptionPayment(planId:string,transactionId:string) {
+    if(!supabase) return;
+    setPaymentPending(true);setError('');setPaymentNotice('');
+    try {
+      const {data,error:verifyError}=await supabase.functions.invoke('verify-kkiapay-payment',{
+        body:{plan_id:planId,transaction_id:transactionId}
+      });
+      if(verifyError||!data?.verified) {
+        setPendingSubscriptionPayment({planId,transactionId});
+        setError(data?.error??verifyError?.message??'Paiement reçu, mais la confirmation serveur doit être réessayée. Votre abonnement reste inactif.');
+        return;
+      }
+      setPendingSubscriptionPayment(null);
+      setPaymentNotice('Paiement confirmé par le serveur. Votre abonnement est activé.');
+      setSelectedPlan(null);
+      await load();
+    } catch(cause) {
+      setPendingSubscriptionPayment({planId,transactionId});
+      setError(cause instanceof Error?cause.message:'La confirmation serveur est momentanément indisponible. Réessayez sans refaire le paiement.');
+    } finally {setPaymentPending(false);}
+  }
+
   async function launchKkiapayPayment() {
-    if (!selectedPlan || !supabase || paymentPending) return;
-    if (selectedPlan.features?.billing_mode === 'quote') {
+    const planToPay=selectedPlan;
+    if (!planToPay || !supabase || paymentPending) return;
+    if (planToPay.features?.billing_mode === 'quote') {
       setError('Cette offre est sur devis. Contactez l’équipe d’administration pour recevoir une proposition personnalisée.');
       return;
     }
-    if (selectedPlan.features?.billing_mode === 'free' || selectedPlan.price_minor === 0) {
-      setPaymentPending(true);
-      setError('');
-      const { error: activateError } = await supabase.functions.invoke('verify-kkiapay-payment', {
-        body: { plan_id: selectedPlan.id, transaction_id: null },
-      });
-      setPaymentPending(false);
-      if (activateError) { setError('Activation du forfait gratuit indisponible pour le moment. Réessayez plus tard.'); return; }
-      setPaymentNotice('Votre demande d’activation a été envoyée. Actualisez votre abonnement pour vérifier son statut.');
-      await load();
+    if (planToPay.features?.billing_mode === 'free' || planToPay.price_minor === 0) {
+      setPaymentPending(true);setError('');
+      try {
+        const {data,error:activateError}=await supabase.functions.invoke('verify-kkiapay-payment',{body:{plan_id:planToPay.id,transaction_id:null}});
+        if(activateError||!data?.verified) throw new Error(data?.error??activateError?.message??'Activation du forfait gratuit indisponible.');
+        setPaymentNotice('Votre forfait gratuit est activé.');
+        setSelectedPlan(null);
+        await load();
+      } catch(cause) {
+        setError(cause instanceof Error?cause.message:'Activation du forfait gratuit impossible. Réessayez.');
+      } finally {setPaymentPending(false);}
       return;
     }
-    if (selectedPlan.currency !== 'XOF') {
-      setError('Le paiement KKIAPAY est configuré en FCFA (XOF). Cette offre utilise une autre devise : contactez l’administrateur.');
-      return;
-    }
-    if (!kkiapayPublicKey) {
-      setError('Le paiement sécurisé n’est pas encore configuré. La clé publique KKIAPAY doit être ajoutée à VITE_KKIAPAY_PUBLIC_KEY ; aucun paiement ne sera simulé.');
-      return;
-    }
-    setPaymentPending(true);
-    setError('');
-    setPaymentNotice('');
+    setPaymentPending(true);setError('');setPaymentNotice('');setPendingSubscriptionPayment(null);
     try {
+      const {data:order,error:orderError}=await supabase.functions.invoke('create-subscription-payment-order',{body:{plan_id:planToPay.id}});
+      if(orderError) throw new Error(order?.error??orderError.message??'Impossible de préparer le paiement.');
+      if(!order?.public_key||!Number.isSafeInteger(Number(order.amount_xof))||Number(order.amount_xof)<=0||order.currency!=='XOF') {
+        throw new Error(order?.error??'La commande de paiement ou la configuration KKIAPAY est incomplète.');
+      }
+      if(order.provider_mode!=='sandbox'&&order.provider_mode!=='live') throw new Error('Mode KKIAPAY invalide. Contactez le support.');
       await launchKkiapayWidget({
-        amount: selectedPlan.price_minor,
-        key: kkiapayPublicKey,
-        position: 'center',
-        theme: '#D6B66E',
-        sandbox: kkiapaySandbox,
-        paymentmethod: paymentMethod === 'mobile_money' ? 'momo' : 'card',
-        countries: ['BJ'],
-        partnerId: `nexora-${selectedPlan.id}-${userId}`,
-        data: JSON.stringify({ plan_id: selectedPlan.id }),
-      }, {
-        onSuccess: async (response) => {
-          const transactionId = response?.transactionId ?? response?.transaction_id ?? response?.id;
-          if (!transactionId || !supabase) {
+        amount:Number(order.amount_xof),
+        key:order.public_key,
+        position:'center',
+        theme:'#D6B66E',
+        sandbox:order.provider_mode==='sandbox',
+        paymentmethod:paymentMethod==='mobile_money'?'momo':'card',
+        countries:['BJ'],
+        partnerId:`nexora-subscription-${userId}-${planToPay.id}`,
+        data:JSON.stringify({plan_id:planToPay.id})
+      },{
+        onSuccess:async response=>{
+          const transactionId=response?.transactionId??response?.transaction_id??response?.id;
+          if(!transactionId) {
             setPaymentPending(false);
-            setError('Référence de transaction absente. Vérifiez le paiement auprès de KKIAPAY avant de recommencer.');
+            setError('Référence de transaction absente. Contactez le support KKIAPAY avant de recommencer.');
             return;
           }
-          const { data, error: verifyError } = await supabase.functions.invoke('verify-kkiapay-payment', {
-            body: { plan_id: selectedPlan.id, transaction_id: transactionId },
-          });
-          setPaymentPending(false);
-          if (verifyError || !data?.verified) {
-            setError('Paiement reçu par le widget mais pas encore confirmé par le serveur. Votre abonnement reste inactif jusqu’à vérification.');
-            return;
-          }
-          setPaymentNotice('Paiement confirmé par le serveur. Votre abonnement est activé.');
-          setSelectedPlan(null);
-          await load();
+          await confirmSubscriptionPayment(planToPay.id,transactionId);
         },
-        onFailure: () => {
+        onFailure:()=>{
           setPaymentPending(false);
           setError('Le paiement a échoué ou a été annulé. Aucun abonnement payant n’a été activé.');
-        },
+        }
       });
-    } catch (paymentError) {
+    } catch(paymentError) {
       setPaymentPending(false);
-      setError(paymentError instanceof Error ? paymentError.message : 'Impossible de lancer KKIAPAY.');
+      setError(paymentError instanceof Error?paymentError.message:'Impossible de lancer KKIAPAY.');
     }
   }
 
@@ -235,9 +245,9 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
           {!quotePlan && <button type="button" className="primary-button billing-pay-button" onClick={() => void launchKkiapayPayment()} disabled={paymentPending || loading}>
             <LockKeyhole size={17}/>{paymentPending ? 'Vérification en cours…' : freePlan ? 'Activer le forfait gratuit' : `Payer ${formatPrice(selectedPlan)}`}
           </button>}
+          {pendingSubscriptionPayment&&<div className="feedback warning" role="status"><p>Le paiement a été reçu, mais la confirmation serveur n’est pas terminée. Ne refaites pas le paiement : relancez uniquement la vérification.</p><button type="button" className="secondary-button" disabled={paymentPending} onClick={()=>void confirmSubscriptionPayment(pendingSubscriptionPayment.planId,pendingSubscriptionPayment.transactionId)}>{paymentPending?'Vérification…':'Réessayer la vérification'}</button></div>}
           {error && <p className="feedback error" role="alert">{error}</p>}
           {paymentNotice && <p className="feedback success" role="status">{paymentNotice}</p>}
-          {!quotePlan && !freePlan && !kkiapayPublicKey && <p className="billing-config-notice">Configuration marchande requise avant l’ouverture du paiement réel.</p>}
         </div>
       </div>
     </section>;
