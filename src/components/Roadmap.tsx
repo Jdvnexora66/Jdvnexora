@@ -88,7 +88,7 @@ export default function Roadmap({ userId }: { userId:string }) {
     try {
       const {error:deleteError}=await supabase.from('roadmap_tasks').delete().eq('id',task.id).eq('user_id',userId);
       if(deleteError){setError('Impossible de supprimer cet objectif. Actualisez la Roadmap puis réessayez.');return;}
-      setTasks(current=>current.filter(row=>row.id!==task.id));setMessage('Objectif supprimé.');
+      setTasks(current=>current.filter(row=>row.id!==task.id));if(editingTaskId===task.id)resetForm();setMessage('Objectif supprimé.');
     } catch {
       setError('Erreur réseau pendant la suppression. Actualisez la Roadmap pour vérifier si l’objectif existe encore.');
     } finally {
