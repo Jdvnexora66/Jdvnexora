@@ -28,7 +28,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mobile_money');
   const [paymentPending, setPaymentPending] = useState(false);
   const [paymentNotice, setPaymentNotice] = useState('');
-  const [pendingSubscriptionPayment, setPendingSubscriptionPayment] = useState<{planId:string;transactionId:string}|null>(null);
+  const [pendingSubscriptionPayment, setPendingSubscriptionPayment] = useState<{orderId:string;planId:string;transactionId:string}|null>(null);
 
   const isAdmin = role === 'admin';
   const load = useCallback(async () => {
@@ -124,12 +124,12 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  async function confirmSubscriptionPayment(planId:string,transactionId:string) {
+  async function confirmSubscriptionPayment(orderId:string,planId:string,transactionId:string) {
     if(!supabase) return;
     setPaymentPending(true);setError('');setPaymentNotice('');
     try {
       const {data,error:verifyError}=await supabase.functions.invoke('verify-kkiapay-payment',{
-        body:{plan_id:planId,transaction_id:transactionId}
+        body:{subscription_order_id:orderId,transaction_id:transactionId}
       });
       if(data?.final) {
         setPendingSubscriptionPayment(null);
@@ -137,7 +137,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
         return;
       }
       if(verifyError||!data?.verified) {
-        setPendingSubscriptionPayment({planId,transactionId});
+        setPendingSubscriptionPayment({orderId,planId,transactionId});
         setError(data?.error??verifyError?.message??'Paiement reçu, mais la confirmation serveur doit être réessayée. Votre abonnement reste inactif.');
         return;
       }
@@ -182,7 +182,11 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
         await load();
         return;
       }
-      if(!order?.public_key||!Number.isSafeInteger(Number(order.amount_xof))||Number(order.amount_xof)<=0||order.currency!=='XOF') {
+      if(order?.verification_required&&order?.order_id&&order?.transaction_id) {
+        await confirmSubscriptionPayment(order.order_id,planToPay.id,order.transaction_id);
+        return;
+      }
+      if(!order?.order_id||!order?.public_key||!Number.isSafeInteger(Number(order.amount_xof))||Number(order.amount_xof)<=0||order.currency!=='XOF') {
         throw new Error(order?.error??'La commande de paiement ou la configuration KKIAPAY est incomplète.');
       }
       if(order.provider_mode!=='sandbox'&&order.provider_mode!=='live') throw new Error('Mode KKIAPAY invalide. Contactez le support.');
@@ -204,7 +208,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
             setError('Référence de transaction absente. Contactez le support KKIAPAY avant de recommencer.');
             return;
           }
-          await confirmSubscriptionPayment(planToPay.id,transactionId);
+          await confirmSubscriptionPayment(order.order_id,planToPay.id,transactionId);
         },
         onFailure:()=>{
           setPaymentPending(false);
@@ -256,7 +260,7 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
           {!quotePlan && <button type="button" className="primary-button billing-pay-button" onClick={() => void launchKkiapayPayment()} disabled={paymentPending || loading}>
             <LockKeyhole size={17}/>{paymentPending ? 'Vérification en cours…' : freePlan ? 'Activer le forfait gratuit' : `Payer ${formatPrice(selectedPlan)}`}
           </button>}
-          {pendingSubscriptionPayment&&<div className="feedback warning" role="status"><p>Le paiement a été reçu, mais la confirmation serveur n’est pas terminée. Ne refaites pas le paiement : relancez uniquement la vérification.</p><button type="button" className="secondary-button" disabled={paymentPending} onClick={()=>void confirmSubscriptionPayment(pendingSubscriptionPayment.planId,pendingSubscriptionPayment.transactionId)}>{paymentPending?'Vérification…':'Réessayer la vérification'}</button></div>}
+          {pendingSubscriptionPayment&&<div className="feedback warning" role="status"><p>Le paiement a été reçu, mais la confirmation serveur n’est pas terminée. Ne refaites pas le paiement : relancez uniquement la vérification.</p><button type="button" className="secondary-button" disabled={paymentPending} onClick={()=>void confirmSubscriptionPayment(pendingSubscriptionPayment.orderId,pendingSubscriptionPayment.planId,pendingSubscriptionPayment.transactionId)}>{paymentPending?'Vérification…':'Réessayer la vérification'}</button></div>}
           {error && <p className="feedback error" role="alert">{error}</p>}
           {paymentNotice && <p className="feedback success" role="status">{paymentNotice}</p>}
         </div>
