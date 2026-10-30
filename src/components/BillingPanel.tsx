@@ -131,6 +131,11 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
       const {data,error:verifyError}=await supabase.functions.invoke('verify-kkiapay-payment',{
         body:{plan_id:planId,transaction_id:transactionId}
       });
+      if(data?.final) {
+        setPendingSubscriptionPayment(null);
+        setError(data?.error??'La transaction n’a pas été validée. Vous pouvez relancer un nouveau paiement.');
+        return;
+      }
       if(verifyError||!data?.verified) {
         setPendingSubscriptionPayment({planId,transactionId});
         setError(data?.error??verifyError?.message??'Paiement reçu, mais la confirmation serveur doit être réessayée. Votre abonnement reste inactif.');
