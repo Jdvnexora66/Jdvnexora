@@ -16,42 +16,54 @@ function xmlTag(block: string, name: string): string | null {
 }
 
 async function fetchFeed(channelId: string): Promise<string> {
-  const url = "https://www.youtube.com/feeds/videos.xml?channel_id=" + encodeURIComponent(channelId);
-  const delays = [700, 1600];
-  let lastStatus: number | null = null;
-  let lastError = "";
+  const channelUrl = "https://www.youtube.com/feeds/videos.xml?channel_id=" + encodeURIComponent(channelId);
+  const uploadsId = "UU" + channelId.slice(2);
+  const uploadsUrl = "https://www.youtube.com/feeds/videos.xml?playlist_id=" + encodeURIComponent(uploadsId);
 
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const response = await fetch(url, {
-        headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; NEXORA-CreatorCatalog/1.0)",
-          "Accept": "application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
-        },
-        redirect: "follow",
-        signal: AbortSignal.timeout(3500),
-      });
-      if (response.ok) {
-        const xml = await response.text();
-        if (xml.length > 2_000_000) throw new Error("Flux YouTube trop volumineux.");
-        if (!/<feed(?:\s|>)/i.test(xml)) throw new Error("Réponse YouTube non conforme au format Atom.");
-        return xml;
+  async function requestFeed(url: string): Promise<string> {
+    let lastStatus: number | null = null;
+    let lastError = "";
+    const delays = [400];
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const response = await fetch(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (compatible; NEXORA-CreatorCatalog/1.0)",
+            "Accept": "application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
+          },
+          redirect: "follow",
+          signal: AbortSignal.timeout(2500),
+        });
+        if (response.ok) {
+          const xml = await response.text();
+          if (xml.length > 2_000_000 || !/<feed(?:\\s|>)/i.test(xml)) {
+            throw new Error("Réponse YouTube non conforme au format Atom.");
+          }
+          return xml;
+        }
+        lastStatus = response.status;
+        lastError = "HTTP " + response.status;
+        if (!(response.status === 404 || response.status === 429 || response.status >= 500)) break;
+      } catch (error) {
+        lastStatus = null;
+        lastError = error instanceof Error ? error.message : "Erreur réseau inconnue";
       }
-      lastStatus = response.status;
-      lastError = "HTTP " + response.status;
-      const retryable = response.status === 404 || response.status === 429 || response.status >= 500;
-      if (!retryable) break;
-    } catch (error) {
-      lastError = error instanceof Error ? error.message : "Erreur réseau inconnue";
-      lastStatus = null;
+      if (attempt < delays.length) await new Promise(resolve => setTimeout(resolve, delays[attempt]));
     }
-    if (attempt < delays.length) await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+    throw new Error(lastStatus === 404 ? "HTTP 404 après deux tentatives" : lastError || "flux inaccessible");
   }
 
-  if (lastStatus === 404) {
-    throw new Error("YouTube renvoie HTTP 404 après trois tentatives. Vérifier l'identifiant de chaîne et la disponibilité du flux.");
+  try {
+    return await requestFeed(channelUrl);
+  } catch (primaryError) {
+    try {
+      return await requestFeed(uploadsUrl);
+    } catch (fallbackError) {
+      const first = primaryError instanceof Error ? primaryError.message : "flux chaîne indisponible";
+      const second = fallbackError instanceof Error ? fallbackError.message : "flux uploads indisponible";
+      throw new Error("Flux chaîne : " + first + " ; flux uploads : " + second);
+    }
   }
-  throw new Error("Flux YouTube inaccessible après trois tentatives : " + (lastError || "erreur réseau"));
 }
 
 async function syncOne(admin: ReturnType<typeof createClient>, channel: Record<string, unknown>) {
