@@ -90,6 +90,11 @@ export default function Academy({ userId }: { userId:string }) {
       const {data,error:verifyError}=await supabase.functions.invoke('verify-kkiapay-payment',{
         body:{course_order_id:orderId,transaction_id:transactionId}
       });
+      if(data?.final) {
+        setPendingCourseOrder(null);
+        setError(data?.error??'La transaction n’a pas été validée. Vous pouvez lancer un nouveau paiement.');
+        return;
+      }
       if(verifyError||!data?.verified) {
         setPendingCourseOrder({orderId,courseId,transactionId});
         setError(data?.error??verifyError?.message??'Le paiement a été reçu, mais la confirmation serveur doit être réessayée. Aucun accès n’est activé avant cette confirmation.');
