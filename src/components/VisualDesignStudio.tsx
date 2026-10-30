@@ -123,6 +123,9 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
   const [, setFuture] = useState<StudioConfig[]>([]);
   const [bindingValues, setBindingValues] = useState<Record<string, number | null>>({});
   const previewFrameRef = useRef<HTMLIFrameElement | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedNativeTarget, setSelectedNativeTarget] = useState<NativeTarget | null>(null);
+  const selectionModeRef = useRef(false);
   const isAdmin = role === 'admin';
   const selectedBlock = config.components.find(block => block.id === selectedBlockId) ?? null;
   const dirty = useMemo(() => JSON.stringify(config) !== JSON.stringify(savedConfig), [config, savedConfig]);
@@ -138,9 +141,28 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
     style.textContent = '.workspace-main[data-active-section="' + safeScope + '"]{--nexora-page-bg:' + styleConfig.background + ' !important;--nexora-page-surface:' + styleConfig.surface + ' !important;--nexora-page-text:' + styleConfig.text + ' !important;--nexora-page-accent:' + styleConfig.accent + ' !important;--nexora-page-radius:' + styleConfig.radius + 'px !important;--nexora-page-font:' + (styleConfig.textScale === 'small' ? '0.92' : styleConfig.textScale === 'large' ? '1.08' : '1') + ' !important;--nexora-page-density:' + (styleConfig.density === 'compact' ? '8' : '14') + 'px !important;background:' + styleConfig.background + ' !important;color:' + styleConfig.text + ' !important}' +
       '.workspace-main[data-active-section="' + safeScope + '"] .project-panel{background:var(--nexora-page-surface)!important;color:var(--nexora-page-text)!important;border-color:color-mix(in srgb,var(--nexora-page-accent) 24%,transparent)!important;border-radius:var(--nexora-page-radius)!important;font-size:var(--nexora-page-font)}' +
       '.workspace-main[data-active-section="' + safeScope + '"] .project-item,.workspace-main[data-active-section="' + safeScope + '"] .timeline-event-card,.workspace-main[data-active-section="' + safeScope + '"] .insight-item{background:var(--nexora-page-bg)!important;border-color:color-mix(in srgb,var(--nexora-page-accent) 20%,transparent)!important;border-radius:var(--nexora-page-radius)!important;padding:var(--nexora-page-density)}' +
-      '.workspace-main[data-active-section="' + safeScope + '"] .eyebrow{color:var(--nexora-page-accent)!important}';
+      '.workspace-main[data-active-section="' + safeScope + '"] .eyebrow{color:var(--nexora-page-accent)!important}' +
+      'body[data-nexora-design-selection="true"] .project-panel,body[data-nexora-design-selection="true"] .project-item,body[data-nexora-design-selection="true"] .project-form,body[data-nexora-design-selection="true"] .section-heading,body[data-nexora-design-selection="true"] .primary-button{cursor:crosshair!important}body[data-nexora-design-selection="true"] .project-panel:hover,body[data-nexora-design-selection="true"] .project-item:hover,body[data-nexora-design-selection="true"] .project-form:hover,body[data-nexora-design-selection="true"] .section-heading:hover,body[data-nexora-design-selection="true"] .primary-button:hover{outline:2px dashed var(--nexora-page-accent)!important;outline-offset:2px}';
+    if (!previewDocument.body.dataset.nexoraNativePickerBound) {
+      previewDocument.body.addEventListener('click', event => {
+        if (!selectionModeRef.current) return;
+        const clicked = event.target as HTMLElement | null;
+        if (!clicked) return;
+        const candidates: Array<[NativeTarget, string]> = [['button','.primary-button'],['form','.project-form'],['card','.project-item'],['heading','.section-heading'],['panel','.project-panel']];
+        for (const [target, selector] of candidates) {
+          if (clicked.closest(selector)) { event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); setSelectedNativeTarget(target); return; }
+        }
+      }, true);
+      previewDocument.body.dataset.nexoraNativePickerBound = 'true';
+    }
+    previewDocument.body.dataset.nexoraDesignSelection = selectionModeRef.current ? 'true' : 'false';
   }, [config, previewMode, scope, theme]);
   useEffect(() => { if (previewMode === 'real') applyDraftPreview(); }, [applyDraftPreview, previewMode]);
+  useEffect(() => {
+    selectionModeRef.current = selectionMode;
+    const body = previewFrameRef.current?.contentDocument?.body;
+    if (body) body.dataset.nexoraDesignSelection = selectionMode ? 'true' : 'false';
+  }, [selectionMode, previewMode, scope]);
   const bindingKey = useMemo(() => [...new Set(config.components.map(block => block.dataBinding).filter((value): value is PageDataBindingKey => Boolean(value)))].sort().join('|'), [config.components]);
 
   const loadLayouts = useCallback(async () => {
