@@ -8,6 +8,14 @@ const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.e
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
+/** Build a browser URL for email links and invitations from native WebViews. */
+export function getClientRedirectUrl(path: string): string {
+  const origin = isNativeClient
+    ? (import.meta.env.VITE_PUBLIC_APP_URL || import.meta.env.NEXT_PUBLIC_APP_URL || 'https://jdvnexora.netlify.app')
+    : window.location.origin;
+  return new URL(path.startsWith('/') ? path : `/${path}`, origin).toString();
+}
+
 const isNativeClient = Capacitor.isNativePlatform();
 const nativeAuthStorageReady: Promise<void> = isNativeClient
   ? (async () => {
