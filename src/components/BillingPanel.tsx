@@ -170,6 +170,12 @@ export default function BillingPanel({ userId, role }: { userId: string; role: s
     try {
       const {data:order,error:orderError}=await supabase.functions.invoke('create-subscription-payment-order',{body:{plan_id:planToPay.id}});
       if(orderError) throw new Error(order?.error??orderError.message??'Impossible de préparer le paiement.');
+      if(order?.already_active) {
+        setPaymentNotice('Ce forfait est déjà actif sur votre compte. Aucun nouveau paiement n’a été lancé.');
+        setSelectedPlan(null);
+        await load();
+        return;
+      }
       if(!order?.public_key||!Number.isSafeInteger(Number(order.amount_xof))||Number(order.amount_xof)<=0||order.currency!=='XOF') {
         throw new Error(order?.error??'La commande de paiement ou la configuration KKIAPAY est incomplète.');
       }
