@@ -312,7 +312,7 @@ export default function VisualDesignStudio({ userId, role }: { userId: string; r
         if (nextScope === scope) return;
         if (dirty && !window.confirm('Abandonner les modifications non enregistrées pour changer de page ?')) return;
         const existing = layouts.find(row => row.scope === nextScope);
-        setScope(nextScope);
+        setScope(nextScope); setSelectionMode(false); setSelectedNativeTarget(null);
         setSelectedId(existing?.id ?? '');
         const nextName = existing?.name ?? (nextScope === 'custom' ? 'Ma nouvelle page' : ({studio:'Studio IA',projects:'Projets',organizations:'Espace entreprise',profile:'Profil et préférences',academy:'Académie',resources:'Bibliothèque de ressources',discover:'Découverte',media:'Médiathèque',timeline:'Planning',insights:'Analyses',library:'Bibliothèque de formation',roadmap:'Feuille de route',billing:'Abonnement et facturation',administration:'Administration'} as Record<string,string>)[nextScope] ?? 'Nouvelle page');
         setName(nextName);
