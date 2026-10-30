@@ -176,7 +176,7 @@ async function verifySubscriptionOrder(
 ) {
   if (!transactionId) return reply(400, { error: "Référence KKIAPAY manquante." });
   const { data: order, error: orderError } = await admin.from("subscriptions")
-    .select("id,user_id,plan_id,status,provider,provider_reference")
+    .select("id,user_id,plan_id,status,provider,provider_reference,amount_minor,currency,billing_interval")
     .eq("id", orderId).eq("user_id", userId).maybeSingle();
   if (orderError || !order) return reply(404, { error: "Commande d'abonnement introuvable." });
   if (order.status === "active" && order.provider === "kkiapay" && order.provider_reference === transactionId) {
@@ -201,14 +201,10 @@ async function verifySubscriptionOrder(
     return reply(409, { error: "Le mode KKIAPAY a changé depuis la création de cette commande. Restaurez le mode d'origine pour vérifier le paiement." });
   }
 
-  const { data: plan, error: planError } = await admin.from("plans")
-    .select("id,active,price_minor,currency,billing_interval,features")
-    .eq("id", order.plan_id).maybeSingle();
-  if (planError || !plan || !plan.active || plan.features?.billing_mode === "quote") {
-    return reply(409, { error: "Le forfait n'est plus disponible." });
-  }
-  if (plan.features?.billing_mode === "free" || Number(plan.price_minor) <= 0 || plan.currency !== "XOF") {
-    return reply(409, { error: "Le forfait ne correspond pas à une commande KKIAPAY payante en FCFA." });
+  if (!Number.isSafeInteger(Number(order.amount_minor)) || Number(order.amount_minor) <= 0
+      || order.currency !== "XOF"
+      || !["month", "year", "one_time"].includes(order.billing_interval)) {
+    return reply(409, { error: "L'instantané commercial de cette commande est invalide. Contactez le support." });
   }
 
   const transactionToken = orderMode + ":" + nonce + ":" + transactionId;
@@ -246,8 +242,8 @@ async function verifySubscriptionOrder(
       return reply(200, { verified: false, pending: true, error: "La transaction KKIAPAY est encore en attente. Réessayez la vérification sans refaire le paiement." });
     }
     if (String(txRecord?.type ?? "").toUpperCase() !== "DEBIT"
-        || Number(txRecord?.amount) !== Number(plan.price_minor)
-        || txCurrency !== "XOF") {
+        || Number(txRecord?.amount) !== Number(order.amount_minor)
+        || txCurrency !== order.currency) {
       await admin.from("subscriptions").update({ status: "canceled", provider_reference: null, updated_at: new Date().toISOString() })
         .eq("id", order.id).eq("status", "pending");
       return reply(200, { verified: false, final: true, error: "Le montant ou le type de transaction ne correspond pas au forfait en FCFA. Contactez le support si votre compte a été débité." });
@@ -265,7 +261,7 @@ async function verifySubscriptionOrder(
     }
 
     const now = new Date();
-    const end = subscriptionEndDate(now, plan.billing_interval);
+    const end = subscriptionEndDate(now, order.billing_interval);
     const { data: activated, error: activationError } = await admin.from("subscriptions")
       .update({ status: "active", provider_reference: transactionId, starts_at: now.toISOString(), ends_at: end?.toISOString() ?? null, updated_at: now.toISOString() })
       .eq("id", order.id).eq("user_id", userId).eq("status", "pending")
@@ -394,6 +390,7 @@ Deno.serve(async (req: Request) => {
   const { data: subscription, error: insertError } = await admin.from("subscriptions").insert({
     user_id: authData.user.id, plan_id: plan.id, status: "active", starts_at: now.toISOString(),
     ends_at: end?.toISOString() ?? null, provider, provider_reference: providerReference,
+    amount_minor: Number(plan.price_minor), currency: plan.currency, billing_interval: plan.billing_interval,
   }).select("id,status,starts_at,ends_at").single();
   if (insertError) {
     if (insertError.code === "23505" && providerReference) {
