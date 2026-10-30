@@ -3114,7 +3114,8 @@ button.logout-button) {
 /* PHASE 2 — tablet ergonomics and native safe-area handling */
 html, body, #root { min-height: 100%; }
 body { overscroll-behavior-x: none; }
-.page-shell { padding-bottom: calc(36px + env(safe-area-inset-bottom, 0px)); }
+.page-shell { padding-bottom: 36px; }
+@media (max-width: 760px) { .page-shell { padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px)); } }
 .topbar { padding-top: max(12px, env(safe-area-inset-top, 0px)); }
 @media (min-width: 761px) and (max-width: 1024px) {
   .page-shell { padding-right: 14px; padding-left: 14px; }
