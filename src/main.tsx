@@ -5,6 +5,7 @@ import App from './App';
 import PublicVitrine from './components/PublicVitrine';
 import './styles.css';
 import './layout-safety.css';
+import './learning-spaces.css';
 import './vitrine.css';
 import { registerServiceWorker } from './lib/registerServiceWorker';
 
