@@ -1,0 +1,145 @@
+/* Second-pass spacing audit: remaining authenticated modules */
+.page-shell.brand-theme .workspace-main :is(.media-library,.timeline-panel,.insights-panel,.roadmap-panel,.billing-panel,.organization-panel,.admin-panel,.collaboration-panel,.visual-studio) {
+  display: grid;
+  align-content: start;
+  gap: 22px;
+  min-width: 0;
+}
+.page-shell.brand-theme .workspace-main :is(.media-library,.timeline-panel,.insights-panel,.roadmap-panel,.billing-panel,.organization-panel,.admin-panel,.collaboration-panel,.visual-studio) > * { min-width: 0; margin-block: 0; }
+.page-shell.brand-theme .workspace-main :is(.media-library-heading,.timeline-heading,.section-heading) { margin: 0; }
+.page-shell.brand-theme .workspace-main .media-grid,
+.page-shell.brand-theme .workspace-main .media-provider-grid,
+.page-shell.brand-theme .workspace-main .insights-grid,
+.page-shell.brand-theme .workspace-main .organization-grid,
+.page-shell.brand-theme .workspace-main .admin-grid,
+.page-shell.brand-theme .workspace-main .billing-grid,
+.page-shell.brand-theme .workspace-main .studio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(min(100%,260px),1fr));
+  align-items: stretch;
+  gap: 16px;
+  margin: 0;
+}
+.page-shell.brand-theme .workspace-main :is(.media-card,.media-provider-card,.organization-card,.admin-card,.billing-card,.studio-card) {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  min-width: 0;
+  padding: 18px;
+  border-radius: 15px;
+}
+.page-shell.brand-theme .workspace-main :is(.media-card,.media-provider-card,.organization-card,.admin-card,.billing-card,.studio-card) > * { margin-block: 0; }
+.page-shell.brand-theme .workspace-main .media-library-form,
+.page-shell.brand-theme .workspace-main .media-form,
+.page-shell.brand-theme .workspace-main .organization-form,
+.page-shell.brand-theme .workspace-main .admin-form,
+.page-shell.brand-theme .workspace-main .billing-form {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--line,rgba(148,169,213,.2));
+  border-radius: 15px;
+}
+.page-shell.brand-theme .workspace-main :is(.media-library-form,.media-form,.organization-form,.admin-form,.billing-form) label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  margin: 0;
+}
+.page-shell.brand-theme .workspace-main :is(.media-library-form,.media-form,.organization-form,.admin-form,.billing-form) :is(input,select,textarea) { width: 100%; min-width: 0; }
+.page-shell.brand-theme .workspace-main .timeline-list,
+.page-shell.brand-theme .workspace-main .insights-list,
+.page-shell.brand-theme .workspace-main .roadmap-list,
+.page-shell.brand-theme .workspace-main .collaboration-comment-list,
+.page-shell.brand-theme .workspace-main .collaboration-member-list { display: grid; gap: 14px; min-width: 0; margin: 0; padding: 0; }
+.page-shell.brand-theme .workspace-main .timeline-event { display: grid; grid-template-columns: 20px minmax(0,1fr); align-items: stretch; gap: 12px; min-width: 0; }
+.page-shell.brand-theme .workspace-main .timeline-event-card,
+.page-shell.brand-theme .workspace-main .insight-item,
+.page-shell.brand-theme .workspace-main .roadmap-task,
+.page-shell.brand-theme .workspace-main .collaboration-comment {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--line,rgba(148,169,213,.2));
+  border-radius: 15px;
+  background: rgba(18,23,35,.55);
+}
+.page-shell.brand-theme .workspace-main :is(.timeline-event-card,.insight-item,.roadmap-task,.collaboration-comment) > * { margin-block: 0; }
+.page-shell.brand-theme .workspace-main .timeline-event-meta,
+.page-shell.brand-theme .workspace-main .timeline-event-actions,
+.page-shell.brand-theme .workspace-main .insight-item-head,
+.page-shell.brand-theme .workspace-main .analysis-result-head,
+.page-shell.brand-theme .workspace-main .roadmap-task-actions,
+.page-shell.brand-theme .workspace-main .collaboration-comment-meta,
+.page-shell.brand-theme .workspace-main .collaboration-member-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+.page-shell.brand-theme .workspace-main .insight-item-head > div { display: grid; gap: 6px; min-width: 0; }
+.page-shell.brand-theme .workspace-main .analysis-result { display: grid; gap: 10px; padding: 14px; border-radius: 12px; background: rgba(8,12,22,.42); }
+.page-shell.brand-theme .workspace-main .analysis-result :is(h4,p,ul,ol) { margin-block: 0; }
+.page-shell.brand-theme .workspace-main .analysis-result :is(ul,ol) { display: grid; gap: 7px; padding-left: 22px; }
+.page-shell.brand-theme .workspace-main .roadmap-summary,
+.page-shell.brand-theme .workspace-main .insights-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(min(100%,190px),1fr));
+  gap: 14px;
+  margin: 0;
+}
+.page-shell.brand-theme .workspace-main :is(.roadmap-summary,.insights-metrics) > div {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line,rgba(148,169,213,.2));
+  border-radius: 14px;
+}
+.page-shell.brand-theme .workspace-main .roadmap-form { display: grid; gap: 14px; padding: 20px; border: 1px solid var(--line,rgba(148,169,213,.2)); border-radius: 15px; }
+.page-shell.brand-theme .workspace-main .roadmap-form-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
+.page-shell.brand-theme .workspace-main .roadmap-form label { display: grid; gap: 7px; min-width: 0; margin: 0; }
+.page-shell.brand-theme .workspace-main .roadmap-form :is(input,select,textarea) { width: 100%; min-width: 0; }
+.page-shell.brand-theme .workspace-main .roadmap-form-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; }
+.page-shell.brand-theme .workspace-main .billing-plans { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,260px),1fr)); gap: 16px; margin: 0; }
+.page-shell.brand-theme .workspace-main .billing-plans-heading { grid-column: 1/-1; margin: 0; }
+.page-shell.brand-theme .workspace-main .billing-plans-heading > div { display: grid; gap: 8px; }
+.page-shell.brand-theme .workspace-main .billing-plans-heading > div > * { margin: 0; }
+.page-shell.brand-theme .workspace-main .billing-checkout-layout { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(260px,.8fr); align-items: start; gap: 18px; }
+.page-shell.brand-theme .workspace-main :is(.billing-order-card,.billing-payment-card,.billing-plan-card) { display: grid; align-content: start; gap: 14px; min-width: 0; padding: 20px; border-radius: 16px; }
+.page-shell.brand-theme .workspace-main .organization-grid { grid-template-columns: repeat(auto-fit,minmax(min(100%,280px),1fr)); }
+.page-shell.brand-theme .workspace-main .organization-member-list,
+.page-shell.brand-theme .workspace-main .admin-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.page-shell.brand-theme .workspace-main :is(.organization-member-list,.admin-list) > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; min-width: 0; padding: 14px; border: 1px solid var(--line,rgba(148,169,213,.18)); border-radius: 12px; }
+.page-shell.brand-theme .workspace-main .collaboration-members,
+.page-shell.brand-theme .workspace-main .collaboration-comments,
+.page-shell.brand-theme .workspace-main .collaboration-shared-chapters { display: grid; gap: 14px; min-width: 0; padding: 18px; border: 1px solid var(--line,rgba(148,169,213,.18)); border-radius: 15px; }
+.page-shell.brand-theme .workspace-main :is(.collaboration-members,.collaboration-comments,.collaboration-shared-chapters) > * { margin-block: 0; }
+.page-shell.brand-theme .workspace-main .collaboration-member-list > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid var(--line,rgba(148,169,213,.16)); border-radius: 12px; }
+.page-shell.brand-theme .workspace-main .collaboration-member-list > li > div:first-child { display: grid; gap: 4px; min-width: 0; }
+.page-shell.brand-theme .workspace-main .visual-studio-workbench { display: grid; grid-template-columns: minmax(230px,.32fr) minmax(0,1fr); align-items: start; gap: 18px; }
+.page-shell.brand-theme .workspace-main .visual-studio-library { display: grid; align-content: start; gap: 12px; min-width: 0; padding: 18px; border: 1px solid var(--line,rgba(148,169,213,.2)); border-radius: 15px; }
+.page-shell.brand-theme .workspace-main .visual-studio-library > * { margin-block: 0; }
+.page-shell.brand-theme .workspace-main .visual-studio-preset { display: flex; align-items: center; gap: 9px; width: 100%; min-width: 0; padding: 10px 12px; text-align: left; }
+.page-shell.brand-theme .workspace-main .visual-studio-theme { display: grid; gap: 12px; padding-top: 14px; border-top: 1px solid var(--line,rgba(148,169,213,.18)); }
+.page-shell.brand-theme .workspace-main .visual-studio-theme label { display: grid; gap: 7px; min-width: 0; margin: 0; }
+.page-shell.brand-theme .workspace-main .visual-studio-theme :is(input,select) { width: 100%; min-width: 0; }
+@media (max-width: 900px) {
+  .page-shell.brand-theme .workspace-main .billing-checkout-layout,
+  .page-shell.brand-theme .workspace-main .visual-studio-workbench { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 760px) {
+  .page-shell.brand-theme .workspace-main .roadmap-form-row { grid-template-columns: minmax(0,1fr); }
+  .page-shell.brand-theme .workspace-main :is(.timeline-event-card,.insight-item,.roadmap-task,.collaboration-comment,.roadmap-form,.visual-studio-library) { padding: 14px; }
+  .page-shell.brand-theme .workspace-main .timeline-event { grid-template-columns: 14px minmax(0,1fr); gap: 8px; }
+  .page-shell.brand-theme .workspace-main .collaboration-member-list > li { align-items: stretch; flex-direction: column; }
+  .page-shell.brand-theme .workspace-main .collaboration-member-actions { justify-content: flex-start; }
+  .page-shell.brand-theme .workspace-main :is(.media-grid,.media-provider-grid,.insights-grid,.organization-grid,.admin-grid,.billing-grid,.studio-grid) { grid-template-columns: minmax(0,1fr); }
+}
